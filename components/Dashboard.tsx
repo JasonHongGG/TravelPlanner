@@ -23,7 +23,7 @@ const LiveTimer = ({ startTime }: { startTime: number }) => {
     return () => clearInterval(interval);
   }, [startTime]);
 
-  return <span className="ml-1 tabular-nums">({elapsedSeconds}s)</span>;
+  return <span className="ml-1 tabular-nums">({elapsedSeconds}秒)</span>;
 };
 
 export default function Dashboard({ trips, onNewTrip, onSelectTrip }: Props) {
@@ -37,7 +37,7 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip }: Props) {
               <div className="bg-brand-600 p-2 rounded-lg">
                 <Map className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-bold text-gray-900 tracking-tight">AI Trip Planner</span>
+              <span className="text-xl font-bold text-gray-900 tracking-tight">Travel Planner Dashboard</span>
             </div>
             <div className="flex items-center">
               <button 
@@ -45,7 +45,7 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip }: Props) {
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-all"
               >
                 <Plus className="w-5 h-5 mr-2" />
-                New Trip
+                新增行程
               </button>
             </div>
           </div>
@@ -56,8 +56,8 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip }: Props) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Your Trips</h1>
-          <p className="mt-1 text-gray-500">Manage your generated itineraries and create new adventures.</p>
+          <h1 className="text-2xl font-bold text-gray-900">您的行程</h1>
+          <p className="mt-1 text-gray-500">管理您生成的行程並規劃新的冒險。</p>
         </div>
 
         {trips.length === 0 ? (
@@ -65,15 +65,15 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip }: Props) {
             <div className="mx-auto h-12 w-12 text-gray-400">
               <Map className="w-12 h-12" />
             </div>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No trips yet</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by creating a new AI-generated itinerary.</p>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">尚未有行程</h3>
+            <p className="mt-1 text-sm text-gray-500">開始建立您的第一個 AI 行程吧。</p>
             <div className="mt-6">
               <button
                 onClick={onNewTrip}
                 className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700"
               >
                 <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                Plan First Trip
+                規劃第一個行程
               </button>
             </div>
           </div>
@@ -90,17 +90,17 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip }: Props) {
                   {trip.status === 'generating' && (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                       <Loader2 className="w-3 h-3 mr-1 animate-spin" /> 
-                      Generating <LiveTimer startTime={trip.createdAt} />
+                      生成中 <LiveTimer startTime={trip.createdAt} />
                     </span>
                   )}
                   {trip.status === 'complete' && (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Ready {trip.generationTimeMs ? `(${(trip.generationTimeMs / 1000).toFixed(1)}s)` : ''}
+                      完成 {trip.generationTimeMs ? `(${(trip.generationTimeMs / 1000).toFixed(1)}秒)` : ''}
                     </span>
                   )}
                    {trip.status === 'error' && (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                      Error
+                      錯誤
                     </span>
                   )}
                 </div>
@@ -122,17 +122,17 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip }: Props) {
                   
                   <div className="mt-4">
                     <div className="flex items-center text-sm text-gray-500 mb-2">
-                       <span className="font-medium text-gray-700 mr-2">Dates:</span> {trip.input.dateRange}
+                       <span className="font-medium text-gray-700 mr-2">日期:</span> {trip.input.dateRange}
                     </div>
                     <div className="flex items-center text-sm text-gray-500">
-                       <span className="font-medium text-gray-700 mr-2">Travelers:</span> {trip.input.travelers}
+                       <span className="font-medium text-gray-700 mr-2">人數:</span> {trip.input.travelers}
                     </div>
                   </div>
                 </div>
                 
                 <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-between items-center">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {trip.status === 'generating' ? 'Processing...' : 'View Itinerary'}
+                    {trip.status === 'generating' ? '處理中...' : '查看行程'}
                   </span>
                   <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-brand-500 transform group-hover:translate-x-1 transition-all" />
                 </div>

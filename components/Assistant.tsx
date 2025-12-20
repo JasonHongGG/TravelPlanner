@@ -50,7 +50,7 @@ export default function Assistant({ onUpdate, isGenerating }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', text: "Hi! I'm your AI Travel Assistant. Not happy with a specific day? Want to change the restaurant? Just tell me, and I'll update the itinerary instantly.", timestamp: Date.now() }
+    { role: 'model', text: "嗨！我是您的 AI 旅遊貼身助理。對某天行程不滿意？想換家餐廳？告訴我，我馬上為您調整。", timestamp: Date.now() }
   ]);
   const [loading, setLoading] = useState(false);
   const [thinkingText, setThinkingText] = useState('');
@@ -85,12 +85,12 @@ export default function Assistant({ onUpdate, isGenerating }: Props) {
           setMessages(prev => [...prev, { role: 'model', text: finalText, timestamp: Date.now() }]);
       } else {
           // Fallback if no text returned but update happened (shouldn't happen with new logic, but safe)
-          setMessages(prev => [...prev, { role: 'model', text: "Itinerary updated!", timestamp: Date.now() }]);
+          setMessages(prev => [...prev, { role: 'model', text: "行程已更新！", timestamp: Date.now() }]);
       }
 
     } catch (error) {
        setMessages(prev => {
-        return [...prev, { role: 'model', text: "Sorry, I encountered an error. Please try again.", timestamp: Date.now() }];
+        return [...prev, { role: 'model', text: "抱歉，更新行程時發生錯誤，請稍後再試。", timestamp: Date.now() }];
       });
     } finally {
       setLoading(false);
@@ -116,8 +116,8 @@ export default function Assistant({ onUpdate, isGenerating }: Props) {
                 <Sparkles className="w-5 h-5 text-yellow-300" />
               </div>
               <div>
-                <h3 className="font-bold text-sm">Travel Assistant</h3>
-                <p className="text-xs text-brand-100">AI-Powered Updates</p>
+                <h3 className="font-bold text-sm">旅遊貼身助理</h3>
+                <p className="text-xs text-brand-100">AI 智慧調整</p>
               </div>
             </div>
             <button onClick={() => setIsOpen(false)} className="hover:bg-white/20 p-1 rounded transition-colors">
@@ -149,14 +149,14 @@ export default function Assistant({ onUpdate, isGenerating }: Props) {
                       <div className="animate-in fade-in duration-300">
                         <div className="flex items-center gap-2 mb-2 text-brand-600 font-bold text-xs uppercase tracking-wide">
                            <Loader2 className="w-3 h-3 animate-spin" />
-                           Thinking Process...
+                           思考中...
                         </div>
                         <MessageContent text={thinkingText} />
                       </div>
                    ) : (
                       <div className="flex items-center gap-2 text-gray-500">
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Analyzing your request...</span>
+                        <span>正在分析您的需求...</span>
                       </div>
                    )}
                 </div>
@@ -170,7 +170,7 @@ export default function Assistant({ onUpdate, isGenerating }: Props) {
               <input
                 type="text"
                 className="w-full pl-4 pr-12 py-3 bg-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all"
-                placeholder="Ask to change anything..."
+                placeholder="輸入您想調整的內容..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyPress}
@@ -200,7 +200,7 @@ export default function Assistant({ onUpdate, isGenerating }: Props) {
             <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
           </span>
         </div>
-        <span className="font-medium pr-1">AI Helper</span>
+        <span className="font-medium pr-1">AI 助手</span>
       </button>
     </div>
   );
