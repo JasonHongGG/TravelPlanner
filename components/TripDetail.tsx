@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Trip, TripData, TripMeta, TripStop } from '../types';
-import { MapPin, Clock, DollarSign, Navigation, ExternalLink, AlertTriangle, Calendar, Info, ArrowRight, Share2, Printer, CheckCircle2, Car, Train, Footprints, Utensils, ShoppingBag, Landmark, TreeDeciduous, Camera, Coffee, Ticket } from 'lucide-react';
+import { Trip, TripData, TripMeta, TripStop, TripDay } from '../types';
+import { MapPin, Clock, DollarSign, Navigation, ExternalLink, AlertTriangle, Calendar, Info, ArrowRight, Share2, Printer, CheckCircle2, Car, Train, Footprints, Utensils, ShoppingBag, Landmark, TreeDeciduous, Camera, Coffee, Ticket, List, RotateCcw, Crosshair, ChevronDown, ChevronUp, Map as MapIcon } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ChartTooltip } from 'recharts';
 import Assistant from './Assistant';
 import { updateTripItinerary } from '../services/geminiService';
@@ -48,58 +48,78 @@ const getStopIcon = (stop: TripStop) => {
   return MapPin;
 };
 
+// Helper to calculate the correct map configuration (Route vs Single City)
+const getDayMapConfig = (day: TripDay | undefined, destination: string) => {
+    const city = destination;
+    if (day && day.stops && day.stops.length > 0) {
+        if (day.stops.length === 1) {
+            // Single Stop Focus
+            const stopName = day.stops[0].name;
+            const query = `${stopName}, ${city}`;
+            return {
+                url: `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=14&ie=UTF8&iwloc=&output=embed`,
+                label: `Focusing on: ${stopName}`
+            };
+        } else {
+            // Route Planning Mode (Start -> Waypoints -> End)
+            const stops = day.stops;
+            const origin = `${stops[0].name}, ${city}`;
+            
+            // Remaining stops are destinations/waypoints
+            // "daddr" supports multiple locations separated by "+to:"
+            const destinations = stops.slice(1).map(s => `${s.name}, ${city}`);
+            
+            const encodedOrigin = encodeURIComponent(origin);
+            const encodedDestinations = destinations.map(d => encodeURIComponent(d)).join('+to:');
+            
+            return {
+                url: `https://maps.google.com/maps?saddr=${encodedOrigin}&daddr=${encodedDestinations}&output=embed`,
+                label: `Day ${day.day} Route • ${stops.length} Stops`
+            };
+        }
+    } else {
+        // Fallback to City View
+        return {
+            url: `https://maps.google.com/maps?q=${encodeURIComponent(city)}&t=&z=13&ie=UTF8&iwloc=&output=embed`,
+            label: `Exploring: ${city}`
+        };
+    }
+};
+
 export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
   const [selectedDay, setSelectedDay] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'risks'>('itinerary');
+  const [isMapMenuOpen, setIsMapMenuOpen] = useState<boolean>(true);
   
   // State for Map URL and Label
   const [mapState, setMapState] = useState<{ url: string; label: string }>({
-    url: `https://maps.google.com/maps?q=${encodeURIComponent(trip.input.destination)}&t=&z=13&ie=UTF8&iwloc=&output=embed`,
-    label: `Exploring: ${trip.input.destination}`
+    url: '',
+    label: ''
   });
 
-  // Update map URL to show route when selected day changes
+  // Effect: Update map when day changes
   useEffect(() => {
-    if (trip.data?.days) {
-      const day = trip.data.days.find(d => d.day === selectedDay);
-      const city = trip.input.destination;
-
-      if (day && day.stops && day.stops.length > 0) {
-        if (day.stops.length === 1) {
-          // Single Stop Focus
-          const stopName = day.stops[0].name;
-          const query = `${stopName}, ${city}`;
-          setMapState({
-            url: `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=14&ie=UTF8&iwloc=&output=embed`,
-            label: `Focusing on: ${stopName}`
-          });
-        } else {
-          // Route Planning Mode (Start -> Waypoints -> End)
-          const stops = day.stops;
-          const origin = `${stops[0].name}, ${city}`;
-          
-          // Remaining stops are destinations/waypoints
-          // "daddr" supports multiple locations separated by "+to:"
-          const destinations = stops.slice(1).map(s => `${s.name}, ${city}`);
-          
-          const encodedOrigin = encodeURIComponent(origin);
-          // Encode each stop, then join with the unencoded Google Maps separator "+to:"
-          const encodedDestinations = destinations.map(d => encodeURIComponent(d)).join('+to:');
-          
-          setMapState({
-            url: `https://maps.google.com/maps?saddr=${encodedOrigin}&daddr=${encodedDestinations}&output=embed`,
-            label: `Day ${day.day} Route • ${stops.length} Stops`
-          });
-        }
-      } else {
-        // Fallback to City View
-        setMapState({
-          url: `https://maps.google.com/maps?q=${encodeURIComponent(city)}&t=&z=13&ie=UTF8&iwloc=&output=embed`,
-          label: `Exploring: ${city}`
-        });
-      }
-    }
+      const day = trip.data?.days.find(d => d.day === selectedDay);
+      const config = getDayMapConfig(day, trip.input.destination);
+      setMapState(config);
   }, [selectedDay, trip.data, trip.input.destination]);
+
+  // Handler: Reset Map to Full Route
+  const handleResetMap = () => {
+    const day = trip.data?.days.find(d => d.day === selectedDay);
+    const config = getDayMapConfig(day, trip.input.destination);
+    setMapState(config);
+  };
+
+  // Handler: Focus on a specific stop
+  const handleFocusStop = (stop: TripStop) => {
+    const city = trip.input.destination;
+    const query = `${stop.name}, ${city}`;
+    setMapState({
+        url: `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=16&ie=UTF8&iwloc=&output=embed`,
+        label: `📍 ${stop.name}`
+    });
+  };
 
   // Error State
   if (trip.status === 'error') {
@@ -133,6 +153,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
   const tripMeta = trip.data.tripMeta || ({} as TripMeta);
   const days = trip.data.days || [];
   const risks = trip.data.risks || [];
+  const currentDayData = days.find(d => d.day === selectedDay);
 
   const budgetEstimate = tripMeta.budgetEstimate || {};
   const budgetData = [
@@ -153,10 +174,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
     }
   };
 
-  const currentDayData = days.find(d => d.day === selectedDay);
-
   // Construct a relevant image URL using Pollinations AI
-  // We use the trip ID as a seed to keep the image consistent across re-renders
   const city = trip.input.destination.split(',')[0].trim();
   const headerImageUrl = `https://image.pollinations.ai/prompt/cinematic%20wide%20shot%20of%20${encodeURIComponent(city)}%20landmark%20scenery%20travel%20photography?width=1280&height=720&nologo=true&seed=${trip.id}`;
 
@@ -197,7 +215,6 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
             <img 
               src={headerImageUrl}
               onError={(e) => {
-                 // Fallback to a nice generic travel image if AI generation fails or hangs
                  e.currentTarget.src = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=2000&q=80';
               }}
               alt={`Travel to ${trip.input.destination}`} 
@@ -288,7 +305,6 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
                         {/* Timeline Container */}
                         <div className="relative ml-4 md:ml-6 pb-4">
                            {/* Continuous Vertical Line */}
-                           {/* Uses bg-gray-300 for high visibility */}
                            <div className="absolute top-0 bottom-0 left-8 w-0.5 bg-gray-300 transform -translate-x-1/2"></div>
                            
                            {currentDayData.stops?.map((stop, idx) => {
@@ -296,8 +312,6 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
                               return (
                                 <div key={idx} className="relative pl-16 pb-12 last:pb-0 group">
                                    {/* Timeline Node */}
-                                   {/* w-8 h-8 (32px). left-8 (32px). -translate-x-1/2 (16px). Center = 16px. */}
-                                   {/* Z-Index 10: Sits above line, but below Sticky Headers (z-30/40) */}
                                    <div className="absolute left-8 -translate-x-1/2 top-0 h-8 w-8 rounded-full border-2 border-brand-500 bg-white z-10 shadow-sm flex items-center justify-center transition-transform duration-300 group-hover:scale-110 flex-shrink-0">
                                       <StopIcon className="w-4 h-4 text-brand-600 stroke-[2.5]" />
                                    </div>
@@ -354,16 +368,12 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
                                                <MapPin className="w-3.5 h-3.5" /> View Map
                                             </a>
                                          )}
-                                         {stop.routeLinkToNext && (
-                                            <a 
-                                               href={stop.routeLinkToNext} 
-                                               target="_blank" 
-                                               rel="noreferrer"
-                                               className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-md"
-                                            >
-                                               <Navigation className="w-3.5 h-3.5" /> Route
-                                            </a>
-                                         )}
+                                         <button 
+                                            onClick={() => handleFocusStop(stop)}
+                                            className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-md"
+                                         >
+                                            <Crosshair className="w-3.5 h-3.5" /> Focus on Map
+                                         </button>
                                       </div>
 
                                       {/* Alternatives (if any) */}
@@ -494,16 +504,73 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
                 allowFullScreen
               ></iframe>
               
-              {/* Map Overlay Badge */}
-              <div className="absolute bottom-8 left-8 right-8 bg-white/95 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-gray-200 flex items-center justify-between">
-                 <div>
-                   <h4 className="font-bold text-gray-900 text-sm mb-0.5">Interactive Map View</h4>
-                   <p className="text-xs text-gray-500 truncate max-w-[200px] xl:max-w-xs">
-                     <span className="font-semibold text-brand-600">{mapState.label}</span>
-                   </p>
-                 </div>
-                 <div className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded border border-gray-200">
-                   Google Maps
+              {/* Top Right Floating Menu */}
+              <div className="absolute top-6 right-6 z-20 flex flex-col items-end">
+                 <div 
+                   className={`bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 transition-all duration-300 overflow-hidden flex flex-col ${
+                     isMapMenuOpen ? 'w-72 max-h-[calc(100vh-120px)]' : 'w-auto'
+                   }`}
+                 >
+                    {/* Header */}
+                    <div 
+                      className="p-3 bg-white border-b border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() => setIsMapMenuOpen(!isMapMenuOpen)}
+                    >
+                        <div className="flex items-center gap-2.5">
+                             <div className="p-1.5 bg-brand-100 rounded-lg text-brand-600">
+                                <MapIcon className="w-4 h-4" />
+                             </div>
+                             {isMapMenuOpen && (
+                                <div>
+                                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Day {selectedDay} Route</h4>
+                                    <p className="text-[10px] text-gray-500 font-medium">{currentDayData?.stops.length || 0} Stops</p>
+                                </div>
+                             )}
+                        </div>
+                        
+                        <div className="flex items-center gap-1 pl-2">
+                            {isMapMenuOpen ? (
+                              <>
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleResetMap(); }}
+                                    className="p-1.5 hover:bg-gray-100 rounded-md text-gray-400 hover:text-brand-600 transition-colors"
+                                    title="Reset View"
+                                >
+                                    <RotateCcw className="w-4 h-4" />
+                                </button>
+                                <div className="h-4 w-px bg-gray-200 mx-0.5"></div>
+                                <ChevronUp className="w-4 h-4 text-gray-400" />
+                              </>
+                            ) : (
+                              <ChevronDown className="w-4 h-4 text-gray-400" />
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Expanded List */}
+                    {isMapMenuOpen && currentDayData && (
+                        <div className="overflow-y-auto p-2 space-y-1 scrollbar-hide bg-gray-50/50">
+                            {currentDayData.stops.map((stop, idx) => (
+                                <div key={idx} className="group flex items-center justify-between p-2 rounded-lg hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-100 transition-all">
+                                    <div className="flex items-center gap-3 overflow-hidden">
+                                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-200 text-gray-600 group-hover:bg-brand-100 group-hover:text-brand-600 flex items-center justify-center text-[10px] font-bold transition-colors">
+                                            {idx + 1}
+                                        </span>
+                                        <span className="text-xs font-medium text-gray-600 truncate group-hover:text-gray-900 transition-colors max-w-[140px]">
+                                            {stop.name}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleFocusStop(stop)}
+                                        className="p-1.5 text-gray-300 hover:text-brand-600 hover:bg-brand-50 rounded-md transition-colors"
+                                        title="Focus on Map"
+                                    >
+                                        <Crosshair className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                  </div>
               </div>
            </div>
