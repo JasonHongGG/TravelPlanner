@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Trip, TripData, TripMeta, TripStop, TripDay, Message } from '../types';
 import { MapPin, Clock, DollarSign, Navigation, ExternalLink, AlertTriangle, Calendar, Info, ArrowRight, Share2, Printer, CheckCircle2, Car, Train, Footprints, Utensils, ShoppingBag, Landmark, TreeDeciduous, Camera, Coffee, Ticket, List, RotateCcw, Crosshair, ChevronDown, ChevronUp, Map as MapIcon, XCircle, Calculator, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ChartTooltip } from 'recharts';
@@ -171,6 +171,52 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
     url: '',
     label: ''
   });
+
+  // Refs for Drag-to-Scroll
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isDown = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftStart = useRef(0);
+  const isDragging = useRef(false);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    isDown.current = true;
+    isDragging.current = false;
+    startX.current = e.pageX;
+    if (scrollRef.current) {
+        scrollLeftStart.current = scrollRef.current.scrollLeft;
+    }
+  };
+
+  const handleMouseLeave = () => {
+    isDown.current = false;
+    isDragging.current = false;
+  };
+
+  const handleMouseUp = () => {
+    isDown.current = false;
+    setTimeout(() => {
+        isDragging.current = false;
+    }, 0);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDown.current || !scrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX;
+    const walk = (x - startX.current) * 1.5; 
+    if (Math.abs(x - startX.current) > 5) {
+        isDragging.current = true;
+    }
+    scrollRef.current.scrollLeft = scrollLeftStart.current - walk;
+  };
+
+  const handleCaptureClick = (e: React.MouseEvent) => {
+      if (isDragging.current) {
+          e.preventDefault();
+          e.stopPropagation();
+      }
+  };
 
   // Effect: Update map when day changes
   useEffect(() => {
@@ -380,14 +426,22 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
             {activeTab === 'itinerary' && (
               <>
                 {/* Day Selector Bar (Horizontal Scroll) */}
-                <div className="bg-white border-b border-gray-200 py-4 px-4 flex gap-3 overflow-x-auto scrollbar-hide sticky top-[57px] z-30">
+                <div 
+                  ref={scrollRef}
+                  className="bg-white border-b border-gray-200 py-4 px-4 flex gap-3 overflow-x-auto scrollbar-hide sticky top-[57px] z-30 cursor-grab active:cursor-grabbing select-none"
+                  onMouseDown={handleMouseDown}
+                  onMouseLeave={handleMouseLeave}
+                  onMouseUp={handleMouseUp}
+                  onMouseMove={handleMouseMove}
+                  onClickCapture={handleCaptureClick}
+                >
                   {days.map((day) => {
                      const isSelected = selectedDay === day.day;
                      return (
                         <button
                           key={day.day}
                           onClick={() => setSelectedDay(day.day)}
-                          className={`flex-shrink-0 flex flex-col items-center justify-center w-[70px] py-2 rounded-lg border transition-all duration-200 ${
+                          className={`flex-shrink-0 flex flex-col items-center justify-center w-[70px] py-2 rounded-lg border transition-all duration-200 select-none ${
                             isSelected 
                               ? 'bg-white border-brand-600 ring-1 ring-brand-600 shadow-sm' 
                               : 'bg-white border-gray-200 hover:border-gray-300'
