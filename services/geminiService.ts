@@ -201,7 +201,7 @@ export const updateTripItinerary = async (
 
     **Scenario B: Decision / Action Phase**
     If the user has made a selection (e.g., "Let's go with option A", "Add the ramen shop"), or gave a direct command (e.g., "Delete day 2"):
-    1.  First, write a brief confirmation of what you are doing.
+    1.  First, write a brief confirmation of what you are doing. **IMPORTANT: Do NOT use technical terms like 'JSON' or 'Data' in this confirmation. Use natural language like "I will update your itinerary with [Selection]" or "Adding that spot to your plan now".**
     2.  Then, output a special separator: "___UPDATE_JSON___".
     3.  Finally, output the COMPLETE, valid updated JSON structure.
 
@@ -241,8 +241,6 @@ export const updateTripItinerary = async (
             if (onThought) onThought(thoughtPart);
             
             // Start buffering JSON from whatever came after the delimiter in this chunk
-            // (Note: usually the delimiter and json won't split weirdly in one chunk but we handle it generally)
-            // Actually, simplest is just to flag it.
             jsonBuffer = fullText.substring(delimiterIndex + delimiter.length);
         } else {
             // Still in text mode, stream to UI

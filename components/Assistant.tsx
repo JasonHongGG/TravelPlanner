@@ -7,6 +7,45 @@ interface Props {
   isGenerating: boolean;
 }
 
+// Simple Markdown-ish renderer for chat messages
+// Handles **bold** and * lists
+const MessageContent = ({ text }: { text: string }) => {
+  // Simple bold parser
+  const parseBold = (str: string) => {
+    // Split by **...**
+    const parts = str.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={i} className="font-bold text-gray-900">{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+  };
+
+  const lines = text.split('\n');
+  return (
+    <div className="space-y-1">
+      {lines.map((line, i) => {
+        const trimmed = line.trim();
+        // Check for list items
+        if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+           return (
+             <div key={i} className="flex items-start gap-2 ml-2">
+               <span className="mt-2 w-1 h-1 bg-current rounded-full flex-shrink-0 opacity-60" />
+               <span className="leading-relaxed">{parseBold(trimmed.substring(2))}</span>
+             </div>
+           );
+        }
+        // Empty lines for spacing
+        if (trimmed === '') return <div key={i} className="h-2" />;
+        
+        // Regular text
+        return <div key={i} className="leading-relaxed">{parseBold(line)}</div>;
+      })}
+    </div>
+  );
+};
+
 export default function Assistant({ onUpdate, isGenerating }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -91,13 +130,13 @@ export default function Assistant({ onUpdate, isGenerating }: Props) {
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div 
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm whitespace-pre-wrap ${
+                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
                     msg.role === 'user' 
                       ? 'bg-brand-600 text-white rounded-br-none' 
                       : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none'
                   }`}
                 >
-                  {msg.text}
+                  {msg.role === 'model' ? <MessageContent text={msg.text} /> : msg.text}
                 </div>
               </div>
             ))}
@@ -112,7 +151,7 @@ export default function Assistant({ onUpdate, isGenerating }: Props) {
                            <Loader2 className="w-3 h-3 animate-spin" />
                            Thinking Process...
                         </div>
-                        <p className="whitespace-pre-wrap leading-relaxed">{thinkingText}</p>
+                        <MessageContent text={thinkingText} />
                       </div>
                    ) : (
                       <div className="flex items-center gap-2 text-gray-500">
