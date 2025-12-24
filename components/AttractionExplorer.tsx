@@ -174,7 +174,8 @@ export default function AttractionExplorer({ isOpen, onClose, initialLocation, i
             </div>
           ) : currentList.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {/* Grid Layout Adjusted: Removed xl:grid-cols-4 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {currentList.map((item, idx) => {
                   // Use Bing Image Proxy for high relevance based on search query
                   // "c=7" asks for high quality cropping, "w=800" for decent resolution
