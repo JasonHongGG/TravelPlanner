@@ -49,10 +49,24 @@ export default function AttractionExplorer({ isOpen, onClose, initialLocation, i
   const handleSearch = async (isNewSearch = true, overrideTab?: TabType) => {
     if (!location.trim()) return;
     
-    setLoading(true);
     const targetTab = overrideTab || activeTab;
+
+    // FIX: If it is a new search, clear the current list immediately.
+    // This forces the UI to render the full loading state instead of showing stale data.
+    if (isNewSearch) {
+        setResults(prev => ({
+            ...prev,
+            [targetTab]: []
+        }));
+    }
+    
+    setLoading(true);
     
     // If loading more, exclude current names
+    // Note: If isNewSearch is true, we just cleared it above, but we also pass [] here logically.
+    // If isNewSearch is false (load more), we use the existing data from state (before setResults updates it? No, react state update is async but we need current val)
+    // Actually, inside the async function, 'results' is the value from render closure.
+    // For 'Load More', we need the existing list.
     const existingItems = isNewSearch ? [] : results[targetTab];
     const excludeNames = existingItems.map(i => i.name);
 
