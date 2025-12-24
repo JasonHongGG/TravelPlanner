@@ -52,11 +52,13 @@ export default function App() {
         />
       )}
 
-      <NewTripForm 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onSubmit={createTrip} 
-      />
+      {isModalOpen && (
+        <NewTripForm 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          onSubmit={createTrip} 
+        />
+      )}
     </>
   );
 }
