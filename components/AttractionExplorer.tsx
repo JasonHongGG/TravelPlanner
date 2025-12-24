@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Search, Sparkles, Plus, Minus, X, Loader2, Check, MapPin, Info, Clock, Map as MapIcon, Utensils, Mountain } from 'lucide-react';
+import { Search, Sparkles, Plus, Minus, X, Loader2, Check, MapPin, Clock, Map as MapIcon, Utensils, Mountain } from 'lucide-react';
 import { AttractionRecommendation } from '../types';
 import { getAttractionRecommendations } from '../services/geminiService';
 
