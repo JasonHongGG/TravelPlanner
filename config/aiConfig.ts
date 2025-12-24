@@ -181,6 +181,46 @@ export const constructUpdatePrompt = (currentData: TripData, history: Message[])
   `;
 };
 
+export const constructExplorerUpdatePrompt = (
+    dayIndex: number,
+    newMustVisit: string[],
+    newAvoid: string[],
+    keepExisting: string[],
+    removeExisting: string[]
+): string => {
+    return `
+    任務：重新規劃第 ${dayIndex} 天的行程。
+
+    請根據以下嚴格指令進行調整：
+
+    1.  **【新增必去 (Must Add)】**：使用者希望加入這些新地點，請安排在最順路的時段：
+        ${newMustVisit.length > 0 ? newMustVisit.join('、') : '無'}
+
+    2.  **【原本行程 - 必須保留 (Keep/Locked)】**：這些是當天原本行程中，使用者指定**絕對不能更動**的項目（但時間順序可依路線最佳化微調）：
+        ${keepExisting.length > 0 ? keepExisting.join('、') : '無'}
+
+    3.  **【原本行程 - 必須移除 (Remove)】**：請將這些項目從當天行程中**刪除**：
+        ${removeExisting.length > 0 ? removeExisting.join('、') : '無'}
+        ${newAvoid.length > 0 ? `(以及使用者在探索時指定避開的：${newAvoid.join('、')})` : ''}
+
+    4.  **【原本行程 - 彈性調整 (Neutral)】**：
+        當天行程中未提及的其他項目為「中立」狀態。
+        - 如果時間足夠，且順路，可以保留。
+        - 如果為了塞入【新增必去】的地點導致時間不足，**可以刪除或替換這些中立項目**。
+        - 如果原本的餐廳被移除，請務必在附近安排新的高評價餐廳（符合該時段，如午餐或晚餐）。
+
+    **輸出要求**：
+    1.  先用繁體中文簡述你做了哪些調整（例如：「已為您加入[新景點]，並保留了[保留景點]，為了行程順暢，我調整了...」）。
+    2.  輸出分隔符 "___UPDATE_JSON___"。
+    3.  輸出 JSON，僅包含更新後的第 ${dayIndex} 天資料 (Partial Update)。
+
+    **核心原則複誦**：
+    - 地點名稱維持當地原生語言 (Node Purity)。
+    - 描述使用繁體中文。
+    - 確保交通邏輯合理。
+    `;
+};
+
 export const constructRecommendationPrompt = (
     location: string, 
     interests: string,

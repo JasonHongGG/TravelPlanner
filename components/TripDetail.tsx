@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Trip, TripData, TripMeta, TripStop, Message } from '../types';
-import { CheckCircle2, AlertTriangle, Calendar, Clock, DollarSign, PanelRightClose, PanelRightOpen, Map as MapIcon, Layout } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Calendar, Clock, DollarSign, PanelRightClose, PanelRightOpen, Map as MapIcon, Loader2 } from 'lucide-react';
 import Assistant from './Assistant';
 import { updateTripItinerary } from '../services/geminiService';
 import { safeRender } from '../utils/formatters';
 import { getDayMapConfig } from '../utils/mapHelpers';
+import { constructExplorerUpdatePrompt } from '../config/aiConfig';
 
 // Sub-components
 import DaySelector from './trip/DaySelector';
 import ItineraryTimeline from './trip/ItineraryTimeline';
 import BudgetView from './trip/BudgetView';
 import TripMap from './trip/TripMap';
+import AttractionExplorer from './AttractionExplorer';
 
 interface Props {
   trip: Trip;
@@ -23,6 +25,10 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
   const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'risks'>('itinerary');
   const [isMapOpen, setIsMapOpen] = useState(true); // State to toggle map visibility
   
+  // Attraction Explorer State
+  const [isExplorerOpen, setIsExplorerOpen] = useState(false);
+  const [isUpdatingFromExplorer, setIsUpdatingFromExplorer] = useState(false);
+
   // State for Map URL and Label
   const [mapState, setMapState] = useState<{ url: string; label: string }>({
     url: '',
@@ -57,7 +63,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
     }
   };
 
-  // AI Update Handler
+  // AI Update Handler (Used by Assistant)
   const handleAiUpdate = async (history: Message[], onThought: (text: string) => void): Promise<string> => {
     if (!trip.data) return "";
     try {
@@ -69,6 +75,58 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
     } catch (e) {
       console.error("Failed to update trip via AI", e);
       throw e; 
+    }
+  };
+
+  // Handler for Explorer Confirmation
+  const handleExplorerConfirm = async (
+      newMustVisit: string[], 
+      newAvoid: string[], 
+      keepExisting: string[], 
+      removeExisting: string[]
+  ) => {
+    if (!trip.data) return;
+    
+    // Safety check: if nothing changed, don't call AI
+    if (newMustVisit.length === 0 && newAvoid.length === 0 && keepExisting.length === 0 && removeExisting.length === 0) {
+        return;
+    }
+    
+    setIsUpdatingFromExplorer(true);
+    
+    try {
+        // Use the new centralized prompt constructor
+        const prompt = constructExplorerUpdatePrompt(
+            selectedDay,
+            newMustVisit,
+            newAvoid,
+            keepExisting,
+            removeExisting
+        );
+
+        // We construct a synthetic history to instruct the update logic
+        // This bypasses the Assistant UI history but uses the same service logic
+        const syntheticHistory: Message[] = [
+            { role: 'user', text: prompt, timestamp: Date.now() }
+        ];
+
+        const result = await updateTripItinerary(
+            trip.data, 
+            syntheticHistory, 
+            (thought) => { 
+                // We could show a toast or status here with the thought
+                console.log("AI Thinking:", thought);
+            }
+        );
+
+        if (result.updatedData) {
+            onUpdateTrip(trip.id, result.updatedData);
+        }
+    } catch (e) {
+        console.error("Failed to update trip from explorer", e);
+        alert("更新行程時發生錯誤，請稍後再試。");
+    } finally {
+        setIsUpdatingFromExplorer(false);
     }
   };
 
@@ -111,7 +169,24 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
   const headerImageUrl = `https://image.pollinations.ai/prompt/cinematic%20wide%20shot%20of%20${encodeURIComponent(city)}%20landmark%20scenery%20travel%20photography?width=1280&height=720&nologo=true&seed=${trip.id}`;
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
+    <div className="flex flex-col h-screen bg-gray-50 overflow-hidden relative">
+      
+      {/* Global Loading Overlay for Explorer Update */}
+      {isUpdatingFromExplorer && (
+        <div className="absolute inset-0 z-[70] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-300">
+            <div className="bg-white p-8 rounded-2xl shadow-2xl border border-gray-100 flex flex-col items-center max-w-sm text-center">
+                <div className="relative mb-4">
+                   <div className="w-16 h-16 border-4 border-brand-100 border-t-brand-600 rounded-full animate-spin"></div>
+                   <div className="absolute inset-0 flex items-center justify-center">
+                      <MapIcon className="w-6 h-6 text-brand-600 animate-pulse" />
+                   </div>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">正在為您重塑行程</h3>
+                <p className="text-gray-500 text-sm">AI 正在根據您選擇的景點，重新計算最佳路線與時間安排...</p>
+            </div>
+        </div>
+      )}
+
       {/* 1. Header (Sticky) */}
       <header className="bg-white border-b border-gray-200 h-16 flex-none z-50 flex items-center justify-between px-6 shadow-sm">
         <div className="flex items-center gap-4">
@@ -214,7 +289,8 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
                 <div className="p-6 pb-24">
                   <ItineraryTimeline 
                     dayData={currentDayData} 
-                    onFocusStop={handleFocusStop} 
+                    onFocusStop={handleFocusStop}
+                    onExplore={() => setIsExplorerOpen(true)}
                   />
                 </div>
               </>
@@ -267,6 +343,17 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
 
       {/* Assistant is fixed to bottom right, adjusted z-index to be above map */}
       <Assistant onUpdate={handleAiUpdate} isGenerating={false} />
+
+      {/* Attraction Explorer Modal */}
+      <AttractionExplorer 
+        isOpen={isExplorerOpen}
+        onClose={() => setIsExplorerOpen(false)}
+        initialLocation={trip.input.destination}
+        initialInterests={trip.input.interests}
+        currentStops={currentDayData?.stops || []}
+        onConfirm={handleExplorerConfirm}
+        mode="modification"
+      />
     </div>
   );
 }

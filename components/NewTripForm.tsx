@@ -123,72 +123,24 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
   };
 
   const handleExplorerConfirm = (must: string[], avoid: string[]) => {
-    const currentText = formData.mustVisit || '';
-    const lines = currentText.split('\n');
-
-    const existingMust = new Set<string>();
-    const existingAvoid = new Set<string>();
-    const keptLines: string[] = [];
-
-    // Parse existing text to separate structured data from manual notes
-    lines.forEach(line => {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('必去：')) {
-        // Extract items after the prefix
-        const items = trimmed.substring(3).split('、');
-        items.forEach(i => {
-            const clean = i.trim();
-            if (clean) existingMust.add(clean);
-        });
-      } else if (trimmed.startsWith('避開：')) {
-        // Extract items after the prefix
-        const items = trimmed.substring(3).split('、');
-        items.forEach(i => {
-            const clean = i.trim();
-            if (clean) existingAvoid.add(clean);
-        });
-      } else {
-        // Preserve other lines (e.g. manual user notes)
-        keptLines.push(line);
-      }
-    });
-
-    // Merge new selections with existing ones
-    // Conflict resolution: If an item is in the new list, prioritize the new status
+    // Strictly append new items to avoid modifying existing user text
+    let newText = formData.mustVisit || '';
     
-    // Add new "Must" items, ensure they are removed from "Avoid"
-    must.forEach(m => {
-        existingMust.add(m);
-        existingAvoid.delete(m);
-    });
-
-    // Add new "Avoid" items, ensure they are removed from "Must"
-    avoid.forEach(a => {
-        existingAvoid.add(a);
-        existingMust.delete(a);
-    });
-
-    // Reconstruct the text
-    // 1. Clean up user notes (remove trailing empty lines)
-    while (keptLines.length > 0 && keptLines[keptLines.length - 1].trim() === '') {
-        keptLines.pop();
+    // Add Must Visit
+    if (must.length > 0) {
+        if (newText && !newText.endsWith('\n')) newText += '\n';
+        newText += `必去：${must.join('、')}`;
     }
-    
-    const parts = keptLines.length > 0 ? [keptLines.join('\n')] : [];
-    
-    // 2. Add Consolidated "Must Visit" line
-    if (existingMust.size > 0) {
-        parts.push(`必去：${Array.from(existingMust).join('、')}`);
-    }
-    
-    // 3. Add Consolidated "Avoid" line
-    if (existingAvoid.size > 0) {
-        parts.push(`避開：${Array.from(existingAvoid).join('、')}`);
+
+    // Add Avoid
+    if (avoid.length > 0) {
+        if (newText && !newText.endsWith('\n')) newText += '\n';
+        newText += `避開：${avoid.join('、')}`;
     }
 
     setFormData(prev => ({
       ...prev,
-      mustVisit: parts.join('\n')
+      mustVisit: newText
     }));
   };
 
@@ -388,6 +340,8 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
         initialLocation={formData.destination}
         initialInterests={formData.interests}
         onConfirm={handleExplorerConfirm}
+        currentStops={[]}
+        mode="planning"
       />
     </>
   );

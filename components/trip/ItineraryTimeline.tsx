@@ -1,15 +1,17 @@
+
 import React from 'react';
 import { TripDay, TripStop } from '../../types';
 import { safeRender } from '../../utils/formatters';
 import { getStopIcon, TransportIcon } from '../../utils/icons';
-import { Clock, Info, MapPin, Navigation, CheckCircle2 } from 'lucide-react';
+import { Clock, Info, MapPin, Navigation, CheckCircle2, Sparkles } from 'lucide-react';
 
 interface Props {
   dayData: TripDay | undefined;
   onFocusStop: (stop: TripStop) => void;
+  onExplore: () => void;
 }
 
-export default function ItineraryTimeline({ dayData, onFocusStop }: Props) {
+export default function ItineraryTimeline({ dayData, onFocusStop, onExplore }: Props) {
   if (!dayData) {
      return (
         <div className="text-center py-20 text-gray-500">
@@ -21,16 +23,26 @@ export default function ItineraryTimeline({ dayData, onFocusStop }: Props) {
   return (
      <div className="animate-in fade-in duration-300">
         {/* Day Header */}
-        <div className="mb-6 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-           <div className="flex items-center gap-3 mb-2">
-             <div className="bg-brand-100 text-brand-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide">
-               DAY {dayData.day}
+        <div className="mb-6 bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+           <div className="flex-1">
+             <div className="flex items-center gap-3 mb-2">
+               <div className="bg-brand-100 text-brand-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide">
+                 DAY {dayData.day}
+               </div>
+               <span className="text-gray-400 text-xs font-medium">{safeRender(dayData.date)}</span>
              </div>
-             <span className="text-gray-400 text-xs font-medium">{safeRender(dayData.date)}</span>
+             <h2 className="text-2xl font-bold text-gray-900 leading-tight">
+               {dayData.theme || `第 ${dayData.day} 天行程`}
+             </h2>
            </div>
-           <h2 className="text-2xl font-bold text-gray-900 leading-tight">
-             {dayData.theme || `第 ${dayData.day} 天行程`}
-           </h2>
+           
+           <button 
+             onClick={onExplore}
+             className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-brand-500 to-sky-500 text-white rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all font-bold text-sm"
+           >
+              <Sparkles className="w-4 h-4 text-yellow-200 fill-yellow-200" />
+              <span>探索與調整</span>
+           </button>
         </div>
 
         {/* Timeline Container */}
