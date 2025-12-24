@@ -1,3 +1,4 @@
+
 // Input form data
 export interface TripInput {
   dateRange: string;
@@ -11,6 +12,14 @@ export interface TripInput {
   mustVisit: string;
   language: string;
   constraints: string;
+}
+
+export interface AttractionRecommendation {
+  name: string;
+  description: string;
+  category: string;
+  reason: string;
+  openHours: string; // Added field for opening hours
 }
 
 // JSON Schema from the prompt
