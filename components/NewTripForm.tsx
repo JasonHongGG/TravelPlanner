@@ -68,17 +68,60 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleExplorerConfirm = (mustVisit: string[], avoid: string[]) => {
-    let newMustVisit = formData.mustVisit;
-    if (mustVisit.length > 0) {
-      const mustText = `必去：${mustVisit.join('、')}`;
-      newMustVisit = newMustVisit ? `${newMustVisit}\n${mustText}` : mustText;
+  const handleExplorerConfirm = (newMustVisit: string[], newAvoid: string[]) => {
+    const currentText = formData.mustVisit || '';
+    
+    // Sets to hold unique items
+    const mustSet = new Set<string>();
+    const avoidSet = new Set<string>();
+    const otherLines: string[] = [];
+
+    // Parse current text to extract existing items and preserve other notes
+    currentText.split('\n').forEach(line => {
+      const trimLine = line.trim();
+      if (!trimLine) return;
+
+      // Check for "Must Visit" line (supports '必去：', '必去:', etc.)
+      if (trimLine.startsWith('必去') && (trimLine.includes('：') || trimLine.includes(':'))) {
+        const content = trimLine.split(/[:：]/)[1] || '';
+        content.split(/[、,，]/).map(s => s.trim()).filter(s => s).forEach(s => mustSet.add(s));
+      } 
+      // Check for "Avoid" line
+      else if (trimLine.startsWith('避開') && (trimLine.includes('：') || trimLine.includes(':'))) {
+        const content = trimLine.split(/[:：]/)[1] || '';
+        content.split(/[、,，]/).map(s => s.trim()).filter(s => s).forEach(s => avoidSet.add(s));
+      } 
+      // Preserve other manual entries
+      else {
+        otherLines.push(trimLine); 
+      }
+    });
+
+    // Merge new items
+    newMustVisit.forEach(s => {
+      mustSet.add(s);
+      avoidSet.delete(s); // Conflict resolution: if it's now a 'must', remove from 'avoid'
+    });
+    
+    newAvoid.forEach(s => {
+      avoidSet.add(s);
+      mustSet.delete(s); // Conflict resolution: if it's now 'avoid', remove from 'must'
+    });
+
+    // Reconstruct the string
+    const resultLines = [];
+    if (mustSet.size > 0) {
+      resultLines.push(`必去：${Array.from(mustSet).join('、')}`);
     }
-    if (avoid.length > 0) {
-      const avoidText = `避開：${avoid.join('、')}`;
-      newMustVisit = newMustVisit ? `${newMustVisit}\n${avoidText}` : avoidText;
+    if (avoidSet.size > 0) {
+      resultLines.push(`避開：${Array.from(avoidSet).join('、')}`);
     }
-    handleChange('mustVisit', newMustVisit);
+    // Append preserved custom notes at the end
+    if (otherLines.length > 0) {
+      resultLines.push(...otherLines);
+    }
+
+    handleChange('mustVisit', resultLines.join('\n'));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
