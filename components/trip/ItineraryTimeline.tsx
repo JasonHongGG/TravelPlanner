@@ -2,7 +2,7 @@ import React from 'react';
 import { TripDay, TripStop } from '../../types';
 import { safeRender } from '../../utils/formatters';
 import { getStopIcon, TransportIcon } from '../../utils/icons';
-import { Clock, Info, MapPin, Crosshair, CheckCircle2 } from 'lucide-react';
+import { Clock, Info, MapPin, Navigation, CheckCircle2 } from 'lucide-react';
 
 interface Props {
   dayData: TripDay | undefined;
@@ -40,6 +40,12 @@ export default function ItineraryTimeline({ dayData, onFocusStop }: Props) {
            
            {dayData.stops?.map((stop, idx) => {
               const StopIcon = getStopIcon(stop);
+              const prevStop = idx > 0 ? dayData.stops[idx - 1] : null;
+              // Use the routeLinkToNext from the previous stop, or construct a generic one
+              const navigationUrl = prevStop 
+                ? (prevStop.routeLinkToNext || `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(prevStop.name)}&destination=${encodeURIComponent(stop.name)}&travelmode=transit`)
+                : null;
+
               return (
                 <div key={idx} className="relative pl-16 pb-12 last:pb-0 group">
                    {/* Timeline Node */}
@@ -99,12 +105,16 @@ export default function ItineraryTimeline({ dayData, onFocusStop }: Props) {
                                <MapPin className="w-3.5 h-3.5" /> 查看地圖
                             </a>
                          )}
-                         <button 
-                            onClick={() => onFocusStop(stop)}
-                            className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-md"
-                         >
-                            <Crosshair className="w-3.5 h-3.5" /> 地圖定位
-                         </button>
+                         {navigationUrl && (
+                            <a 
+                               href={navigationUrl}
+                               target="_blank"
+                               rel="noreferrer"
+                               className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-md"
+                            >
+                               <Navigation className="w-3.5 h-3.5" /> 路線導航
+                            </a>
+                         )}
                       </div>
 
                       {/* Alternatives (if any) */}
