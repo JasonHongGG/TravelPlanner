@@ -56,8 +56,12 @@ export default function AttractionExplorer({
   // Initial fetch when opened
   useEffect(() => {
     if (isOpen) {
-      if (initialLocation && results[activeTab].length === 0) {
-        handleSearch(true);
+      // Sync input with prop when opened
+      setLocation(initialLocation);
+
+      // Only auto-search in planning mode
+      if (mode === 'planning' && initialLocation && results[activeTab].length === 0) {
+        handleSearch(true, undefined, initialLocation);
       }
       
       // Initialize existing stops status to neutral if in modification mode
@@ -77,23 +81,32 @@ export default function AttractionExplorer({
           setActiveSidebarTab('must');
       }
     }
-  }, [isOpen, currentStops, mode]);
+  }, [isOpen, currentStops, mode, initialLocation]);
 
   // Handle Tab Switch
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     if (results[tab].length === 0 && !loading) {
+       // Check if we should auto-search on tab change
+       // In modification mode, we only search if the user has already performed a search (results exist for other tab) 
+       // OR if they clicked the tab. 
+       // Since this is an explicit user action (click tab), we can search, but we need a valid location.
+       // We use the 'location' state or 'lastSearchLocation'.
+       
+       // If in modification mode and no search done yet (lastSearchLocation might be initialLocation), maybe wait?
+       // But if user clicks "Food", they expect food results for the current location input.
        handleSearch(true, tab);
     }
   };
 
-  const handleSearch = async (isNewSearch = true, overrideTab?: TabType) => {
-    if (!location.trim()) return;
+  const handleSearch = async (isNewSearch = true, overrideTab?: TabType, customLocation?: string) => {
+    const query = customLocation || location;
+    if (!query.trim()) return;
     
     const targetTab = overrideTab || activeTab;
 
     if (isNewSearch) {
-        setLastSearchLocation(location);
+        setLastSearchLocation(query);
         setResults(prev => ({ ...prev, [targetTab]: [] }));
     }
     
@@ -103,7 +116,7 @@ export default function AttractionExplorer({
     const excludeNames = [...existingItems.map(i => i.name), ...currentStops.map(s => s.name)];
 
     try {
-      const newItems = await getAttractionRecommendations(location, initialInterests, targetTab, excludeNames);
+      const newItems = await getAttractionRecommendations(query, initialInterests, targetTab, excludeNames);
       setResults(prev => ({
         ...prev,
         [targetTab]: isNewSearch ? newItems : [...prev[targetTab], ...newItems]
