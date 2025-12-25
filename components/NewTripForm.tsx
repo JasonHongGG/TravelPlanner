@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { TripInput } from '../types';
-import { X, Calendar, MapPin, Users, Heart, DollarSign, Train, Home, Clock, CheckSquare, Languages, AlertCircle, Download, Upload, Sparkles } from 'lucide-react';
+import { X, Calendar, MapPin, Users, Heart, DollarSign, Train, Home, Clock, CheckSquare, Languages, AlertCircle, Download, Upload, Sparkles, Plane, Briefcase } from 'lucide-react';
 import AttractionExplorer from './AttractionExplorer';
 
 interface Props {
@@ -10,15 +10,18 @@ interface Props {
   onSubmit: (data: TripInput) => void;
 }
 
+// Enhanced Input Field with clearer borders and interaction states
 const InputField = ({ label, icon: Icon, value, onChange, placeholder, required = false }: any) => (
-  <div className="mb-4">
-    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-      <Icon className="w-4 h-4 text-brand-600" />
-      {label} {required && <span className="text-red-500">*</span>}
+  <div className="mb-5 group">
+    <label className="block text-sm font-bold text-gray-700 mb-1.5 flex items-center gap-2 transition-colors group-focus-within:text-brand-600">
+      <div className="p-1 rounded-md bg-white border border-gray-200 text-gray-500 group-focus-within:bg-brand-50 group-focus-within:text-brand-600 group-focus-within:border-brand-200 transition-colors shadow-sm">
+        <Icon className="w-3.5 h-3.5" />
+      </div>
+      {label} {required && <span className="text-red-500 text-xs font-bold">*</span>}
     </label>
     <input
       type="text"
-      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+      className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-xl shadow-sm focus:outline-none focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-gray-400 transition-all placeholder:text-gray-400 font-medium"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
@@ -27,17 +30,20 @@ const InputField = ({ label, icon: Icon, value, onChange, placeholder, required 
   </div>
 );
 
+// Enhanced Textarea with matching style
 const TextAreaField = ({ label, icon: Icon, value, onChange, placeholder, required = false, actionButton }: any) => (
-  <div className="mb-4">
-    <div className="flex justify-between items-center mb-1">
-      <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-        <Icon className="w-4 h-4 text-brand-600" />
-        {label} {required && <span className="text-red-500">*</span>}
+  <div className="mb-5 group">
+    <div className="flex justify-between items-center mb-1.5">
+      <label className="block text-sm font-bold text-gray-700 flex items-center gap-2 transition-colors group-focus-within:text-brand-600">
+        <div className="p-1 rounded-md bg-white border border-gray-200 text-gray-500 group-focus-within:bg-brand-50 group-focus-within:text-brand-600 group-focus-within:border-brand-200 transition-colors shadow-sm">
+            <Icon className="w-3.5 h-3.5" />
+        </div>
+        {label} {required && <span className="text-red-500 text-xs font-bold">*</span>}
       </label>
-      {actionButton && <div>{actionButton}</div>}
+      {actionButton && <div className="animate-in fade-in slide-in-from-right-2">{actionButton}</div>}
     </div>
     <textarea
-      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+      className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-xl shadow-sm focus:outline-none focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-gray-400 transition-all placeholder:text-gray-400 font-medium min-h-[100px] leading-relaxed resize-y"
       rows={3}
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -45,6 +51,13 @@ const TextAreaField = ({ label, icon: Icon, value, onChange, placeholder, requir
       required={required}
     />
   </div>
+);
+
+// Section Divider
+const SectionHeader = ({ title }: { title: string }) => (
+    <div className="col-span-1 md:col-span-2 mt-4 mb-4 pb-2 border-b border-gray-100 flex items-center gap-2">
+        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{title}</h3>
+    </div>
 );
 
 export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
@@ -77,13 +90,9 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
 
   const handleExport = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(formData, null, 2));
-    
     const now = new Date();
     const pad = (n: number) => n.toString().padStart(2, '0');
-    // Format: yyyy-mm-dd_hh:mm:ss
-    const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    
-    // Sanitize destination to be filename safe (allow unicode for chinese inputs, just remove reserved chars)
+    const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}`;
     const safeDest = formData.destination ? formData.destination.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').trim() : 'draft';
     const fileName = `trip_config_${safeDest}_${timestamp}.json`;
 
@@ -101,16 +110,12 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileObj = e.target.files && e.target.files[0];
-    if (!fileObj) {
-      return;
-    }
+    if (!fileObj) return;
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
         if (event.target?.result) {
            const json = JSON.parse(event.target.result as string);
-           // Basic validation: Check if it has at least one key matching our type
-           // Or just spread it.
            setFormData(prev => ({ ...prev, ...json }));
         }
       } catch (error) {
@@ -119,80 +124,64 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
       }
     };
     reader.readAsText(fileObj);
-    // Reset input so same file can be selected again
     e.target.value = '';
   };
 
   const handleExplorerConfirm = (must: string[], avoid: string[]) => {
     const currentText = formData.mustVisit || '';
-    
-    // Use Sets to automatically handle deduplication
     const mustSet = new Set<string>();
     const avoidSet = new Set<string>();
     const otherLines: string[] = [];
 
-    // 1. Parse existing text line by line
     currentText.split('\n').forEach(line => {
         const trimmed = line.trim();
         if (!trimmed) return;
-
-        // Check for "Must Visit" keywords (Traditional Chinese, Simplified, English)
         if (/^(必去|Must)/i.test(trimmed)) {
-            // Extract content after colon or space
             const content = trimmed.replace(/^(必去|Must)\s*[:：]?\s*/i, '');
-            // Split by common delimiters (Chinese comma, regular comma)
             content.split(/[、,，]+/).map(s => s.trim()).filter(Boolean).forEach(s => mustSet.add(s));
-        } 
-        // Check for "Avoid" keywords
-        else if (/^(避開|Avoid)/i.test(trimmed)) {
+        } else if (/^(避開|Avoid)/i.test(trimmed)) {
             const content = trimmed.replace(/^(避開|Avoid)\s*[:：]?\s*/i, '');
             content.split(/[、,，]+/).map(s => s.trim()).filter(Boolean).forEach(s => avoidSet.add(s));
-        } 
-        // Preserve other user notes that don't match the pattern
-        else {
+        } else {
             otherLines.push(trimmed);
         }
     });
 
-    // 2. Add new items from Explorer
     must.forEach(item => mustSet.add(item));
     avoid.forEach(item => avoidSet.add(item));
-
-    // 3. Conflict Resolution: 
-    // If an item is added to "Must", ensure it's removed from "Avoid", and vice versa.
-    // We prioritize the NEW selection from Explorer.
     must.forEach(item => avoidSet.delete(item));
     avoid.forEach(item => mustSet.delete(item));
 
-    // 4. Reconstruct the text
     const newLines = [...otherLines];
-    
-    if (mustSet.size > 0) {
-        newLines.push(`必去：${Array.from(mustSet).join('、')}`);
-    }
-    
-    if (avoidSet.size > 0) {
-        newLines.push(`避開：${Array.from(avoidSet).join('、')}`);
-    }
+    if (mustSet.size > 0) newLines.push(`必去：${Array.from(mustSet).join('、')}`);
+    if (avoidSet.size > 0) newLines.push(`避開：${Array.from(avoidSet).join('、')}`);
 
-    setFormData(prev => ({
-      ...prev,
-      mustVisit: newLines.join('\n')
-    }));
+    setFormData(prev => ({ ...prev, mustVisit: newLines.join('\n') }));
   };
 
   if (!isOpen) return null;
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-          {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-brand-50">
-            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              ✨ 規劃新的旅程
-            </h2>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        {/* Backdrop */}
+        <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+        
+        {/* Modal Container */}
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col relative z-10 animate-in fade-in zoom-in-95 duration-200 border border-gray-100">
+          
+          {/* Header - Modern & Clean */}
+          <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-start bg-white sticky top-0 z-20">
+            <div>
+                <h2 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-brand-600 to-sky-500 mb-1 flex items-center gap-2">
+                    <Sparkles className="w-6 h-6 text-brand-500 fill-brand-500" />
+                    開始您的旅程
+                </h2>
+                <p className="text-sm text-gray-500 font-medium">填寫下表，讓 AI 為您打造完美的專屬行程</p>
+            </div>
+
             <div className="flex items-center gap-2">
+               {/* Hidden File Input */}
                <input 
                   type="file" 
                   ref={fileInputRef} 
@@ -200,37 +189,39 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
                   className="hidden" 
                   accept=".json"
                 />
+               
+               {/* Utility Buttons */}
+               <div className="hidden sm:flex bg-gray-50 rounded-lg p-1 mr-2 border border-gray-100">
+                   <button 
+                      onClick={handleImportClick}
+                      className="px-3 py-1.5 text-xs font-bold text-gray-600 hover:text-brand-600 hover:bg-white rounded-md transition-all shadow-sm hover:shadow"
+                      title="匯入設定檔"
+                   >
+                      <Upload className="w-3.5 h-3.5 inline mr-1" /> 匯入
+                   </button>
+                   <button 
+                      onClick={handleExport}
+                      className="px-3 py-1.5 text-xs font-bold text-gray-600 hover:text-brand-600 hover:bg-white rounded-md transition-all shadow-sm hover:shadow"
+                      title="匯出設定檔"
+                   >
+                      <Download className="w-3.5 h-3.5 inline mr-1" /> 匯出
+                   </button>
+               </div>
+
                <button 
-                  onClick={handleImportClick}
-                  className="p-2 text-brand-700 hover:bg-brand-100 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium"
-                  title="匯入設定"
+                  onClick={onClose} 
+                  className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
                >
-                  <Upload className="w-4 h-4" /> 匯入
-               </button>
-               <button 
-                  onClick={handleExport}
-                  className="p-2 text-brand-700 hover:bg-brand-100 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium"
-                  title="匯出設定"
-               >
-                  <Download className="w-4 h-4" /> 匯出
-               </button>
-               <div className="h-4 w-px bg-gray-300 mx-1"></div>
-               <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-                  <X className="w-5 h-5 text-gray-600" />
+                  <X className="w-6 h-6" />
                </button>
             </div>
           </div>
 
-          {/* Scrollable Form Content */}
-          <div className="p-6 overflow-y-auto flex-1">
-            <form id="new-trip-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+          {/* Form Content - Scrollable */}
+          <div className="flex-1 overflow-y-auto px-8 py-6 scrollbar-hide bg-gray-50/30">
+            <form id="new-trip-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
               
-              <div className="md:col-span-2 bg-blue-50 p-4 rounded-lg mb-6 border border-blue-100">
-                 <p className="text-sm text-blue-800 flex items-start gap-2">
-                   <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                   請填寫詳細資訊以獲得最佳 AI 行程規劃結果。
-                 </p>
-              </div>
+              <SectionHeader title="基本資訊 Basic Info" />
 
               <InputField 
                 label="目的地" 
@@ -251,11 +242,11 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
               />
 
               <InputField 
-                label="旅遊人數與成員" 
+                label="旅遊人數" 
                 icon={Users} 
                 value={formData.travelers} 
                 onChange={(v: string) => handleChange('travelers', v)} 
-                placeholder="例：2 位大人，1 位小孩" 
+                placeholder="例：2 大人, 1 小孩" 
                 required 
               />
 
@@ -264,16 +255,18 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
                 icon={DollarSign} 
                 value={formData.budget} 
                 onChange={(v: string) => handleChange('budget', v)} 
-                placeholder="例：中等預算，總共約台幣 6 萬元" 
+                placeholder="例：中等預算，約台幣 6 萬" 
                 required 
               />
+              
+              <SectionHeader title="旅行風格 Preferences" />
 
               <InputField 
-                label="旅遊步調" 
+                label="步調" 
                 icon={Clock} 
                 value={formData.pace} 
                 onChange={(v: string) => handleChange('pace', v)} 
-                placeholder="例：輕鬆，早上 10 點出發，晚上 8 點回飯店"
+                placeholder="例：輕鬆，早上 10 點出發"
                 required 
               />
 
@@ -285,10 +278,10 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
                 placeholder="例：大眾運輸為主"
                 required 
               />
-              
+
               <div className="md:col-span-2">
                  <InputField 
-                  label="住宿資訊" 
+                  label="住宿安排" 
                   icon={Home} 
                   value={formData.accommodation} 
                   onChange={(v: string) => handleChange('accommodation', v)} 
@@ -299,11 +292,11 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
 
               <div className="md:col-span-2">
                 <TextAreaField 
-                  label="興趣與風格" 
+                  label="興趣與主題" 
                   icon={Heart} 
                   value={formData.interests} 
                   onChange={(v: string) => handleChange('interests', v)} 
-                  placeholder="例：美食、動漫、寺廟巡禮、大自然。不喜歡人擠人。"
+                  placeholder="例：喜歡美食、動漫、寺廟巡禮、大自然。不喜歡人擠人。"
                   required 
                 />
               </div>
@@ -314,58 +307,62 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
                   icon={CheckSquare} 
                   value={formData.mustVisit} 
                   onChange={(v: string) => handleChange('mustVisit', v)} 
-                  placeholder="必去：東京鐵塔。避開：迪士尼（人太多）。"
+                  placeholder="必去：東京鐵塔。避開：迪士尼。"
                   required 
                   actionButton={
                     <button 
                       type="button"
                       onClick={() => setIsExplorerOpen(true)}
-                      className="text-xs font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 px-2 py-1 rounded-md flex items-center gap-1 transition-all border border-brand-100"
+                      className="text-xs font-bold text-white bg-gradient-to-r from-brand-500 to-sky-500 hover:from-brand-600 hover:to-sky-600 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all shadow-sm hover:shadow-md transform hover:-translate-y-0.5 border border-white/20"
                     >
-                      <Sparkles className="w-3 h-3 fill-brand-600" /> AI 景點探索助手
+                      <Sparkles className="w-3 h-3 text-yellow-200 fill-yellow-200" /> AI 探索助手
                     </button>
                   }
                 />
               </div>
               
-               <div className="md:col-span-2">
+              <SectionHeader title="其他細節 Details" />
+
+              <div className="md:col-span-1">
                 <InputField 
-                  label="語言" 
-                  icon={Languages} 
-                  value={formData.language} 
-                  onChange={(v: string) => handleChange('language', v)} 
-                  placeholder="例：繁體中文"
-                  required 
+                    label="語言" 
+                    icon={Languages} 
+                    value={formData.language} 
+                    onChange={(v: string) => handleChange('language', v)} 
+                    placeholder="例：繁體中文"
+                    required 
                 />
               </div>
-               <div className="md:col-span-2">
-                <TextAreaField 
-                  label="其他限制" 
+              
+              <div className="md:col-span-1">
+                <InputField 
+                  label="特殊限制" 
                   icon={AlertCircle} 
                   value={formData.constraints} 
                   onChange={(v: string) => handleChange('constraints', v)} 
-                  placeholder="例：班機下午 5 點抵達成田。對花生過敏。" 
+                  placeholder="例：過敏、班機時間..." 
                 />
               </div>
 
             </form>
           </div>
 
-          {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+          {/* Footer - Fixed */}
+          <div className="px-8 py-5 border-t border-gray-100 bg-white flex justify-end gap-3 rounded-b-3xl">
             <button 
               type="button" 
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              className="px-6 py-2.5 text-gray-600 bg-white border border-gray-300 hover:border-gray-400 rounded-xl hover:bg-gray-50 transition-all font-bold text-sm"
             >
               取消
             </button>
             <button 
               type="submit" 
               form="new-trip-form"
-              className="px-6 py-2 text-white bg-brand-600 rounded-lg hover:bg-brand-700 transition-colors font-medium shadow-md flex items-center gap-2"
+              className="px-8 py-2.5 text-white bg-brand-600 hover:bg-brand-700 rounded-xl transition-all font-bold text-sm shadow-lg shadow-brand-200 hover:shadow-xl hover:-translate-y-0.5 flex items-center gap-2"
             >
-               生成行程
+               <Plane className="w-4 h-4" />
+               開始生成行程
             </button>
           </div>
         </div>
