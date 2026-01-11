@@ -84,6 +84,10 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
           // For Explorer, we check against the CURRENT data because the new data doesn't exist yet
           const result = await aiService.checkFeasibility(trip.data, context);
           
+          // CRITICAL: Turn off feasibility loading state BEFORE executing the update.
+          // Otherwise "Evaluating..." overrides "Reshaping..." in the UI because both flags would be true.
+          setIsCheckingFeasibility(false);
+
           if (!result.feasible || result.riskLevel === 'high' || result.riskLevel === 'moderate') {
               setFeasibilityResult(result);
               setPendingUpdateAction(() => executeIfSafe);
@@ -93,9 +97,8 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
           }
       } catch (e) {
           console.error("Check failed", e);
-          await executeIfSafe();
-      } finally {
           setIsCheckingFeasibility(false);
+          await executeIfSafe();
       }
   };
 
@@ -145,6 +148,9 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
             result.updatedData, // Check the PROPOSED itinerary
             `User Chat Request: ${lastMsg}`
         );
+        
+        // Check finished
+        setIsCheckingFeasibility(false);
 
         if (!checkResult.feasible || checkResult.riskLevel === 'high') {
              // 4a. 風險高 -> 顯示 Modal，暫存數據 (pendingNewData)
@@ -153,12 +159,10 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
              
              // 我們仍回傳 AI 的文字回應，讓對話框顯示「好的，我已為您安排...」
              // 但實際上 UI 尚未更新，直到用戶在 Modal 點擊確認
-             setIsCheckingFeasibility(false);
              return result.responseText;
         } 
     } catch (e) {
         console.warn("Feasibility check failed, proceeding anyway", e);
-    } finally {
         setIsCheckingFeasibility(false);
     }
     
