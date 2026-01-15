@@ -32,11 +32,20 @@ export default function App() {
 
   const selectedTrip = trips.find(t => t.id === selectedTripId);
 
+  // Initialize Database Concept
+  React.useEffect(() => {
+    const initDB = async () => {
+      const { db } = await import('./services/database/Database');
+      await db.connect();
+    };
+    initDB();
+  }, []);
+
   return (
     <>
       {view === 'dashboard' && (
-        <Dashboard 
-          trips={trips} 
+        <Dashboard
+          trips={trips}
           onNewTrip={() => setIsModalOpen(true)}
           onSelectTrip={handleSelectTrip}
           onDeleteTrip={handleDeleteTrip}
@@ -45,18 +54,18 @@ export default function App() {
       )}
 
       {view === 'detail' && selectedTrip && (
-        <TripDetail 
-          trip={selectedTrip} 
+        <TripDetail
+          trip={selectedTrip}
           onBack={() => setView('dashboard')}
           onUpdateTrip={updateTripData}
         />
       )}
 
       {isModalOpen && (
-        <NewTripForm 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
-          onSubmit={createTrip} 
+        <NewTripForm
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSubmit={createTrip}
         />
       )}
     </>
