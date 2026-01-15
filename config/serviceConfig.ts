@@ -7,7 +7,7 @@
 
 export const SERVICE_CONFIG = {
   // Change this value to switch providers manually at deployment time
-  provider: 'local_api' as 'gemini' | 'ollama' | 'local_api',
+  provider: 'copilot' as 'gemini' | 'ollama' | 'local_api' | 'copilot',
 
   // Google Gemini Configuration
   gemini: {
@@ -34,6 +34,15 @@ export const SERVICE_CONFIG = {
     models: {
       tripGenerator: 'gemini-3-pro-thinking',
       tripUpdater: 'gemini-3-pro-thinking',
+      recommender: 'gemini-3-flash',
+    }
+  },
+
+  // Copilot SDK Configuration
+  copilot: {
+    models: {
+      tripGenerator: 'gpt-5.2',
+      tripUpdater: 'gemini-3-pro',
       recommender: 'gemini-3-flash',
     }
   }
