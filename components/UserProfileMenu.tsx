@@ -3,6 +3,7 @@ import { LogOut, User, Coins, History, ChevronDown, ChevronUp, CreditCard } from
 import { useAuth } from '../context/AuthContext';
 import { usePoints } from '../context/PointsContext';
 import PurchasePointsModal from './PurchasePointsModal';
+import TransactionHistoryModal from './TransactionHistoryModal';
 
 export default function UserProfileMenu() {
     const { user, logout } = useAuth();
@@ -22,6 +23,7 @@ export default function UserProfileMenu() {
 
     const { balance } = usePoints();
     const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
     if (!user) return null;
 
@@ -106,7 +108,13 @@ export default function UserProfileMenu() {
 
                         {/* Menu Items */}
                         <div className="space-y-1">
-                            <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors group">
+                            <button
+                                onClick={() => {
+                                    setIsOpen(false);
+                                    setIsHistoryModalOpen(true);
+                                }}
+                                className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+                            >
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-100 transition-colors">
                                         <History className="w-4 h-4" />
@@ -133,6 +141,11 @@ export default function UserProfileMenu() {
             <PurchasePointsModal
                 isOpen={isPurchaseModalOpen}
                 onClose={() => setIsPurchaseModalOpen(false)}
+            />
+
+            <TransactionHistoryModal
+                isOpen={isHistoryModalOpen}
+                onClose={() => setIsHistoryModalOpen(false)}
             />
         </div>
     );
