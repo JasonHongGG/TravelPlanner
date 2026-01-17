@@ -5,9 +5,6 @@ import { Trip } from "../../../types";
 export class TripModel extends BaseModel<Trip> {
     protected collectionName = 'trips';
 
-    // You can add specific Trip-related database methods here
-    async findByStatus(status: string): Promise<Trip[]> {
-        console.log(`[Database] ${this.collectionName}: Finding by status ${status}`);
-        return Promise.resolve([]);
-    }
+    // The generic methods (create, findById, etc.) are already handled by BaseModel + Adapter
+    // specific Trip-related methods can be added here
 }

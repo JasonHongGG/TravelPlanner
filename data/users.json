@@ -1,0 +1,22 @@
+{
+  "hong107373@gmail.com": {
+    "email": "hong107373@gmail.com",
+    "points": 1700,
+    "transactions": [
+      {
+        "id": "56edcfdd-7b12-4c4c-aa4d-16149967a984",
+        "date": 1768667032704,
+        "amount": 1200,
+        "type": "purchase",
+        "description": "購買 探險家 方案"
+      },
+      {
+        "id": "welcome-bonus",
+        "date": 1768666964371,
+        "amount": 500,
+        "type": "purchase",
+        "description": "歡迎好禮：新戶入會點數"
+      }
+    ]
+  }
+}

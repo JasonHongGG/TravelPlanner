@@ -1,15 +1,21 @@
 
 import { TripModel } from "./models/TripModel";
+import { UserModel } from "./models/UserModel";
+import { RestApiAdapter } from "./adapters/RestApiAdapter";
 
 export class Database {
     private static instance: Database;
 
-    // Models
     public trips: TripModel;
+    public users: UserModel;
 
     private constructor() {
-        console.log("[Database] Initializing Database Concept...");
-        this.trips = new TripModel();
+        console.log("[Database] Initializing Database with RestApiAdapter...");
+        const adapter = new RestApiAdapter();
+
+        // Inject adapter into models
+        this.trips = new TripModel(adapter);
+        this.users = new UserModel(adapter);
     }
 
     public static getInstance(): Database {
@@ -17,12 +23,6 @@ export class Database {
             Database.instance = new Database();
         }
         return Database.instance;
-    }
-
-    public async connect(): Promise<void> {
-        console.log("[Database] Connecting to database (Mock)...");
-        // Logic to connect to real DB would go here
-        console.log("[Database] Connected.");
     }
 }
 

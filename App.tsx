@@ -35,14 +35,8 @@ export default function App() {
 
   const selectedTrip = trips.find(t => t.id === selectedTripId);
 
-  // Initialize Database Concept
-  React.useEffect(() => {
-    const initDB = async () => {
-      const { db } = await import('./services/database/Database');
-      await db.connect();
-    };
-    initDB();
-  }, []);
+  // Database initialized via singleton import
+  // React.useEffect(() => { ... });
 
   const { user } = useAuth(); // Access user state
 
