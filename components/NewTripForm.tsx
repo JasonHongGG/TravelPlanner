@@ -6,6 +6,7 @@ import AttractionExplorer from './AttractionExplorer';
 import { usePoints } from '../context/PointsContext';
 import { calculateTripCost } from '../utils/tripUtils';
 import InsufficientPointsModal from './InsufficientPointsModal';
+import DateRangePicker from './DateRangePicker';
 
 interface Props {
   isOpen: boolean;
@@ -67,6 +68,14 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
   const [showPointsModal, setShowPointsModal] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const datePickerRef = useRef<HTMLDivElement>(null);
+
+  // Parse initial dates from string if present (for editing or previous drafts)
+  // Simple heuristic: just start clean or parse if needed. For now start clean or user picks.
+  const [dateSelection, setDateSelection] = useState<{ start: Date | null, end: Date | null }>({ start: null, end: null });
+
+
 
   const { balance, openPurchaseModal } = usePoints();
 
@@ -255,14 +264,46 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
                 required
               />
 
-              <InputField
-                label="日期範圍與天數"
-                icon={Calendar}
-                value={formData.dateRange}
-                onChange={(v: string) => handleChange('dateRange', v)}
-                placeholder="例：10/10 - 10/17 (共 7 天)"
-                required
-              />
+              <div className="mb-5 group relative" ref={datePickerRef}>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5 flex items-center gap-2 transition-colors group-focus-within:text-brand-600">
+                  <div className="p-1 rounded-md bg-white border border-gray-200 text-gray-500 group-focus-within:bg-brand-50 group-focus-within:text-brand-600 group-focus-within:border-brand-200 transition-colors shadow-sm">
+                    <Calendar className="w-3.5 h-3.5" />
+                  </div>
+                  日期範圍與天數 <span className="text-red-500 text-xs font-bold">*</span>
+                </label>
+
+                <div
+                  onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
+                  className={`w-full px-4 py-3 bg-white border cursor-pointer text-gray-900 rounded-xl shadow-sm transition-all font-medium flex items-center justify-between ${isDatePickerOpen ? 'border-brand-500 ring-4 ring-brand-500/10' : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                >
+                  <span className={formData.dateRange ? 'text-gray-900' : 'text-gray-400'}>
+                    {formData.dateRange || '點擊選擇日期...'}
+                  </span>
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                </div>
+
+                {isDatePickerOpen && (
+                  <DateRangePicker
+                    startDate={dateSelection.start}
+                    endDate={dateSelection.end}
+                    onChange={(start, end) => {
+                      setDateSelection({ start, end });
+                      if (start && end) {
+                        // Format: YYYY/MM/DD - YYYY/MM/DD (N 天)
+                        const fmt = (d: Date) => `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+                        const diff = Math.round((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
+                        const str = `${fmt(start)} - ${fmt(end)} (共 ${diff} 天)`;
+                        handleChange('dateRange', str);
+                        if (JSON.stringify(dateSelection) !== JSON.stringify({ start, end })) {
+                          setIsDatePickerOpen(false); // Close on selection completion
+                        }
+                      }
+                    }}
+                    onClose={() => setIsDatePickerOpen(false)}
+                  />
+                )}
+              </div>
 
               <InputField
                 label="旅遊人數"
