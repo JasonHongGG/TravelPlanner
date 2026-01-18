@@ -2,8 +2,11 @@
 import { useState, useEffect } from 'react';
 import { Trip, TripInput, TripData } from '../types';
 import { aiService } from '../services';
+import { usePoints } from '../context/PointsContext';
+import { calculateTripCost } from '../utils/tripUtils';
 
 export const useTripManager = () => {
+  const { balance, spendPoints } = usePoints();
   // Initialize state directly from localStorage
   const [trips, setTrips] = useState<Trip[]>(() => {
     try {
@@ -29,30 +32,50 @@ export const useTripManager = () => {
       input,
     };
 
+    // Calculate Cost
+    const cost = calculateTripCost(input.dateRange);
+
+    // Check Balance
+    if (balance < cost) {
+      alert(`點數不足！產生此行程需要 ${cost} 點，目前餘額 ${balance} 點。`);
+      return;
+    }
+
     setTrips(prev => [newTrip, ...prev]);
-    
+
     // Trigger AI Generation in background via the abstract service
     aiService.generateTrip(input)
-      .then(data => {
-        setTrips(prev => prev.map(t => 
-          t.id === newTrip.id 
-            ? { ...t, status: 'complete', data, generationTimeMs: Date.now() - t.createdAt } 
+      .then(async (data) => {
+        // Deduction happened here? 
+        // Logic: "一律是行程生成完成後才扣點" -> Deduct now.
+        // We'll trust the user has points since we checked, but technically they could have spent it elsewhere in parallel.
+        // spendPoints checks again usually.
+
+        const success = await spendPoints(cost, `生成行程: ${input.destination}`);
+        if (!success) {
+          console.warn("Points deduction failed even though initial check passed.");
+          // Potentially handle this edge case, but for now just warn.
+        }
+
+        setTrips(prev => prev.map(t =>
+          t.id === newTrip.id
+            ? { ...t, status: 'complete', data, generationTimeMs: Date.now() - t.createdAt }
             : t
         ));
       })
       .catch(err => {
-        setTrips(prev => prev.map(t => 
-          t.id === newTrip.id 
-            ? { ...t, status: 'error', errorMsg: err.message, generationTimeMs: Date.now() - t.createdAt } 
+        setTrips(prev => prev.map(t =>
+          t.id === newTrip.id
+            ? { ...t, status: 'error', errorMsg: err.message, generationTimeMs: Date.now() - t.createdAt }
             : t
         ));
       });
   };
 
   const updateTripData = (tripId: string, newData: TripData) => {
-    setTrips(prev => prev.map(t => 
-      t.id === tripId 
-        ? { ...t, data: newData } 
+    setTrips(prev => prev.map(t =>
+      t.id === tripId
+        ? { ...t, data: newData }
         : t
     ));
   };

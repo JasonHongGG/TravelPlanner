@@ -4,6 +4,7 @@ import App from './App';
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './context/AuthContext';
+import { PointsProvider } from './context/PointsContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -21,7 +22,9 @@ root.render(
   <React.StrictMode>
     <GoogleOAuthProvider clientId={clientId}>
       <AuthProvider>
-        <App />
+        <PointsProvider>
+          <App />
+        </PointsProvider>
       </AuthProvider>
     </GoogleOAuthProvider>
   </React.StrictMode>

@@ -5,11 +5,13 @@ import NewTripForm from './components/NewTripForm';
 import TripDetail from './components/TripDetail';
 import { useTripManager } from './hooks/useTripManager';
 import { useAuth } from './context/AuthContext';
-import { PointsProvider } from './context/PointsContext';
 import LoginScreen from './components/LoginScreen';
+import PurchasePointsModal from './components/PurchasePointsModal';
+import { usePoints } from './context/PointsContext';
 
 export default function App() {
   const { trips, createTrip, updateTripData, deleteTrip, importTrip } = useTripManager();
+  const { isPurchaseModalOpen, closePurchaseModal } = usePoints();
 
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,7 +48,7 @@ export default function App() {
 
   return (
     <>
-      <PointsProvider>
+      <>
         {view === 'dashboard' && (
           <Dashboard
             trips={trips}
@@ -72,7 +74,12 @@ export default function App() {
             onSubmit={createTrip}
           />
         )}
-      </PointsProvider>
+
+        <PurchasePointsModal
+          isOpen={isPurchaseModalOpen}
+          onClose={closePurchaseModal}
+        />
+      </>
     </>
   );
 }

@@ -19,6 +19,9 @@ interface PointsContextType {
     purchasePoints: (packageId: string) => Promise<void>;
     spendPoints: (amount: number, description: string) => Promise<boolean>;
     isLoading: boolean;
+    isPurchaseModalOpen: boolean;
+    openPurchaseModal: () => void;
+    closePurchaseModal: () => void;
 }
 
 const PointsContext = createContext<PointsContextType | undefined>(undefined);
@@ -53,6 +56,10 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const [balance, setBalance] = useState(0);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+
+    const openPurchaseModal = () => setIsPurchaseModalOpen(true);
+    const closePurchaseModal = () => setIsPurchaseModalOpen(false);
 
     // Fetch user profile on mount or user change
     useEffect(() => {
@@ -119,7 +126,16 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     return (
-        <PointsContext.Provider value={{ balance, transactions, purchasePoints, spendPoints, isLoading }}>
+        <PointsContext.Provider value={{
+            balance,
+            transactions,
+            purchasePoints,
+            spendPoints,
+            isLoading,
+            isPurchaseModalOpen,
+            openPurchaseModal,
+            closePurchaseModal
+        }}>
             {children}
         </PointsContext.Provider>
     );

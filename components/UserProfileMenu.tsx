@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { LogOut, User, Coins, History, ChevronDown, ChevronUp, CreditCard } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { usePoints } from '../context/PointsContext';
-import PurchasePointsModal from './PurchasePointsModal';
 import TransactionHistoryModal from './TransactionHistoryModal';
 
 export default function UserProfileMenu() {
@@ -21,8 +20,7 @@ export default function UserProfileMenu() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const { balance } = usePoints();
-    const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+    const { balance, openPurchaseModal } = usePoints();
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
     if (!user) return null;
@@ -96,7 +94,7 @@ export default function UserProfileMenu() {
                                 <button
                                     onClick={() => {
                                         setIsOpen(false);
-                                        setIsPurchaseModalOpen(true);
+                                        openPurchaseModal();
                                     }}
                                     className="w-full py-2 bg-white text-gray-900 rounded-lg text-xs font-bold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
                                 >
@@ -138,10 +136,7 @@ export default function UserProfileMenu() {
                 </div>
             )}
 
-            <PurchasePointsModal
-                isOpen={isPurchaseModalOpen}
-                onClose={() => setIsPurchaseModalOpen(false)}
-            />
+
 
             <TransactionHistoryModal
                 isOpen={isHistoryModalOpen}
