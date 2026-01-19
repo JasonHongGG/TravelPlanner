@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Trip } from '../types';
 import { getTripCover } from '../utils/tripUtils';
 import UserProfileMenu from './UserProfileMenu';
-import { Plus, Map, Loader2, Calendar, Users, Trash2, Download, Upload, MapPin, ArrowRight, MoreHorizontal, Clock, Sparkles, Check, RefreshCw, Globe } from 'lucide-react';
+import LanguageSwitcher from './LanguageSwitcher';
+import { Plus, Map, Loader2, Calendar, Users, Trash2, Download, Upload, MapPin, ArrowRight, MoreHorizontal, Clock, Sparkles, Check, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface Props {
@@ -277,17 +278,7 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
 
               <div className="h-6 w-px bg-gray-200 mx-1 hidden sm:block"></div>
 
-              <button
-                onClick={() => i18n.changeLanguage(i18n.language === 'zh-TW' ? 'en-US' : 'zh-TW')}
-                className="p-2 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded-full transition-colors relative group"
-                title={t('profile.language')}
-              >
-                <div className="absolute inset-0 bg-current opacity-10 rounded-full scale-0 group-hover:scale-100 transition-transform" />
-                <div className="text-xs font-bold absolute -bottom-1 -right-1 bg-white border border-gray-100 rounded-[4px] px-1 leading-none shadow-sm text-gray-600 group-hover:text-brand-600 group-hover:border-brand-200">
-                  {i18n.language === 'zh-TW' ? '繁' : 'EN'}
-                </div>
-                <Globe className="w-5 h-5" />
-              </button>
+              <LanguageSwitcher />
             </div>
           </div>
         </div>
