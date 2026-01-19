@@ -304,7 +304,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
   };
 
   const handleResetCover = () => {
-    if (confirm("確定要恢復預設封面嗎？") && onUpdateTripMeta) {
+    if (onUpdateTripMeta) {
       onUpdateTripMeta({ customCoverImage: undefined });
     }
   };
