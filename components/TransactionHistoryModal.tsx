@@ -1,7 +1,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { X, Calendar, TrendingUp, TrendingDown, History, CircleDollarSign } from 'lucide-react';
+import { X, Calendar, TrendingUp, TrendingDown, History, CircleDollarSign, Sparkles } from 'lucide-react';
 import { usePoints } from '../context/PointsContext';
 
 interface Props {
@@ -72,8 +72,46 @@ export default function TransactionHistoryModal({ isOpen, onClose }: Props) {
                     ) : (
                         <div className="space-y-3">
                             {transactions.map((tx, index) => {
+                                const isSubscription = tx.type === 'subscription_activation';
                                 const isPurchase = tx.type === 'purchase';
-                                const isPositive = tx.amount > 0; // Sometimes 'spend' might be refund? Assume amount sign is truth
+                                const isPositive = tx.amount > 0;
+
+                                if (isSubscription) {
+                                    return (
+                                        <div
+                                            key={tx.id || index}
+                                            className="group flex items-center justify-between p-4 rounded-2xl border border-purple-100 bg-gradient-to-r from-purple-50/50 to-blue-50/50 hover:shadow-md transition-all duration-300 relative overflow-hidden"
+                                        >
+                                            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-purple-200/20 to-transparent -mr-5 -mt-5 rounded-full blur-xl"></div>
+
+                                            <div className="flex items-center gap-4 relative z-10">
+                                                <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-lg shadow-purple-200">
+                                                    <Sparkles className="w-5 h-5" />
+                                                </div>
+
+                                                <div className="flex flex-col">
+                                                    <span className="font-black text-gray-900 text-sm flex items-center gap-2">
+                                                        {tx.description || '啟用訂閱會員'}
+                                                        <span className="px-2 py-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[10px] rounded-full">Pro</span>
+                                                    </span>
+                                                    <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                                                        <Calendar className="w-3 h-3" />
+                                                        <span>{formatDate(tx.date)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="text-right z-10">
+                                                <div className="text-sm font-bold text-indigo-600 flex items-center justify-end gap-1">
+                                                    會員權益已生效
+                                                </div>
+                                                <div className="text-[10px] text-gray-400">
+                                                    30 天無限生成
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                }
 
                                 return (
                                     <div

@@ -96,9 +96,11 @@ export default function PurchasePointsModal({ isOpen, onClose }: Props) {
                 {purchaseStep === 'select' && (
                     <div className="p-6 overflow-y-auto custom-scrollbar">
                         {/* Packages */}
-                        <div className="grid grid-cols- md:grid-cols-3 gap-4 mb-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                             {AVAILABLE_PACKAGES.map((pkg) => {
                                 const isSelected = selectedPackageId === pkg.id;
+                                const isSubscription = pkg.type === 'subscription';
+
                                 return (
                                     <div
                                         key={pkg.id}
@@ -106,19 +108,33 @@ export default function PurchasePointsModal({ isOpen, onClose }: Props) {
                                         className={`relative p-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 flex flex-col items-center text-center ${isSelected
                                             ? 'border-brand-500 bg-brand-50/30 shadow-lg scale-105 z-10'
                                             : 'border-gray-100 bg-white hover:border-brand-200 hover:shadow-md'
-                                            }`}
+                                            } ${isSubscription ? 'lg:col-span-1' : ''}`} // Optional: Make subscription card stand out? No, keep uniform.
                                     >
                                         {pkg.popular && (
                                             <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-brand-600 to-sky-500 text-white text-[10px] font-bold rounded-full shadow-sm">
                                                 最受歡迎
                                             </span>
                                         )}
+                                        {isSubscription && (
+                                            <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-purple-600 to-pink-500 text-white text-[10px] font-bold rounded-full shadow-sm">
+                                                推薦
+                                            </span>
+                                        )}
+
                                         <h3 className={`font-bold mb-1 ${isSelected ? 'text-brand-700' : 'text-gray-700'}`}>
                                             {pkg.name}
                                         </h3>
-                                        <div className="text-3xl font-black text-gray-900 mb-2 tracking-tight">
-                                            {pkg.points} <span className="text-sm font-medium text-gray-400">P</span>
-                                        </div>
+
+                                        {isSubscription ? (
+                                            <div className="text-3xl font-black text-gray-900 mb-2 tracking-tight">
+                                                ∞ <span className="text-sm font-medium text-gray-400">無限</span>
+                                            </div>
+                                        ) : (
+                                            <div className="text-3xl font-black text-gray-900 mb-2 tracking-tight">
+                                                {pkg.points} <span className="text-sm font-medium text-gray-400">P</span>
+                                            </div>
+                                        )}
+
                                         <p className="text-xs text-gray-500 leading-relaxed mb-4 min-h-[2.5em]">
                                             {pkg.description}
                                         </p>
@@ -185,13 +201,27 @@ export default function PurchasePointsModal({ isOpen, onClose }: Props) {
                 {/* Success State */}
                 {purchaseStep === 'success' && (
                     <div className="p-10 flex flex-col items-center text-center py-20 animate-in zoom-in duration-300">
-                        <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-green-100">
-                            <Check className="w-10 h-10" />
-                        </div>
-                        <h3 className="text-2xl font-black text-gray-900 mb-2">儲值成功！</h3>
-                        <p className="text-gray-500 text-lg mb-6">
-                            已將 <span className="font-bold text-brand-600">{selectedPkg?.points} P</span> 加入您的帳戶
-                        </p>
+                        {selectedPkg?.type === 'subscription' ? (
+                            <>
+                                <div className="w-20 h-20 bg-gradient-to-tr from-purple-100 to-pink-100 text-purple-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-purple-200">
+                                    <Sparkles className="w-10 h-10 animate-pulse" />
+                                </div>
+                                <h3 className="text-2xl font-black text-gray-900 mb-2">尊榮會員資格已啟用！</h3>
+                                <p className="text-gray-500 text-lg mb-6">
+                                    開始享受 <span className="font-bold text-purple-600">無限 AI 生成</span> 與專屬旅遊顧問服務
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-green-100">
+                                    <Check className="w-10 h-10" />
+                                </div>
+                                <h3 className="text-2xl font-black text-gray-900 mb-2">儲值成功！</h3>
+                                <p className="text-gray-500 text-lg mb-6">
+                                    已將 <span className="font-bold text-brand-600">{selectedPkg?.points} P</span> 加入您的帳戶
+                                </p>
+                            </>
+                        )}
                         <div className="text-sm text-gray-400">視窗將自動關閉...</div>
                     </div>
                 )}

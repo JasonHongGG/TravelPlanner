@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LogOut, User, Coins, History, ChevronDown, ChevronUp, CreditCard } from 'lucide-react';
+import { LogOut, User, Coins, History, ChevronDown, ChevronUp, CreditCard, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { usePoints } from '../context/PointsContext';
 import TransactionHistoryModal from './TransactionHistoryModal';
@@ -20,7 +20,7 @@ export default function UserProfileMenu() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const { balance, openPurchaseModal } = usePoints();
+    const { balance, openPurchaseModal, isSubscribed } = usePoints();
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
     if (!user) return null;
@@ -46,7 +46,13 @@ export default function UserProfileMenu() {
 
                 <div className="flex flex-col items-start mr-1 hidden sm:flex">
                     <span className="text-xs font-bold text-gray-700 leading-tight">{user.name}</span>
-                    <span className="text-[10px] font-medium text-brand-600">{balance} P</span>
+                    {isSubscribed ? (
+                        <span className="text-[10px] font-bold text-purple-600 flex items-center gap-1">
+                            <Sparkles className="w-3 h-3" /> PRO
+                        </span>
+                    ) : (
+                        <span className="text-[10px] font-medium text-brand-600">{balance} P</span>
+                    )}
                 </div>
 
                 {isOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
@@ -75,20 +81,34 @@ export default function UserProfileMenu() {
                     <div className="p-4 space-y-4">
 
                         {/* Points Card */}
-                        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 text-white shadow-lg relative overflow-hidden group">
+                        <div className={`rounded-xl p-4 text-white shadow-lg relative overflow-hidden group transition-all duration-500
+                            ${isSubscribed
+                                ? 'bg-gradient-to-br from-indigo-900 via-purple-900 to-brand-900'
+                                : 'bg-gradient-to-br from-gray-900 to-gray-800'
+                            }`}>
                             {/* Decorative circles */}
                             <div className="absolute top-0 right-0 -mt-2 -mr-2 w-20 h-20 bg-white/10 rounded-full blur-xl group-hover:bg-white/20 transition-all"></div>
 
                             <div className="relative z-10">
                                 <div className="flex justify-between items-start mb-2">
-                                    <span className="text-xs font-medium text-gray-400">現有點數</span>
+                                    <span className="text-xs font-medium text-gray-400">
+                                        {isSubscribed ? '目前方案' : '現有點數'}
+                                    </span>
                                     <div className="p-1.5 bg-white/10 rounded-lg backdrop-blur-sm">
-                                        <Coins className="w-4 h-4 text-yellow-400" />
+                                        {isSubscribed ? <Sparkles className="w-4 h-4 text-yellow-400 fill-yellow-400 animate-pulse" /> : <Coins className="w-4 h-4 text-yellow-400" />}
                                     </div>
                                 </div>
                                 <div className="flex items-baseline gap-1 mb-4">
-                                    <span className="text-2xl font-black tracking-tight">{balance}</span>
-                                    <span className="text-sm font-medium text-gray-400">P</span>
+                                    {isSubscribed ? (
+                                        <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-yellow-200 to-amber-400">
+                                            PRO 會員
+                                        </span>
+                                    ) : (
+                                        <>
+                                            <span className="text-2xl font-black tracking-tight">{balance}</span>
+                                            <span className="text-sm font-medium text-gray-400">P</span>
+                                        </>
+                                    )}
                                 </div>
 
                                 <button

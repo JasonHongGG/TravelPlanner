@@ -11,11 +11,13 @@ interface PointPackage {
     name: string;
     popular?: boolean;
     description: string;
+    type?: 'points' | 'subscription'; // Added type
 }
 
 interface PointsContextType {
     balance: number;
     transactions: Transaction[];
+    isSubscribed: boolean; // Added
     purchasePoints: (packageId: string) => Promise<void>;
     spendPoints: (amount: number, description: string) => Promise<boolean>;
     isLoading: boolean;
@@ -28,26 +30,37 @@ const PointsContext = createContext<PointsContextType | undefined>(undefined);
 
 export const AVAILABLE_PACKAGES: PointPackage[] = [
     {
-        id: 'basic',
-        name: '旅人起步',
+        id: 'pkg_100',
+        points: 100,
+        price: 30,
+        name: '輕量體驗',
+        description: '適合偶爾使用',
+        type: 'points'
+    },
+    {
+        id: 'pkg_500',
         points: 500,
-        price: 150,
-        description: '適合體驗單次行程生成',
-    },
-    {
-        id: 'pro',
-        name: '探險家',
-        points: 1200,
-        price: 300,
+        price: 130,
+        name: '超值方案',
         popular: true,
-        description: '最受歡迎！適合規劃 2-3 趟旅程',
+        description: '最受歡迎的選擇',
+        type: 'points'
     },
     {
-        id: 'ultimate',
-        name: '環遊世界',
-        points: 3000,
-        price: 600,
-        description: '重度旅行者首選，盡情探索',
+        id: 'pkg_1000',
+        points: 1000,
+        price: 250,
+        name: '專業玩家',
+        description: '大量生成無壓力',
+        type: 'points'
+    },
+    {
+        id: 'plan_unlimited',
+        points: 0,
+        price: 399,
+        name: '旅遊貼身助理',
+        description: '無限 AI 生成 + 專屬顧問',
+        type: 'subscription'
     }
 ];
 
@@ -55,6 +68,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const { user } = useAuth();
     const [balance, setBalance] = useState(0);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [isSubscribed, setIsSubscribed] = useState(false); // Added
     const [isLoading, setIsLoading] = useState(false);
     const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
 
@@ -71,6 +85,10 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     if (userProfile) {
                         setBalance(userProfile.points);
                         setTransactions(userProfile.transactions || []);
+                        // Check subscription validity
+                        const sub = userProfile.subscription;
+                        const isValid = sub?.active && sub.endDate > Date.now();
+                        setIsSubscribed(!!isValid);
                     }
                 } catch (error) {
                     console.error("Failed to fetch user points:", error);
@@ -80,6 +98,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             } else {
                 setBalance(0);
                 setTransactions([]);
+                setIsSubscribed(false);
             }
         };
 
@@ -94,9 +113,21 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         try {
             if (pkg) {
-                const updatedUser = await db.users.addPoints(user.email, pkg.points, `購買 ${pkg.name} 方案`);
-                setBalance(updatedUser.points);
-                setTransactions(updatedUser.transactions);
+                let updatedUser;
+                if (pkg.type === 'subscription') {
+                    // Activate Subscription
+                    updatedUser = await db.users.activateSubscription(user.email, pkg.id);
+                    setIsSubscribed(true);
+                } else {
+                    // Add Points
+                    updatedUser = await db.users.addPoints(user.email, pkg.points, `購買 ${pkg.name} 方案`);
+                    setBalance(updatedUser.points);
+                }
+
+                // Common update
+                if (updatedUser) {
+                    setTransactions(updatedUser.transactions);
+                }
             } else {
                 throw new Error("Package not found");
             }
@@ -111,8 +142,8 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const spendPoints = async (amount: number, description: string): Promise<boolean> => {
         if (!user?.email) return false;
 
-        // Optimistic check
-        if (balance < amount) return false;
+        // Optimistic check (If subscribed, always allow)
+        if (!isSubscribed && balance < amount) return false;
 
         try {
             const updatedUser = await db.users.addPoints(user.email, -amount, description);
@@ -129,6 +160,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         <PointsContext.Provider value={{
             balance,
             transactions,
+            isSubscribed,
             purchasePoints,
             spendPoints,
             isLoading,

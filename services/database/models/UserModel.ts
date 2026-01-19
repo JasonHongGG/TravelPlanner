@@ -5,7 +5,7 @@ export interface Transaction {
     id: string;
     date: number;
     amount: number;
-    type: 'purchase' | 'spend';
+    type: 'purchase' | 'spend' | 'subscription_activation';
     description: string;
 }
 
@@ -13,6 +13,12 @@ export interface User {
     email: string;
     points: number;
     transactions: Transaction[];
+    subscription?: {
+        active: boolean;
+        startDate: number;
+        endDate: number;
+        planId: string;
+    };
 }
 
 export class UserModel extends BaseModel<User> {
@@ -33,6 +39,21 @@ export class UserModel extends BaseModel<User> {
         };
 
         // Use the adapter's custom execution for atomic transaction
+        return this.adapter.execute<User>(this.collectionName, 'transaction', {
+            id: email,
+            transaction
+        });
+    }
+
+    async activateSubscription(email: string, planId: string): Promise<User> {
+        const transaction: Transaction = {
+            id: crypto.randomUUID(),
+            date: Date.now(),
+            amount: 0,
+            type: 'subscription_activation',
+            description: '啟用訂閱：旅遊貼身助理'
+        };
+
         return this.adapter.execute<User>(this.collectionName, 'transaction', {
             id: email,
             transaction

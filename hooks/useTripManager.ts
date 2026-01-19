@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Trip, TripInput, TripData } from '../types';
 import { aiService } from '../services';
@@ -7,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { calculateTripCost } from '../utils/tripUtils';
 
 export const useTripManager = () => {
-  const { balance, openPurchaseModal } = usePoints(); // Removed spendPoints
+  const { balance, openPurchaseModal, isSubscribed } = usePoints();
   const { user } = useAuth();
 
   // Initialize state directly from localStorage
@@ -39,7 +38,7 @@ export const useTripManager = () => {
     const cost = calculateTripCost(input.dateRange);
 
     // Initial Frontend Check (UX only)
-    if (balance < cost) {
+    if (!isSubscribed && balance < cost) {
       alert(`點數不足！產生此行程需要 ${cost} 點，目前餘額 ${balance} 點。`);
       openPurchaseModal();
       return;

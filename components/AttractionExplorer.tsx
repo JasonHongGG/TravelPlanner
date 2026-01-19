@@ -39,7 +39,7 @@ export default function AttractionExplorer({
     const [location, setLocation] = useState(initialLocation);
     const [lastSearchLocation, setLastSearchLocation] = useState(initialLocation);
 
-    const { balance, openPurchaseModal } = usePoints();
+    const { balance, openPurchaseModal, isSubscribed } = usePoints();
     const { user } = useAuth();
     const QUEUE_SIZE = 3; // Defined as per user request (3 batches/queues)
 
@@ -369,7 +369,14 @@ export default function AttractionExplorer({
                                     <span className="font-bold text-gray-900">總計花費</span>
                                     <span className="font-black text-xl text-brand-600 flex items-center gap-1">
                                         <Coins className="w-5 h-5" />
-                                        {searchConfirmation.totalCost}
+                                        {isSubscribed ? (
+                                            <>
+                                                <span className="line-through text-gray-400 text-base mr-2">{searchConfirmation.totalCost}</span>
+                                                <span>會員免費</span>
+                                            </>
+                                        ) : (
+                                            searchConfirmation.totalCost
+                                        )}
                                     </span>
                                 </div>
                             </div>
@@ -383,8 +390,8 @@ export default function AttractionExplorer({
                                 <ArrowRight className="w-4 h-4 text-gray-400" />
                                 <div className="flex flex-col items-end">
                                     <span className="text-gray-500 text-xs">剩餘點數</span>
-                                    <span className={`font-bold ${balance - searchConfirmation.totalCost < 0 ? 'text-red-600' : 'text-brand-600'}`}>
-                                        {balance - searchConfirmation.totalCost}
+                                    <span className={`font-bold ${!isSubscribed && (balance - searchConfirmation.totalCost < 0) ? 'text-red-600' : 'text-brand-600'}`}>
+                                        {isSubscribed ? balance : balance - searchConfirmation.totalCost}
                                     </span>
                                 </div>
                             </div>
@@ -398,7 +405,7 @@ export default function AttractionExplorer({
                                     取消
                                 </button>
 
-                                {balance < searchConfirmation.totalCost ? (
+                                {(balance < searchConfirmation.totalCost && !isSubscribed) ? (
                                     <button
                                         onClick={() => {
                                             setSearchConfirmation(null);

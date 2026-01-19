@@ -1,207 +1,244 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, X, Bot, Sparkles, Loader2 } from 'lucide-react';
+import { Bot, X, Send, Sparkles, User, Loader2, Maximize2, Minimize2, Lock } from 'lucide-react';
 import { Message } from '../types';
+import { safeRender } from '../utils/formatters';
+import { usePoints } from '../context/PointsContext';
 
-interface Props {
-  onUpdate: (history: Message[], onThought: (text: string) => void) => Promise<string | void>;
-  isGenerating: boolean;
+interface NewProps {
+  onUpdate: (history: Message[], onThought: (text: string) => void) => Promise<string>;
+  isGenerating?: boolean; // Parent controls loading state if needed
 }
 
-// Simple Markdown-ish renderer for chat messages
-// Handles **bold** and * lists
-const MessageContent = ({ text }: { text: string }) => {
-  // Simple bold parser
-  const parseBold = (str: string) => {
-    // Split by **...**
-    const parts = str.split(/(\*\*.*?\*\*)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={i} className="font-bold text-gray-900">{part.slice(2, -2)}</strong>;
-      }
-      return part;
-    });
-  };
-
-  const lines = text.split('\n');
-  return (
-    <div className="space-y-1">
-      {lines.map((line, i) => {
-        const trimmed = line.trim();
-        // Check for list items
-        if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
-           return (
-             <div key={i} className="flex items-start gap-2 ml-2">
-               <span className="mt-2 w-1 h-1 bg-current rounded-full flex-shrink-0 opacity-60" />
-               <span className="leading-relaxed">{parseBold(trimmed.substring(2))}</span>
-             </div>
-           );
-        }
-        // Empty lines for spacing
-        if (trimmed === '') return <div key={i} className="h-2" />;
-        
-        // Regular text
-        return <div key={i} className="leading-relaxed">{parseBold(line)}</div>;
-      })}
-    </div>
-  );
-};
-
-export default function Assistant({ onUpdate, isGenerating }: Props) {
+export default function Assistant({ onUpdate, isGenerating: parentIsGenerating = false }: NewProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', text: "嗨！我是您的 AI 旅遊貼身助理。對某天行程不滿意？想換家餐廳？告訴我，我馬上為您調整。", timestamp: Date.now() }
+    { role: 'model', text: '嗨！我是您的 AI 旅遊助理。想要調整行程、尋找餐廳，或是有任何旅行問題，都可以問我喔！', timestamp: Date.now() }
   ]);
-  const [loading, setLoading] = useState(false);
-  const [thinkingText, setThinkingText] = useState('');
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [input, setInput] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
+  const [currentThought, setCurrentThought] = useState('');
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const { isSubscribed, openPurchaseModal } = usePoints();
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    scrollToBottom();
+  }, [messages, isThinking, currentThought, isOpen]);
+
+  // Focus input when opened
+  useEffect(() => {
+    if (isOpen && isSubscribed) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 300);
     }
-  }, [messages, isOpen, thinkingText]);
+  }, [isOpen, isSubscribed]);
 
-  const handleSend = async () => {
-    if (!input.trim() || loading) return;
+  // ... (handleSubmit and handleKeyDown remain same, but check isSubscribed)
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!input.trim() || isThinking || !isSubscribed) return;
 
-    const userText = input;
+    const userMsg: Message = { role: 'user', text: input.trim(), timestamp: Date.now() };
+    setMessages(prev => [...prev, userMsg]);
     setInput('');
-    setLoading(true);
-    setThinkingText('');
-    
-    // Add User Message locally first
-    const newHistory = [...messages, { role: 'user', text: userText, timestamp: Date.now() } as Message];
-    setMessages(newHistory);
+    setIsThinking(true);
+    setCurrentThought('正在思考中...');
 
     try {
-      // Call Parent Handler with full history and thought callback
-      // The parent returns the AI's final text response (if it was a chat) OR void (if it updated the trip, we usually get a confirmation text)
-      const finalText = await onUpdate(newHistory, (text) => {
-        setThinkingText(text);
+      const newHistory = [...messages, userMsg];
+      const responseText = await onUpdate(newHistory, (thought) => {
+        setCurrentThought(thought);
       });
 
-      if (finalText) {
-          setMessages(prev => [...prev, { role: 'model', text: finalText, timestamp: Date.now() }]);
-      } else {
-          // Fallback if no text returned but update happened (shouldn't happen with new logic, but safe)
-          setMessages(prev => [...prev, { role: 'model', text: "行程已更新！", timestamp: Date.now() }]);
-      }
-
+      // Add model response
+      setMessages(prev => [...prev, {
+        role: 'model',
+        text: responseText,
+        timestamp: Date.now()
+      }]);
     } catch (error) {
-       setMessages(prev => {
-        return [...prev, { role: 'model', text: "抱歉，更新行程時發生錯誤，請稍後再試。", timestamp: Date.now() }];
-      });
+      console.error(error);
+      setMessages(prev => [...prev, {
+        role: 'model',
+        text: '抱歉，我現在有點累，請稍後再試。',
+        timestamp: Date.now()
+      }]);
     } finally {
-      setLoading(false);
-      setThinkingText('');
+      setIsThinking(false);
+      setCurrentThought('');
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      handleSubmit();
     }
   };
 
-  return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-      {isOpen && (
-        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-80 md:w-96 h-[500px] mb-4 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-10 duration-200">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-brand-600 to-brand-500 p-4 flex justify-between items-center text-white">
-            <div className="flex items-center gap-2">
-              <div className="bg-white/20 p-1.5 rounded-lg">
-                <Sparkles className="w-5 h-5 text-yellow-300" />
-              </div>
-              <div>
-                <h3 className="font-bold text-sm">旅遊貼身助理</h3>
-                <p className="text-xs text-brand-100">AI 智慧調整</p>
-              </div>
-            </div>
-            <button onClick={() => setIsOpen(false)} className="hover:bg-white/20 p-1 rounded transition-colors">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+  if (!isOpen) {
+    return (
+      <button
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-brand-600 to-sky-600 hover:from-brand-500 hover:to-sky-500 text-white p-4 rounded-full shadow-lg shadow-brand-200 transition-all hover:scale-110 group"
+      >
+        <Bot className="w-8 h-8 group-hover:rotate-12 transition-transform" />
+        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full animate-bounce">
+          Beta
+        </span>
+      </button>
+    );
+  }
 
-          {/* Messages */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div 
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                    msg.role === 'user' 
-                      ? 'bg-brand-600 text-white rounded-br-none' 
-                      : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none'
-                  }`}
-                >
-                  {msg.role === 'model' ? <MessageContent text={msg.text} /> : msg.text}
+  return (
+    <div className={`fixed z-[60] bg-white shadow-2xl transition-all duration-300 flex flex-col overflow-hidden border border-gray-100 font-sans
+            ${isExpanded
+        ? 'inset-4 md:inset-10 rounded-2xl'
+        : 'bottom-6 right-6 w-[90vw] md:w-[450px] h-[600px] md:max-h-[80vh] rounded-2xl'
+      }
+        `}>
+      {/* Header */}
+      <div className="bg-gradient-to-r from-brand-600 to-sky-600 p-4 flex items-center justify-between text-white shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-white/20 rounded-lg">
+            <Bot className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-bold text-lg">AI 旅遊顧問</h3>
+            <p className="text-white/80 text-xs flex items-center gap-1">
+              <Sparkles className="w-3 h-3" />
+              {isThinking ? '正在思考中...' : '隨時為您服務'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-2 hover:bg-white/10 rounded-full transition-colors hidden md:block"
+            title={isExpanded ? "縮小視窗" : "全螢幕"}
+          >
+            {isExpanded ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+          </button>
+          <button
+            onClick={() => setIsOpen(false)}
+            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Content Gate */}
+      {!isSubscribed ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gray-50">
+          <div className="w-20 h-20 bg-gradient-to-tr from-brand-200 to-sky-200 rounded-full flex items-center justify-center mb-6 relative">
+            <Bot className="w-10 h-10 text-brand-700" />
+            <div className="absolute -bottom-2 -right-2 bg-white p-2 rounded-full shadow-md">
+              <Lock className="w-5 h-5 text-gray-400" />
+            </div>
+          </div>
+          <h3 className="text-2xl font-black text-gray-900 mb-2">解鎖您的專屬助理</h3>
+          <p className="text-gray-500 mb-8 max-w-xs leading-relaxed">
+            升級成為 <span className="font-bold text-brand-600">旅遊貼身助理</span> 會員，即可享有無限次 AI 行程調整與即時諮詢服務。
+          </p>
+          <button
+            onClick={openPurchaseModal}
+            className="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-lg shadow-brand-200 hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
+          >
+            <Sparkles className="w-5 h-5" />
+            查看升級方案
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Chat Area */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50/50 scroll-smooth">
+            {messages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+              >
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm
+                                    ${msg.role === 'user' ? 'bg-gray-200' : 'bg-brand-100 text-brand-600'}
+                                `}>
+                  {msg.role === 'user' ? <User className="w-5 h-5 text-gray-600" /> : <Bot className="w-5 h-5" />}
+                </div>
+                <div className={`max-w-[85%] rounded-2xl p-4 shadow-sm border
+                                    ${msg.role === 'user'
+                    ? 'bg-white text-gray-800 border-gray-100 rounded-tr-none'
+                    : 'bg-white text-gray-800 border-gray-100 rounded-tl-none'
+                  }
+                                `}>
+                  <div className="prose prose-sm max-w-none">
+                    {safeRender(msg.text)}
+                  </div>
+                  <div className={`text-[10px] mt-2 opacity-50 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
+                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
                 </div>
               </div>
             ))}
 
-            {/* Thinking Bubble */}
-            {loading && (
-              <div className="flex justify-start">
-                <div className="max-w-[90%] bg-gray-100 text-gray-700 border border-gray-200 rounded-2xl rounded-bl-none px-4 py-3 text-sm shadow-sm">
-                   {thinkingText ? (
-                      <div className="animate-in fade-in duration-300">
-                        <div className="flex items-center gap-2 mb-2 text-brand-600 font-bold text-xs uppercase tracking-wide">
-                           <Loader2 className="w-3 h-3 animate-spin" />
-                           思考中...
-                        </div>
-                        <MessageContent text={thinkingText} />
-                      </div>
-                   ) : (
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>正在分析您的需求...</span>
-                      </div>
-                   )}
+            {/* Thought Process (Real-time) */}
+            {isThinking && (
+              <div className="flex gap-3">
+                <div className="w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center shrink-0 animate-pulse">
+                  <Bot className="w-5 h-5" />
+                </div>
+                <div className="max-w-[85%] space-y-2">
+                  {currentThought && (
+                    <div className="text-xs text-gray-400 italic bg-gray-100 rounded-lg px-3 py-2 animate-in fade-in">
+                      思考中: {currentThought}
+                    </div>
+                  )}
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                    <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                  </div>
                 </div>
               </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
-          <div className="p-3 bg-white border-t border-gray-200">
-            <div className="relative flex items-center">
-              <input
-                type="text"
-                className="w-full pl-4 pr-12 py-3 bg-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all"
-                placeholder="輸入您想調整的內容..."
+          {/* Input Area */}
+          <div className="p-4 bg-white border-t border-gray-100">
+            <div className="relative">
+              <textarea
+                ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyPress}
-                disabled={loading}
+                onKeyDown={handleKeyDown}
+                placeholder="輸入訊息..."
+                disabled={isThinking}
+                className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none resize-none h-[52px] max-h-32 min-h-[52px]"
               />
-              <button 
-                onClick={handleSend}
-                disabled={loading || !input.trim()}
-                className="absolute right-2 p-1.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:hover:bg-brand-600 transition-colors"
+              <button
+                onClick={() => handleSubmit()}
+                disabled={!input.trim() || isThinking}
+                className="absolute right-2 top-1.5 p-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
-                <Send className="w-4 h-4" />
+                {isThinking ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
               </button>
             </div>
+            <div className="text-center mt-2">
+              <p className="text-[10px] text-gray-400 flex items-center justify-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                AI 可能會產生不準確的資訊，請以實際情況為準
+              </p>
+            </div>
           </div>
-        </div>
+        </>
       )}
-
-      {/* Toggle Button */}
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="group flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-3 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
-      >
-        <div className="relative">
-          <Bot className="w-6 h-6" />
-          <span className="absolute -top-1 -right-1 flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-          </span>
-        </div>
-        <span className="font-medium pr-1">AI 助手</span>
-      </button>
     </div>
   );
 }

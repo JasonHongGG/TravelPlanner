@@ -81,20 +81,46 @@ app.post('/users/:email/transaction', (req, res) => {
         const { email } = req.params;
         const { transaction } = req.body;
 
+        console.log(`[DB Server] Processing transaction for ${email}:`, transaction.type);
+        console.log(`[DB Server] Users File Path: ${USERS_FILE}`);
+
         const users = readUsers();
 
         if (!users[email]) {
+            console.error(`[DB Server] User ${email} not found.`);
             return res.status(404).json({ error: "User not found" });
         }
 
         const userData = users[email];
 
+        // Handle Subscription Purchase
+        if (transaction.type === 'subscription_activation') {
+            userData.subscription = {
+                active: true,
+                startDate: Date.now(),
+                endDate: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
+                planId: 'plan_unlimited'
+            };
+            console.log(`[DB Server] Activated subscription for ${email}. New State:`, userData.subscription);
+        }
+
         // Check for sufficient funds if deducting
+        // If subscribed, WAIVE the cost (set amount to 0) for spending transactions
         if (transaction.amount < 0) {
-            const potentialBalance = (userData.points || 0) + transaction.amount;
-            if (potentialBalance < 0) {
-                console.warn(`[DB Server] Insufficient funds for ${email}. Current: ${userData.points}, Attempted: ${transaction.amount}`);
-                return res.status(400).json({ error: "Insufficient points" });
+            const isSubscribed = userData.subscription?.active && userData.subscription.endDate > Date.now();
+
+            if (isSubscribed) {
+                console.log(`[DB Server] Waiving fee for subscriber ${email}`);
+                transaction.originalAmount = transaction.amount; // Keep track of what it would have cost
+                transaction.amount = 0;
+                transaction.description = `[會員] ${transaction.description}`;
+            } else {
+                // Normal balance check
+                const potentialBalance = (userData.points || 0) + transaction.amount;
+                if (potentialBalance < 0) {
+                    console.warn(`[DB Server] Insufficient funds for ${email}. Current: ${userData.points}, Attempted: ${transaction.amount}`);
+                    return res.status(400).json({ error: "Insufficient points" });
+                }
             }
         }
 
@@ -107,9 +133,10 @@ app.post('/users/:email/transaction', (req, res) => {
 
         // Save
         users[email] = userData;
+        console.log(`[DB Server] Saving user data to cleanup...`);
         writeUsers(users);
 
-        console.log(`[DB Server] Transaction recorded for ${email}. New Balance: ${userData.points}`);
+        console.log(`[DB Server] Transaction recorded successfully for ${email}. New Balance: ${userData.points}`);
         res.json(userData);
 
     } catch (error: any) {

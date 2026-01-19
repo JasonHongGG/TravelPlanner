@@ -6,6 +6,12 @@ interface User {
     name: string;
     email: string;
     picture: string;
+    subscription?: {
+        active: boolean;
+        startDate: number;
+        endDate: number;
+        planId: string;
+    };
 }
 
 interface AuthContextType {
