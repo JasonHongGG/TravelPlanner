@@ -64,7 +64,7 @@ export default function Assistant({ onUpdate, isGenerating: parentIsGenerating =
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsThinking(true);
-    setCurrentThought('正在思考中...');
+    setCurrentThought(''); // Changed from '正在思考中...'
 
     try {
       const newHistory = [...messages, userMsg];
@@ -223,25 +223,32 @@ export default function Assistant({ onUpdate, isGenerating: parentIsGenerating =
 
             {/* Streaming Message (Real-time) */}
             {isThinking && (
-              <div className="flex gap-3 flex-row animate-in fade-in duration-300">
-                {/* Avatar */}
+              <div className="flex gap-3 flex-row animate-in fade-in duration-300 items-start">
+                {/* Avatar - Always visible */}
                 <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-sm border border-white bg-gradient-to-br from-brand-50 to-brand-100 text-brand-600">
                   <Bot className="w-5 h-5 animate-pulse" />
                 </div>
 
-                {/* Message Bubble */}
-                <div className="max-w-[85%] rounded-2xl p-5 shadow-sm bg-white text-gray-800 border border-gray-100 rounded-tl-none shadow-brand-50/50">
-                  <div className="text-[15px] leading-relaxed min-h-[24px]">
-                    <ReactMarkdown components={MarkdownComponents}>
-                      {currentThought || ' '}
-                    </ReactMarkdown>
-                    <span className="inline-block w-2 h-4 ml-1 align-middle bg-brand-400 animate-pulse rounded-full"></span>
+                {!currentThought ? (
+                  // State 1: WAITING (Modern Premium UI)
+                  <div className="flex items-center gap-3 px-4 py-3 bg-white border border-brand-100/50 rounded-2xl rounded-tl-none shadow-sm">
+                    <div className="relative flex items-center justify-center w-5 h-5">
+                      <div className="absolute inset-0 bg-brand-400 rounded-full animate-ping opacity-20 duration-1000"></div>
+                      <Sparkles className="relative z-10 w-4 h-4 text-brand-500 animate-pulse duration-1000" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-500">正在為您規劃行程</span>
                   </div>
-                  <div className="text-[10px] mt-2 opacity-60 flex items-center gap-1 text-gray-400">
-                    <Sparkles className="w-2 h-2 animate-spin" />
-                    <span>正在思考中...</span>
+                ) : (
+                  // State 2: STREAMING (Full Bubble)
+                  <div className="max-w-[85%] rounded-2xl p-5 shadow-sm bg-white text-gray-800 border border-gray-100 rounded-tl-none shadow-brand-50/50">
+                    <div className="text-[15px] leading-relaxed min-h-[24px]">
+                      <ReactMarkdown components={MarkdownComponents}>
+                        {currentThought}
+                      </ReactMarkdown>
+                      <span className="inline-block w-2 h-4 ml-1 align-middle bg-brand-400 animate-pulse rounded-full"></span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -257,7 +264,7 @@ export default function Assistant({ onUpdate, isGenerating: parentIsGenerating =
                 onKeyDown={handleKeyDown}
                 placeholder="輸入訊息..."
                 disabled={isThinking}
-                className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none resize-none h-[52px] max-h-32 min-h-[52px]"
+                className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none resize-none h-[52px] max-h-32 min-h-[52px] [&::-webkit-scrollbar]:hidden"
               />
               <button
                 onClick={() => handleSubmit()}
