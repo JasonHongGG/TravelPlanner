@@ -123,6 +123,14 @@ export const useTripManager = () => {
     ));
   };
 
+  const updateTrip = (tripId: string, updates: Partial<Trip>) => {
+    setTrips(prev => prev.map(t =>
+      t.id === tripId
+        ? { ...t, ...updates }
+        : t
+    ));
+  };
+
   const deleteTrip = (tripId: string) => {
     setTrips(prev => prev.filter(t => t.id !== tripId));
   };
@@ -142,6 +150,8 @@ export const useTripManager = () => {
     trips,
     createTrip,
     updateTripData,
+    updateTrip,
+    deleteTrip,
     deleteTrip,
     importTrip,
     retryTrip

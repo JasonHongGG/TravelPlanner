@@ -10,7 +10,7 @@ import PurchasePointsModal from './components/PurchasePointsModal';
 import { usePoints } from './context/PointsContext';
 
 export default function App() {
-  const { trips, createTrip, updateTripData, deleteTrip, importTrip, retryTrip } = useTripManager();
+  const { trips, createTrip, updateTripData, updateTrip, deleteTrip, importTrip, retryTrip } = useTripManager();
   const { isPurchaseModalOpen, closePurchaseModal } = usePoints();
 
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
@@ -65,6 +65,7 @@ export default function App() {
             trip={selectedTrip}
             onBack={() => setView('dashboard')}
             onUpdateTrip={updateTripData}
+            onUpdateTripMeta={(updates) => updateTrip(selectedTrip.id, updates)}
           />
         )}
 

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Trip, TripData, TripMeta, TripStop, Message, FeasibilityResult } from '../types';
-import { CheckCircle2, AlertTriangle, Calendar, Clock, DollarSign, PanelRightClose, PanelRightOpen, Map as MapIcon, Loader2 } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Calendar, Clock, DollarSign, PanelRightClose, PanelRightOpen, Map as MapIcon, Loader2, Camera, ImagePlus } from 'lucide-react';
 import Assistant from './Assistant';
 import { aiService } from '../services'; // Import singleton service
 import { safeRender } from '../utils/formatters';
@@ -20,13 +20,17 @@ import FeasibilityModal from './FeasibilityModal';
 interface Props {
   trip: Trip;
   onBack: () => void;
+  onBack: () => void;
   onUpdateTrip: (tripId: string, newData: TripData) => void;
+  onUpdateTripMeta?: (updates: Partial<Trip>) => void; // Optional for backward compatibility, but passed from App
 }
 
-export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
+export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMeta }: Props) {
   const [selectedDay, setSelectedDay] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'risks'>('itinerary');
   const [isMapOpen, setIsMapOpen] = useState(true); // State to toggle map visibility
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Attraction Explorer State
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
@@ -269,8 +273,51 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
   // Construct a relevant image URL using Pollinations AI (Switched to Bing for variety)
   const headerImageUrl = getTripCover(trip);
 
+  const handleEditCoverClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    // Validate size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert("圖片大小請小於 2MB");
+      return;
+    }
+
+    setIsUploading(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (result && onUpdateTripMeta) {
+        onUpdateTripMeta({ customCoverImage: result });
+        // Small delay to simulate processing and let state update
+        setTimeout(() => setIsUploading(false), 500);
+      } else {
+        setIsUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = ''; // Reset input
+  };
+
+  const handleResetCover = () => {
+    if (confirm("確定要恢復預設封面嗎？") && onUpdateTripMeta) {
+      onUpdateTripMeta({ customCoverImage: undefined });
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen bg-gray-50 overflow-hidden relative">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept="image/*"
+      />
 
       {/* Feasibility Check Modal */}
       {feasibilityResult && (
@@ -330,24 +377,77 @@ export default function TripDetail({ trip, onBack, onUpdateTrip }: Props) {
         {/* Adjusted width logic based on isMapOpen state */}
         <div className={`w-full flex flex-col scrollbar-hide bg-gray-50 overflow-y-auto transition-all duration-300 ease-in-out ${isMapOpen ? 'lg:w-7/12 xl:w-1/2' : 'lg:w-full'}`}>
 
-          {/* Hero / Cover Section */}
-          <div className="relative h-64 flex-shrink-0 w-full bg-gray-900 group">
+          {/* Header Image */}
+          <div className="h-64 md:h-80 w-full relative shrink-0 group">
+            <div className="absolute inset-0 bg-gray-900/30"></div>
             <img
               src={headerImageUrl}
+              alt={trip.input.destination}
+              className="w-full h-full object-cover"
               onError={(e) => {
-                e.currentTarget.src = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=2000&q=80';
+                e.currentTarget.src = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1280&q=80';
               }}
-              alt={`Travel to ${trip.input.destination}`}
-              className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-8">
-              <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-3 shadow-sm leading-tight">{trip.input.destination}</h1>
-              <div className="flex flex-wrap items-center gap-4 text-white/90 text-sm font-medium">
-                <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4" /> {safeRender(tripMeta.dateRange)}</span>
-                <span className="w-1 h-1 bg-white/50 rounded-full"></span>
-                <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> {safeRender(tripMeta.days)} 天</span>
-                <span className="w-1 h-1 bg-white/50 rounded-full"></span>
-                <span className="flex items-center gap-1.5"><DollarSign className="w-4 h-4" /> {safeRender(tripMeta.budgetEstimate?.total ? `~${tripMeta.budgetEstimate.total}` : trip.input.budget)}</span>
+
+            {/* Navigation & Actions */}
+            <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start z-10">
+              {/* Back button is in the sticky header, but we can add one here for full screen feel if needed, or just keep actions */}
+              <div></div>
+              <div className="flex gap-2">
+                <button className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all">
+                  <span className="sr-only">分享</span>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Edit Cover & Reset Button - Modern & Glassmorphism */}
+            <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
+              {/* Reset Button - Only show if custom image exists */}
+              {trip.customCoverImage && (
+                <button
+                  onClick={handleResetCover}
+                  className="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 bg-black/20 hover:bg-red-500/80 text-white/90 hover:text-white rounded-full backdrop-blur-md border border-white/10 transition-all duration-300 shadow-sm"
+                  title="恢復預設封面"
+                >
+                  <span className="sr-only">重置</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              )}
+
+              {/* Edit Button */}
+              <button
+                onClick={handleEditCoverClick}
+                disabled={isUploading}
+                className="group/btn flex items-center h-9 md:h-9 rounded-full bg-black/20 hover:bg-black/40 text-white/90 hover:text-white backdrop-blur-md border border-white/10 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm overflow-hidden"
+              >
+                {/* Icon Container - Fixed Square for perfect circle */}
+                <div className="w-9 h-full flex items-center justify-center shrink-0">
+                  {isUploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Camera className="w-4 h-4" />
+                  )}
+                </div>
+
+                {/* Text reveals on hover - Pushes parent width smoothly */}
+                <span className={`text-xs font-medium whitespace-nowrap overflow-hidden transition-all duration-300 max-w-0 opacity-0
+                  ${!isUploading && 'group-hover/btn:max-w-xs group-hover/btn:opacity-100 group-hover/btn:pr-3'}
+                  ${isUploading && 'max-w-xs opacity-100 pr-3'}
+                `}>
+                  {isUploading ? '上傳中...' : '更換封面'}
+                </span>
+              </button>
+            </div>
+
+            <div className="absolute bottom-6 left-6 text-white z-10 drop-shadow-md">
+              <h1 className="text-4xl font-bold mb-1 tracking-tight">{tripMeta.title || trip.title || trip.input.destination}</h1>
+              <div className="flex items-center gap-3 text-sm font-medium text-white/90">
+                <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {tripMeta.dateRange || trip.input.dateRange}</span>
+                <span>•</span>
+                <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {tripMeta.days || days.length} 天</span>
+                <span>•</span>
+                <span className="flex items-center gap-1"><DollarSign className="w-4 h-4" /> {trip.input.budget || '~'}</span>
               </div>
             </div>
           </div>

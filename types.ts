@@ -71,6 +71,7 @@ export interface Trip {
   data?: TripData;
   errorMsg?: string;
   generationTimeMs?: number;
+  customCoverImage?: string; // Base64 encoded image or URL
 }
 
 export type MessageRole = 'user' | 'model';

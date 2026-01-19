@@ -40,7 +40,14 @@ export const calculateTripCost = (dateRange: string): number => {
 };
 
 export const getTripCover = (trip: Trip): string => {
-    if (!trip || !trip.input || !trip.input.destination) return '';
+    if (!trip) return '';
+
+    // 1. Priority: Custom User Upload
+    if (trip.customCoverImage) {
+        return trip.customCoverImage;
+    }
+
+    if (!trip.input || !trip.input.destination) return '';
 
     const city = trip.input.destination.split(',')[0].trim();
 
