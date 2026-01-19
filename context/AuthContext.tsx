@@ -6,6 +6,7 @@ interface User {
     name: string;
     email: string;
     picture: string;
+    apiSecret?: string; // New Security Field
     subscription?: {
         active: boolean;
         startDate: number;
@@ -16,7 +17,7 @@ interface User {
 
 interface AuthContextType {
     user: User | null;
-    login: (token: string) => void;
+    login: (token: string) => Promise<void>;
     logout: () => void;
 }
 
@@ -31,11 +32,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (token) {
             try {
                 const decoded: any = jwtDecode(token);
-                setUser({
-                    name: decoded.name,
-                    email: decoded.email,
-                    picture: decoded.picture,
-                });
+                // NEW: Sync with DB Server to get latest state & API Secret
+                fetch('http://localhost:3002/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: decoded.email,
+                        name: decoded.name,
+                        picture: decoded.picture
+                    })
+                })
+                    .then(res => res.json())
+                    .then(userData => {
+                        if (userData.error) {
+                            console.error('Auth sync error:', userData.error);
+                            return;
+                        }
+                        setUser(userData);
+                    })
+                    .catch(e => {
+                        console.error("Auth sync failed", e);
+                        // Optional: logout if server unreachable? For now keep local session but APIs might fail.
+                    });
             } catch (e) {
                 console.error("Invalid token found", e);
                 localStorage.removeItem('google_auth_token');
@@ -43,17 +61,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }, []);
 
-    const login = (token: string) => {
+    const login = async (token: string) => {
         try {
             const decoded: any = jwtDecode(token);
-            setUser({
-                name: decoded.name,
-                email: decoded.email,
-                picture: decoded.picture,
+
+            // Authenticate with DB Server
+            const res = await fetch('http://localhost:3002/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: decoded.email,
+                    name: decoded.name,
+                    picture: decoded.picture
+                })
             });
+
+            const userData = await res.json();
+
+            if (userData.error) throw new Error(userData.error);
+
+            setUser(userData);
             localStorage.setItem('google_auth_token', token);
         } catch (e) {
-            console.error("Login failed: Invalid token", e);
+            console.error("Login failed:", e);
         }
     };
 

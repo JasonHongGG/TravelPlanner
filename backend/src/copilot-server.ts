@@ -54,7 +54,7 @@ client.start()
     .catch(err => console.error(`[Copilot] Failed to start client:`, err));
 
 // Helper to deduct points based on ACTION and Cost
-async function deductPoints(userId: string, cost: number, description: string): Promise<boolean> {
+async function deductPoints(userId: string, cost: number, description: string, apiSecret: string): Promise<boolean> {
     if (cost <= 0) return true; // Free
 
     if (!userId) return true; // Anonymous (should restrict?)
@@ -62,7 +62,10 @@ async function deductPoints(userId: string, cost: number, description: string): 
     try {
         const response = await fetch(`http://localhost:3002/users/${userId}/transaction`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-secret': apiSecret
+            },
             body: JSON.stringify({
                 transaction: {
                     id: crypto.randomUUID(),
@@ -88,6 +91,7 @@ async function deductPoints(userId: string, cost: number, description: string): 
 app.post('/generate', async (req, res) => {
     try {
         const { prompt, model, systemInstruction, userId, action, description, tripInput } = req.body;
+        const apiSecret = req.headers['x-api-secret'] as string;
 
         console.log(`[Copilot] Request from ${userId || 'anon'}. Action: ${action}`);
 
@@ -119,9 +123,14 @@ app.post('/generate', async (req, res) => {
 
         // 2. Transact
         if (userId) {
-            const success = await deductPoints(userId, calculatedCost, costDescription);
+            if (!apiSecret) {
+                console.warn(`[Security] Request missing 'x-api-secret' header from ${userId}`);
+                return res.status(401).json({ error: "Missing API Secret. Please log in again." });
+            }
+
+            const success = await deductPoints(userId, calculatedCost, costDescription, apiSecret);
             if (!success) {
-                return res.status(403).json({ error: "Insufficient points or transaction failed." });
+                return res.status(403).json({ error: "Insufficient points or Unauthorized (Invalid Secret)." });
             }
         }
 
@@ -165,6 +174,7 @@ app.post('/generate', async (req, res) => {
 app.post('/stream-update', async (req, res) => {
     try {
         const { prompt, model, systemInstruction, userId, action, description } = req.body;
+        const apiSecret = req.headers['x-api-secret'] as string;
 
         // Server-side Point Deduction
         if (userId) {
@@ -172,11 +182,17 @@ app.post('/stream-update', async (req, res) => {
                 res.status(400).json({ error: "Invalid or missing 'action' parameter." });
                 return;
             }
+
+            if (!apiSecret) {
+                res.status(401).json({ error: "Missing API Secret. Please log in again." });
+                return;
+            }
+
             // Updates usually have fixed cost
             const cost = calculateCost(action);
-            const success = await deductPoints(userId, cost, description || `AI Request (${action})`);
+            const success = await deductPoints(userId, cost, description || `AI Request (${action})`, apiSecret);
             if (!success) {
-                res.status(403).json({ error: "Insufficient points or transaction failed." });
+                res.status(403).json({ error: "Insufficient points or Unauthorized." });
                 return;
             }
         }

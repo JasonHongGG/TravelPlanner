@@ -10,7 +10,7 @@ export interface IAIService {
     /**
      * Generates a full trip itinerary based on user input.
      */
-    generateTrip(input: TripInput, userId?: string, cost?: number): Promise<TripData>;
+    generateTrip(input: TripInput, userId?: string, apiSecret?: string): Promise<TripData>;
 
     /**
      * Updates an existing itinerary based on chat history and user request.
@@ -21,7 +21,7 @@ export interface IAIService {
         history: Message[],
         onThought?: (text: string) => void,
         userId?: string,
-        cost?: number
+        apiSecret?: string
     ): Promise<UpdateResult>;
 
     /**
@@ -33,7 +33,7 @@ export interface IAIService {
         category?: 'attraction' | 'food',
         excludeNames?: string[],
         userId?: string,
-        cost?: number
+        apiSecret?: string
     ): Promise<AttractionRecommendation[]>;
 
     /**
@@ -42,6 +42,7 @@ export interface IAIService {
     checkFeasibility(
         currentData: TripData,
         modificationContext: string,
-        userId?: string
+        userId?: string,
+        apiSecret?: string
     ): Promise<FeasibilityResult>;
 }

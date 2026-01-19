@@ -60,10 +60,22 @@ export class CopilotService implements IAIService {
         return newData;
     }
 
-    private async postGenerate(prompt: string, model: string, systemInstruction?: string, userId?: string, action: string = 'GENERATE_TRIP', description?: string, tripInput?: TripInput): Promise<string> {
+    private async postGenerate(
+        prompt: string,
+        model: string,
+        systemInstruction?: string,
+        userId?: string,
+        action: string = 'GENERATE_TRIP',
+        description?: string,
+        tripInput?: TripInput,
+        apiSecret?: string
+    ): Promise<string> {
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (apiSecret) headers['x-api-secret'] = apiSecret;
+
         const response = await fetch(`${SERVER_URL}/generate`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({ prompt, model, systemInstruction, userId, action, description, tripInput })
         });
 
@@ -76,7 +88,7 @@ export class CopilotService implements IAIService {
         return data.text;
     }
 
-    async generateTrip(input: TripInput, userId?: string): Promise<TripData> {
+    async generateTrip(input: TripInput, userId?: string, apiSecret?: string): Promise<TripData> {
         // Backend now handles prompt construction for security. We send the raw input.
         const model = SERVICE_CONFIG.copilot?.models.tripGenerator || 'gpt-4o';
 
@@ -87,7 +99,8 @@ export class CopilotService implements IAIService {
             userId,
             'GENERATE_TRIP',
             `Generate Trip: ${input.destination}`,
-            input // Pass the raw input
+            input, // Pass the raw input
+            apiSecret
         );
         return this.parseJsonFromResponse(responseText, true);
     }
@@ -96,15 +109,19 @@ export class CopilotService implements IAIService {
         currentData: TripData,
         history: Message[],
         onThought?: ((text: string) => void) | undefined,
-        userId?: string
+        userId?: string,
+        apiSecret?: string
     ): Promise<UpdateResult> {
         const prompt = constructUpdatePrompt(currentData, history);
         const model = SERVICE_CONFIG.copilot?.models.tripUpdater || 'gpt-4o';
 
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (apiSecret) headers['x-api-secret'] = apiSecret;
+
         // Use SSE for streaming updates
         const response = await fetch(`${SERVER_URL}/stream-update`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({
                 prompt,
                 model,
@@ -212,12 +229,13 @@ export class CopilotService implements IAIService {
         interests: string,
         category?: "attraction" | "food",
         excludeNames?: string[],
-        userId?: string
+        userId?: string,
+        apiSecret?: string
     ): Promise<AttractionRecommendation[]> {
         const prompt = constructRecommendationPrompt(location, interests, category || 'attraction', excludeNames || []);
         const model = SERVICE_CONFIG.copilot?.models.recommender || 'gpt-4o';
 
-        const responseText = await this.postGenerate(prompt, model, undefined, userId, 'GET_RECOMMENDATIONS', `Recommendations: ${location} (${category})`);
+        const responseText = await this.postGenerate(prompt, model, undefined, userId, 'GET_RECOMMENDATIONS', `Recommendations: ${location} (${category})`, undefined, apiSecret);
 
         try {
             const firstBracket = responseText.indexOf('[');
@@ -236,12 +254,13 @@ export class CopilotService implements IAIService {
     async checkFeasibility(
         currentData: TripData,
         modificationContext: string,
-        userId?: string
+        userId?: string,
+        apiSecret?: string
     ): Promise<FeasibilityResult> {
         const prompt = constructFeasibilityPrompt(currentData, modificationContext);
         const model = SERVICE_CONFIG.copilot?.models.recommender || 'gpt-4o';
 
-        const responseText = await this.postGenerate(prompt, model, undefined, userId, 'CHECK_FEASIBILITY', `Feasibility Check`);
+        const responseText = await this.postGenerate(prompt, model, undefined, userId, 'CHECK_FEASIBILITY', `Feasibility Check`, undefined, apiSecret);
 
         try {
             return this.parseJsonFromResponse(responseText, false);

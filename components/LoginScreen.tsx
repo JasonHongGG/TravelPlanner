@@ -73,7 +73,7 @@ export default function LoginScreen() {
                 </div>
 
                 <p className="text-xs text-gray-500 mt-6">
-                    Powered by Google Gemini AI
+                    Made By Jason Hong
                 </p>
 
             </div>
