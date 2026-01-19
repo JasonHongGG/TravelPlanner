@@ -52,9 +52,49 @@ client.start()
     .then(() => console.log(`[Copilot] Client started successfully using script: ${copilotScript}`))
     .catch(err => console.error(`[Copilot] Failed to start client:`, err));
 
+// Helper to deduct points
+async function deductPoints(userId: string, cost: number, description: string): Promise<boolean> {
+    if (!userId || cost <= 0) return true; // No cost or user, skip
+
+    try {
+        const response = await fetch(`http://localhost:3002/users/${userId}/transaction`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                transaction: {
+                    id: crypto.randomUUID(),
+                    date: Date.now(),
+                    amount: -cost,
+                    type: 'spend',
+                    description: description
+                }
+            })
+        });
+
+        if (!response.ok) {
+            console.error(`[Copilot] Point deduction failed for ${userId}: ${response.statusText}`);
+            return false;
+        }
+        return true;
+    } catch (e) {
+        console.error(`[Copilot] Error contacting DB server:`, e);
+        return false;
+    }
+}
+
 app.post('/generate', async (req, res) => {
     try {
-        const { prompt, model, systemInstruction } = req.body;
+        const { prompt, model, systemInstruction, userId, cost, description } = req.body;
+
+        console.log(`[Copilot] Generating content for ${userId || 'anon'}. Cost: ${cost || 0}`);
+
+        // Server-side Point Deduction
+        if (userId && cost > 0) {
+            const success = await deductPoints(userId, cost, description || `AI Request (${model})`);
+            if (!success) {
+                return res.status(403).json({ error: "Insufficient points or transaction failed." });
+            }
+        }
 
         console.log(`[Copilot] Generating content with model: ${model}`);
 
@@ -101,7 +141,16 @@ app.post('/generate', async (req, res) => {
 // Endpoint for streaming updates (used by updateTrip) - using SSE
 app.post('/stream-update', async (req, res) => {
     try {
-        const { prompt, model, systemInstruction } = req.body;
+        const { prompt, model, systemInstruction, userId, cost, description } = req.body;
+
+        // Server-side Point Deduction
+        if (userId && cost > 0) {
+            const success = await deductPoints(userId, cost, description || `AI Request (${model})`);
+            if (!success) {
+                res.status(403).json({ error: "Insufficient points or transaction failed." });
+                return;
+            }
+        }
 
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
@@ -131,7 +180,9 @@ app.post('/stream-update', async (req, res) => {
 
     } catch (error: any) {
         console.error("Error in /stream-update:", error);
-        res.status(500).json({ error: error.message });
+        if (!res.headersSent) {
+            res.status(500).json({ error: error.message });
+        }
     }
 });
 

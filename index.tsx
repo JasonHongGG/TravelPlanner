@@ -12,7 +12,7 @@ if (!rootElement) {
 }
 
 const root = ReactDOM.createRoot(rootElement);
-const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+const clientId = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID || "";
 
 if (!clientId) {
   console.warn("Missing VITE_GOOGLE_CLIENT_ID in .env file. Google Login will not work.");

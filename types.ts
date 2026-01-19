@@ -40,6 +40,7 @@ export interface TripDay {
 }
 
 export interface TripMeta {
+  title?: string; // Optional title from AI
   dateRange: string;
   days: number;
   budgetEstimate: {

@@ -3,10 +3,13 @@ import { useState, useEffect } from 'react';
 import { Trip, TripInput, TripData } from '../types';
 import { aiService } from '../services';
 import { usePoints } from '../context/PointsContext';
+import { useAuth } from '../context/AuthContext';
 import { calculateTripCost } from '../utils/tripUtils';
 
 export const useTripManager = () => {
-  const { balance, spendPoints } = usePoints();
+  const { balance, openPurchaseModal } = usePoints(); // Removed spendPoints
+  const { user } = useAuth();
+
   // Initialize state directly from localStorage
   const [trips, setTrips] = useState<Trip[]>(() => {
     try {
@@ -35,28 +38,20 @@ export const useTripManager = () => {
     // Calculate Cost
     const cost = calculateTripCost(input.dateRange);
 
-    // Check Balance
+    // Initial Frontend Check (UX only)
     if (balance < cost) {
       alert(`點數不足！產生此行程需要 ${cost} 點，目前餘額 ${balance} 點。`);
+      openPurchaseModal();
       return;
     }
 
     setTrips(prev => [newTrip, ...prev]);
 
-    // Trigger AI Generation in background via the abstract service
-    aiService.generateTrip(input)
-      .then(async (data) => {
-        // Deduction happened here? 
-        // Logic: "一律是行程生成完成後才扣點" -> Deduct now.
-        // We'll trust the user has points since we checked, but technically they could have spent it elsewhere in parallel.
-        // spendPoints checks again usually.
-
-        const success = await spendPoints(cost, `生成行程: ${input.destination}`);
-        if (!success) {
-          console.warn("Points deduction failed even though initial check passed.");
-          // Potentially handle this edge case, but for now just warn.
-        }
-
+    // Trigger AI Generation
+    // SECURITY: We pass user.email and cost to backend. Backend executes deduction.
+    aiService.generateTrip(input, user?.email, cost)
+      .then((data) => {
+        // Success implies deduction was successful on server side
         setTrips(prev => prev.map(t =>
           t.id === newTrip.id
             ? { ...t, status: 'complete', data, generationTimeMs: Date.now() - t.createdAt }
@@ -64,6 +59,8 @@ export const useTripManager = () => {
         ));
       })
       .catch(err => {
+        // If error involves "Insufficient points", we should probably handle it gracefully
+        console.error("Generation failed:", err);
         setTrips(prev => prev.map(t =>
           t.id === newTrip.id
             ? { ...t, status: 'error', errorMsg: err.message, generationTimeMs: Date.now() - t.createdAt }
@@ -79,9 +76,10 @@ export const useTripManager = () => {
     // Calculate Cost
     const cost = calculateTripCost(trip.input.dateRange);
 
-    // Check Balance
+    // Initial Frontend Check
     if (balance < cost) {
       alert(`點數不足！重試此行程需要 ${cost} 點，目前餘額 ${balance} 點。`);
+      openPurchaseModal();
       return;
     }
 
@@ -93,13 +91,8 @@ export const useTripManager = () => {
     ));
 
     // Trigger AI Generation
-    aiService.generateTrip(trip.input)
-      .then(async (data) => {
-        const success = await spendPoints(cost, `生成行程: ${trip.input.destination}`);
-        if (!success) {
-          console.warn("Points deduction failed.");
-        }
-
+    aiService.generateTrip(trip.input, user?.email, cost)
+      .then((data) => {
         setTrips(prev => prev.map(t =>
           t.id === tripId
             ? { ...t, status: 'complete', data, generationTimeMs: Date.now() - (t.createdAt || Date.now()) }
@@ -151,7 +144,6 @@ export const useTripManager = () => {
     createTrip,
     updateTripData,
     updateTrip,
-    deleteTrip,
     deleteTrip,
     importTrip,
     retryTrip

@@ -20,7 +20,6 @@ import FeasibilityModal from './FeasibilityModal';
 interface Props {
   trip: Trip;
   onBack: () => void;
-  onBack: () => void;
   onUpdateTrip: (tripId: string, newData: TripData) => void;
   onUpdateTripMeta?: (updates: Partial<Trip>) => void; // Optional for backward compatibility, but passed from App
 }

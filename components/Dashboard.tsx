@@ -73,7 +73,6 @@ interface TripCardProps {
   trip: Trip;
   onSelect: () => void;
   onDelete: () => void;
-  onDelete: () => void;
   onExport: (e: React.MouseEvent) => void;
   onRetry: (e: React.MouseEvent) => void;
 }

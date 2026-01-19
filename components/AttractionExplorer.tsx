@@ -5,6 +5,7 @@ import { AttractionRecommendation, TripStop } from '../types';
 import { aiService } from '../services';
 import { getStopIcon } from '../utils/icons';
 import { usePoints } from '../context/PointsContext';
+import { useAuth } from '../context/AuthContext';
 import { ATTRACTION_SEARCH_COST } from '../constants/pointsConfig';
 
 interface Props {
@@ -38,7 +39,8 @@ export default function AttractionExplorer({
     const [location, setLocation] = useState(initialLocation);
     const [lastSearchLocation, setLastSearchLocation] = useState(initialLocation);
 
-    const { balance, spendPoints, openPurchaseModal } = usePoints();
+    const { balance, openPurchaseModal } = usePoints();
+    const { user } = useAuth();
     const QUEUE_SIZE = 3; // Defined as per user request (3 batches/queues)
 
     const [searchConfirmation, setSearchConfirmation] = useState<{
@@ -242,14 +244,6 @@ export default function AttractionExplorer({
         if (!searchConfirmation) return;
         const { query, totalCost, targetTab } = searchConfirmation;
 
-        // Deduct Points
-        const success = await spendPoints(totalCost, `AI 景點探索: ${query} (${targetTab === 'food' ? '美食' : '景點'})`);
-        if (!success) {
-            alert("交易失敗，請稍後再試");
-            setSearchConfirmation(null);
-            return;
-        }
-
         setSearchConfirmation(null); // Close modal
 
         // Update UI state for search
@@ -258,17 +252,20 @@ export default function AttractionExplorer({
         setBuffer(prev => ({ ...prev, [targetTab]: [] }));
         setIsWaitingForBuffer(false);
 
-        // Run the actual API call
-        executeSearchLogic(query, targetTab, true);
+        // Security: Pass user ID and cost to backend via service
+        executeSearchLogic(query, targetTab, true, user?.email, totalCost);
     };
 
-    const executeSearchLogic = async (query: string, targetTab: TabType, isNewSearch: boolean) => {
+
+
+    const executeSearchLogic = async (query: string, targetTab: TabType, isNewSearch: boolean, userId?: string, cost?: number) => {
         setInitialLoading(true);
 
         try {
             // Initial fetch only excludes current stops (results are empty)
             const excludeNames = [...currentStops.map(s => s.name)];
-            const newItems = await aiService.getRecommendations(query, initialInterests, targetTab, excludeNames);
+            // Pass userId and cost to getRecommendations
+            const newItems = await aiService.getRecommendations(query, initialInterests, targetTab, excludeNames, userId, cost);
 
             if (isMounted.current) {
                 setResults(prev => ({

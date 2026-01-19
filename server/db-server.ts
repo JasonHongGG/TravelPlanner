@@ -89,6 +89,15 @@ app.post('/users/:email/transaction', (req, res) => {
 
         const userData = users[email];
 
+        // Check for sufficient funds if deducting
+        if (transaction.amount < 0) {
+            const potentialBalance = (userData.points || 0) + transaction.amount;
+            if (potentialBalance < 0) {
+                console.warn(`[DB Server] Insufficient funds for ${email}. Current: ${userData.points}, Attempted: ${transaction.amount}`);
+                return res.status(400).json({ error: "Insufficient points" });
+            }
+        }
+
         // Update Balance
         userData.points = (userData.points || 0) + transaction.amount;
 
