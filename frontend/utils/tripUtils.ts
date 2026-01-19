@@ -1,7 +1,7 @@
-import { TRIP_BASE_COST, TRIP_DAILY_COST } from '../constants/pointsConfig';
 import { Trip } from '../types';
 
-export const calculateTripCost = (dateRange: string): number => {
+// Defaults provided for safety, but usually passed from config
+export const calculateTripCost = (dateRange: string, baseCost = 50, dailyCost = 10): number => {
     // Default to at least 1 day if parsing fails
     let days = 1;
 
@@ -36,7 +36,7 @@ export const calculateTripCost = (dateRange: string): number => {
     // Safety check
     if (days < 1) days = 1;
 
-    return TRIP_BASE_COST + (days * TRIP_DAILY_COST);
+    return baseCost + (days * dailyCost);
 };
 
 export const getTripCover = (trip: Trip): string => {

@@ -7,10 +7,12 @@
     "scripts": {
         "db": "tsx src/db-server.ts",
         "copilot": "tsx src/copilot-server.ts",
+        "server": "tsx src/server.ts",
         "install-deps": "npm install"
     },
     "dependencies": {
         "@github/copilot-sdk": "^0.1.12",
+        "@google/genai": "^1.37.0",
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
         "express": "^5.2.1"

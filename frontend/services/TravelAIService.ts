@@ -1,20 +1,10 @@
+import { TripInput, TripData, Message, AttractionRecommendation, FeasibilityResult, UpdateResult } from "../types";
 
-import { TripInput, TripData, Message, AttractionRecommendation, FeasibilityResult } from "../types";
-import {
-    SYSTEM_INSTRUCTION,
-    constructTripPrompt,
-    constructUpdatePrompt,
-    constructRecommendationPrompt,
-    constructFeasibilityPrompt
-} from "../config/aiConfig";
-import { SERVICE_CONFIG } from "../config/serviceConfig";
-import { IAIService, UpdateResult } from "./aiInterface";
 
 const SERVER_URL = "http://localhost:3001";
 
-export class CopilotService implements IAIService {
+export class TravelAIService {
 
-    // Helper to cleanup JSON string
     private parseJsonFromResponse(text: string, strict = true): any {
         const start = text.indexOf('{');
         const end = text.lastIndexOf('}');
@@ -28,8 +18,7 @@ export class CopilotService implements IAIService {
             const data = JSON.parse(jsonStr);
             if (strict) {
                 if (!data.tripMeta || !data.days) {
-                    // throw new Error("Response is missing required trip data fields (tripMeta or days).");
-                    // Relaxed check for now as some partials might not have it all
+                    // Relaxed check for now
                 }
             }
             return data;
@@ -60,23 +49,81 @@ export class CopilotService implements IAIService {
         return newData;
     }
 
+    private async streamAndAccumulate(
+        endpoint: string,
+        body: any,
+        apiSecret?: string,
+        onChunk?: (text: string) => void
+    ): Promise<string> {
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (apiSecret) headers['x-api-secret'] = apiSecret;
+
+        const response = await fetch(`${SERVER_URL}${endpoint}`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(err.error || `Server error: ${response.status}`);
+        }
+
+        if (!response.body) {
+            throw new Error("Failed to connect to streaming endpoint");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunkStr = decoder.decode(value);
+            const lines = chunkStr.split('\n\n');
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const dataStr = line.substring(6);
+                    try {
+                        const data = JSON.parse(dataStr);
+                        if (data.type === 'content') {
+                            const text = data.chunk;
+                            fullText += text;
+                            if (onChunk) onChunk(text);
+                        } else if (data.type === 'error') {
+                            throw new Error(data.message);
+                        }
+                    } catch (e) {
+                        // ignore parse errors
+                    }
+                }
+            }
+        }
+        return fullText;
+    }
+
     private async postGenerate(
-        prompt: string,
-        model: string,
-        systemInstruction?: string,
-        userId?: string,
-        action: string = 'GENERATE_TRIP',
-        description?: string,
-        tripInput?: TripInput,
+        action: string,
+        description: string,
+        bodyParams: any,
         apiSecret?: string
     ): Promise<string> {
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         if (apiSecret) headers['x-api-secret'] = apiSecret;
 
+        const body = {
+            action,
+            description,
+            ...bodyParams
+        };
+
         const response = await fetch(`${SERVER_URL}/generate`, {
             method: 'POST',
             headers,
-            body: JSON.stringify({ prompt, model, systemInstruction, userId, action, description, tripInput })
+            body: JSON.stringify(body)
         });
 
         if (!response.ok) {
@@ -89,20 +136,26 @@ export class CopilotService implements IAIService {
     }
 
     async generateTrip(input: TripInput, userId?: string, apiSecret?: string): Promise<TripData> {
-        // Backend now handles prompt construction for security. We send the raw input.
-        const model = SERVICE_CONFIG.copilot?.models.tripGenerator || 'gpt-4o';
-
-        const responseText = await this.postGenerate(
-            "", // Prompt is ignored by backend for GENERATE_TRIP
-            model,
-            SYSTEM_INSTRUCTION,
-            userId,
-            'GENERATE_TRIP',
-            `Generate Trip: ${input.destination}`,
-            input, // Pass the raw input
+        // Model is determined by backend configuration
+        const responseText = await this.streamAndAccumulate(
+            '/stream-update',
+            {
+                userId,
+                action: 'GENERATE_TRIP',
+                description: `Generate Trip: ${input.destination}`,
+                tripInput: input
+            },
             apiSecret
         );
-        return this.parseJsonFromResponse(responseText, true);
+
+        let cleanJson = responseText.trim();
+        if (cleanJson.startsWith('```json')) {
+            cleanJson = cleanJson.replace(/^```json/, '').replace(/```$/, '');
+        } else if (cleanJson.startsWith('```')) {
+            cleanJson = cleanJson.replace(/^```/, '').replace(/```$/, '');
+        }
+
+        return this.parseJsonFromResponse(cleanJson, true);
     }
 
     async updateTrip(
@@ -113,23 +166,22 @@ export class CopilotService implements IAIService {
         apiSecret?: string,
         language: string = "Traditional Chinese"
     ): Promise<UpdateResult> {
-        const prompt = constructUpdatePrompt(currentData, history, language);
-        const model = SERVICE_CONFIG.copilot?.models.tripUpdater || 'gpt-4o';
+        // Model is determined by backend configuration
 
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         if (apiSecret) headers['x-api-secret'] = apiSecret;
 
-        // Use SSE for streaming updates
         const response = await fetch(`${SERVER_URL}/stream-update`, {
             method: 'POST',
             headers,
             body: JSON.stringify({
-                prompt,
-                model,
-                systemInstruction: SYSTEM_INSTRUCTION,
+                // model removed, backend decides
                 userId,
                 action: 'CHAT_UPDATE',
-                description: `Update Trip: ${history[history.length - 1]?.text.substring(0, 20)}...`
+                description: `Update Trip: ${history[history.length - 1]?.text.substring(0, 20)}...`,
+                currentData,
+                history: history.slice(-10),
+                language
             })
         });
 
@@ -151,7 +203,6 @@ export class CopilotService implements IAIService {
         let displayedText = "";
 
         const typewrite = async (newText: string) => {
-            // If text is huge (e.g. busty burst), speed up slightly to avoid too long lag
             const delay = newText.length > 50 ? 5 : 15;
             for (const char of newText) {
                 displayedText += char;
@@ -175,13 +226,15 @@ export class CopilotService implements IAIService {
                         if (data.type === 'content') {
                             const text = data.chunk;
 
+                            // If text contains delimiter, we switch modes
+                            // Note: text chunk might be small (one char) or large
+
                             if (!isJsonMode) {
                                 fullText += text;
                                 const delimiterIndex = fullText.indexOf(delimiter);
 
                                 if (delimiterIndex !== -1) {
                                     isJsonMode = true;
-                                    const thoughtEndIndex = delimiterIndex;
                                     const fullThought = fullText.substring(0, delimiterIndex);
                                     const newThoughtPart = fullThought.substring(displayedText.length);
 
@@ -189,39 +242,83 @@ export class CopilotService implements IAIService {
 
                                     jsonBuffer = fullText.substring(delimiterIndex + delimiter.length);
                                 } else {
+                                    // Careful: Only type component of fullText that hasn't changed?
+                                    // Actually, we should just type 'text'.
+                                    // But what if 'text' contains part of delimiter? 
+                                    // Usually unlikely to break significantly.
                                     await typewrite(text);
                                 }
                             } else {
-                                fullText += text; // Keep tracking full text just in case
+                                fullText += text;
                                 jsonBuffer += text;
                             }
                         } else if (data.type === 'error') {
                             throw new Error(data.message);
-                        } else if (data.type === 'done') {
-                            // Stream complete
                         }
                     } catch (e) {
-                        // ignore parse errors
+                        // ignore
                     }
                 }
             }
         }
 
         if (isJsonMode) {
-            // Basic JSON cleanup if needed (some LLMs add markdown blocks)
             let cleanJson = jsonBuffer.trim();
             if (cleanJson.startsWith('```json')) cleanJson = cleanJson.replace(/^```json/, '').replace(/```$/, '');
 
             const partialUpdate = this.parseJsonFromResponse(cleanJson, false);
             const updatedData = this.mergeTripData(currentData, partialUpdate);
             const finalText = fullText.split(delimiter)[0].trim();
-            // Fallback if AI skips the conversational confirmation
             const safeResponseText = finalText || "好的，已為您更新行程。";
             return { responseText: safeResponseText, updatedData: updatedData };
         } else {
-            // Fallback if AI returns absolutely nothing
             const safeResponseText = fullText.trim() || "抱歉，我無法處理您的請求，請再試一次。";
             return { responseText: safeResponseText };
+        }
+    }
+
+    async updateTripWithExplorer(
+        currentData: TripData,
+        dayIndex: number,
+        newMustVisit: string[],
+        newAvoid: string[],
+        keepExisting: string[],
+        removeExisting: string[],
+        onThought?: (text: string) => void,
+        userId?: string,
+        apiSecret?: string,
+        language?: string
+    ): Promise<UpdateResult> {
+        const body = {
+            action: 'EXPLORER_UPDATE',
+            currentData,
+            dayIndex,
+            newMustVisit,
+            newAvoid,
+            keepExisting,
+            removeExisting,
+            language
+        };
+
+        const responseText = await this.streamAndAccumulate('/stream-update', body, apiSecret, onThought);
+
+        const delimiter = "___UPDATE_JSON___";
+        const delimiterIndex = responseText.indexOf(delimiter);
+
+        if (delimiterIndex !== -1) {
+            const finalText = responseText.substring(0, delimiterIndex);
+            const jsonPart = responseText.substring(delimiterIndex + delimiter.length);
+
+            try {
+                const partialUpdate = JSON.parse(jsonPart);
+                const mergedData = this.mergeTripData(currentData, partialUpdate);
+                return { responseText: finalText, updatedData: mergedData };
+            } catch (e) {
+                console.error("Failed to parse explorer update JSON", e);
+                return { responseText: responseText };
+            }
+        } else {
+            return { responseText: responseText };
         }
     }
 
@@ -234,19 +331,24 @@ export class CopilotService implements IAIService {
         apiSecret?: string,
         language: string = "Traditional Chinese"
     ): Promise<AttractionRecommendation[]> {
-        const prompt = constructRecommendationPrompt(location, interests, category || 'attraction', excludeNames || [], language);
-        const model = SERVICE_CONFIG.copilot?.models.recommender || 'gpt-4o';
 
-        const responseText = await this.postGenerate(prompt, model, undefined, userId, 'GET_RECOMMENDATIONS', `Recommendations: ${location} (${category})`, undefined, apiSecret);
+
+        const responseText = await this.postGenerate(
+            'GET_RECOMMENDATIONS',
+            `Recommendations: ${location} (${category})`,
+            { location, interests, category, excludeNames, language },
+            apiSecret
+        );
 
         try {
-            const firstBracket = responseText.indexOf('[');
-            const lastBracket = responseText.lastIndexOf(']');
-            if (firstBracket !== -1 && lastBracket !== -1) {
-                const jsonStr = responseText.substring(firstBracket, lastBracket + 1);
-                return JSON.parse(jsonStr);
-            }
-            return [];
+            // Recommendation endpoint returns { text: JSON_STRING }
+            // So we just parse it.
+            // But wait, the previous Gemini/Copilot service parsed it manually from potentially markdown-wrapped text.
+            // Backend sends `res.json({ text: JSON.stringify(result) })` which is double encoded if result is an object?
+            // "result = await provider.getRecommendations" -> returns OBJECT Array.
+            // "res.json({ text: JSON.stringify(result) })" -> returns JSON object { text: "[...]" }
+            // So responseText IS a JSON string of the array.
+            return JSON.parse(responseText);
         } catch (e) {
             console.error("Failed to parse recommendations", e);
             return [];
@@ -260,13 +362,17 @@ export class CopilotService implements IAIService {
         apiSecret?: string,
         language: string = "Traditional Chinese"
     ): Promise<FeasibilityResult> {
-        const prompt = constructFeasibilityPrompt(currentData, modificationContext, language);
-        const model = SERVICE_CONFIG.copilot?.models.recommender || 'gpt-4o';
 
-        const responseText = await this.postGenerate(prompt, model, undefined, userId, 'CHECK_FEASIBILITY', `Feasibility Check`, undefined, apiSecret);
+
+        const responseText = await this.postGenerate(
+            'CHECK_FEASIBILITY',
+            `Feasibility Check`,
+            { tripData: currentData, modificationContext, language },
+            apiSecret
+        );
 
         try {
-            return this.parseJsonFromResponse(responseText, false);
+            return JSON.parse(responseText);
         } catch (e) {
             console.error("Failed to parse feasibility check", e);
             return { feasible: true, riskLevel: 'low', issues: [], suggestions: [] };

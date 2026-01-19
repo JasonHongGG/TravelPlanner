@@ -18,14 +18,13 @@ export default function TripMap({ mapState, selectedDay, currentDayData, onReset
   return (
     <div className="bg-gray-200 h-full relative border-l border-gray-200">
       <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
-        {/* Fake Interactive Map using Embed */}
         <iframe
           title={t('map.title')}
           width="100%"
           height="100%"
           frameBorder="0"
           style={{ border: 0 }}
-          src={mapState.url}
+          src={mapState.url || "about:blank"}
           allowFullScreen
         ></iframe>
 

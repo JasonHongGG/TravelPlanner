@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { X, Check, Loader2, CreditCard, Wallet, Sparkles, ShieldCheck } from 'lucide-react';
-import { usePoints, AVAILABLE_PACKAGES } from '../context/PointsContext';
+import { usePoints } from '../context/PointsContext';
 
 interface Props {
     isOpen: boolean;
@@ -43,8 +43,17 @@ const PaymentMethodCard = ({
 );
 
 export default function PurchasePointsModal({ isOpen, onClose }: Props) {
-    const { purchasePoints, isLoading } = usePoints();
-    const [selectedPackageId, setSelectedPackageId] = useState<string | null>(AVAILABLE_PACKAGES[1].id);
+    const { purchasePoints, isLoading, packages } = usePoints();
+    const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
+
+    // Set default selection when packages load
+    React.useEffect(() => {
+        if (packages.length > 0 && !selectedPackageId) {
+            // Try to find popular or default to second item or first
+            const defaultPkg = packages.find(p => p.popular) || packages[1] || packages[0];
+            if (defaultPkg) setSelectedPackageId(defaultPkg.id);
+        }
+    }, [packages]);
     const [selectedMethod, setSelectedMethod] = useState<'card' | 'paypal'>('card');
     const [purchaseStep, setPurchaseStep] = useState<'select' | 'processing' | 'success'>('select');
 
@@ -69,7 +78,7 @@ export default function PurchasePointsModal({ isOpen, onClose }: Props) {
         }
     };
 
-    const selectedPkg = AVAILABLE_PACKAGES.find(p => p.id === selectedPackageId);
+    const selectedPkg = packages.find(p => p.id === selectedPackageId);
 
     return ReactDOM.createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
@@ -97,7 +106,7 @@ export default function PurchasePointsModal({ isOpen, onClose }: Props) {
                     <div className="p-6 overflow-y-auto custom-scrollbar">
                         {/* Packages */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                            {AVAILABLE_PACKAGES.map((pkg) => {
+                            {packages.map((pkg) => {
                                 const isSelected = selectedPackageId === pkg.id;
                                 const isSubscription = pkg.type === 'subscription';
 

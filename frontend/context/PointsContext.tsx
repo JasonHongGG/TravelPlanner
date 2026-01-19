@@ -14,6 +14,13 @@ interface PointPackage {
     type?: 'points' | 'subscription'; // Added type
 }
 
+export interface PointConfig {
+    TRIP_BASE_COST: number;
+    TRIP_DAILY_COST: number;
+    NEW_USER_BONUS: number;
+    ATTRACTION_SEARCH_COST: number;
+}
+
 interface PointsContextType {
     balance: number;
     transactions: Transaction[];
@@ -23,46 +30,15 @@ interface PointsContextType {
     isLoading: boolean;
     isPurchaseModalOpen: boolean;
     openPurchaseModal: () => void;
+
     closePurchaseModal: () => void;
+    packages: PointPackage[]; // Added
+    config: PointConfig; // Added
 }
 
 const PointsContext = createContext<PointsContextType | undefined>(undefined);
 
-export const AVAILABLE_PACKAGES: PointPackage[] = [
-    {
-        id: 'pkg_100',
-        points: 100,
-        price: 30,
-        name: '輕量體驗',
-        description: '適合偶爾使用',
-        type: 'points'
-    },
-    {
-        id: 'pkg_500',
-        points: 500,
-        price: 130,
-        name: '超值方案',
-        popular: true,
-        description: '最受歡迎的選擇',
-        type: 'points'
-    },
-    {
-        id: 'pkg_1000',
-        points: 1000,
-        price: 250,
-        name: '專業玩家',
-        description: '大量生成無壓力',
-        type: 'points'
-    },
-    {
-        id: 'plan_unlimited',
-        points: 0,
-        price: 399,
-        name: '旅遊貼身助理',
-        description: '無限 AI 生成 + 專屬顧問',
-        type: 'subscription'
-    }
-];
+
 
 export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user } = useAuth();
@@ -79,21 +55,18 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     useEffect(() => {
         const fetchProfile = async () => {
             if (user?.email) {
-                setIsLoading(true);
+                // setIsLoading(true); // Don't block whole UI, just profile loading
                 try {
                     const userProfile = await db.users.getProfile(user.email);
                     if (userProfile) {
                         setBalance(userProfile.points);
                         setTransactions(userProfile.transactions || []);
-                        // Check subscription validity
                         const sub = userProfile.subscription;
                         const isValid = sub?.active && sub.endDate > Date.now();
                         setIsSubscribed(!!isValid);
                     }
                 } catch (error) {
                     console.error("Failed to fetch user points:", error);
-                } finally {
-                    setIsLoading(false);
                 }
             } else {
                 setBalance(0);
@@ -105,11 +78,52 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         fetchProfile();
     }, [user?.email]);
 
+    // Fetch Packages from Backend
+    const [packages, setPackages] = useState<PointPackage[]>([]);
+
+    useEffect(() => {
+        const fetchPackages = async () => {
+            try {
+                const response = await fetch('http://localhost:3001/packages');
+                if (response.ok) {
+                    const data = await response.json();
+                    setPackages(data);
+                }
+            } catch (e) {
+                console.error("Failed to fetch packages:", e);
+            }
+        };
+        fetchPackages();
+        fetchPackages();
+    }, []);
+
+    const [pointConfig, setPointConfig] = useState<PointConfig>({
+        TRIP_BASE_COST: 50,
+        TRIP_DAILY_COST: 10,
+        NEW_USER_BONUS: 500,
+        ATTRACTION_SEARCH_COST: 10
+    });
+
+    useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const response = await fetch('http://localhost:3001/config');
+                if (response.ok) {
+                    const data = await response.json();
+                    setPointConfig(data);
+                }
+            } catch (e) {
+                console.error("Failed to fetch points config:", e);
+            }
+        };
+        fetchConfig();
+    }, []);
+
     const purchasePoints = async (packageId: string): Promise<void> => {
         if (!user?.email) return;
 
         setIsLoading(true);
-        const pkg = AVAILABLE_PACKAGES.find(p => p.id === packageId);
+        const pkg = packages.find(p => p.id === packageId);
 
         try {
             if (pkg) {
@@ -166,7 +180,9 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             isLoading,
             isPurchaseModalOpen,
             openPurchaseModal,
-            closePurchaseModal
+            closePurchaseModal,
+            packages, // Added
+            config: pointConfig // Added
         }}>
             {children}
         </PointsContext.Provider>

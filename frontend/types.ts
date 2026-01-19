@@ -97,3 +97,8 @@ export interface FeasibilityResult {
   issues: string[]; // List of specific problems (e.g., "Osaka is 500km from Tokyo, impossible for a 2-hour stop")
   suggestions: string[]; // List of actionable advice
 }
+
+export interface UpdateResult {
+  responseText: string;
+  updatedData?: TripData;
+}

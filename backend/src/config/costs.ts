@@ -1,11 +1,17 @@
 import { calculateTripCost } from '../utils/sharedUtils';
 
+export const TRIP_BASE_COST = 50;
+export const TRIP_DAILY_COST = 10;
+export const NEW_USER_BONUS = 500;
+export const ATTRACTION_SEARCH_COST = 10;
+
 export const COSTS = {
-    GENERATE_TRIP: 50,
+    GENERATE_TRIP: TRIP_BASE_COST,
     CHAT_UPDATE: 10,
     GET_RECOMMENDATIONS: 20,
-    CHECK_FEASIBILITY: 0 // Free check
+    CHECK_FEASIBILITY: 0
 };
+
 
 export type PointAction = keyof typeof COSTS;
 

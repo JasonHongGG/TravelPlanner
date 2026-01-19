@@ -1,7 +1,5 @@
 
-// Constants (Duplicated from frontend/constants for independence)
-const TRIP_BASE_COST = 50;
-const TRIP_DAILY_COST = 10;
+import { TRIP_BASE_COST, TRIP_DAILY_COST } from "../config/costs";
 
 export const calculateTripCost = (dateRange: string): number => {
     // Default to at least 1 day if parsing fails

@@ -135,7 +135,7 @@ export const constructTripPrompt = (input: TripInput): string => {
   `;
 };
 
-export const constructUpdatePrompt = (currentData: TripData, history: Message[]): string => {
+export const constructUpdatePrompt = (currentData: TripData, history: Message[], targetLanguage: string = "Traditional Chinese"): string => {
   const historyText = history.map(m => `${m.role.toUpperCase()}: ${m.text}`).join('\n');
   const lastUserMessage = history[history.length - 1]?.text || "";
 
@@ -154,7 +154,7 @@ export const constructUpdatePrompt = (currentData: TripData, history: Message[])
     **Scenario A: Discussion / Research Phase**
     If the user is asking for suggestions, options (e.g., "Add a supper spot", "What is good to eat nearby?"), or the request is vague:
     1.  **DO NOT** generate the JSON itinerary yet.
-    2.  Provide a helpful, conversational response listing specific options, pros/cons, or asking clarifying questions. **Use Traditional Chinese.**
+    2.  Provide a helpful, conversational response listing specific options, pros/cons, or asking clarifying questions. **Use ${targetLanguage}.**
     3.  End your response there.
 
     **CRITICAL FORMATTING RULES FOR CHAT (Strictly Enforce):**
@@ -166,7 +166,7 @@ export const constructUpdatePrompt = (currentData: TripData, history: Message[])
 
     **Scenario B: Decision / Action Phase**
     If the user has made a selection (e.g., "Let's go with option A", "Add the ramen shop"), or gave a direct command (e.g., "Delete day 2"):
-    1.  First, write a brief confirmation of what you are doing. **IMPORTANT: Do NOT use technical terms like 'JSON' or 'Data' in this confirmation. Use natural language like "I will update your itinerary with [Selection]" or "Adding that spot to your plan now". Use Traditional Chinese.**
+    1.  First, write a brief confirmation of what you are doing. **IMPORTANT: Do NOT use technical terms like 'JSON' or 'Data' in this confirmation. Use natural language like "I will update your itinerary with [Selection]" or "Adding that spot to your plan now". Use ${targetLanguage}.**
     2.  Then, output a special separator: "___UPDATE_JSON___".
     3.  Finally, output the **PARTIAL** updated JSON structure.
 
@@ -182,7 +182,8 @@ export const constructUpdatePrompt = (currentData: TripData, history: Message[])
     - Always output valid JSON.
 
     **CONTENT RULES FOR JSON UPDATE**: 
-    - **Language**: Place names MUST be in the local native language (e.g. Japanese). Descriptions MUST be in Traditional Chinese.
+    - **Language**: Place names MUST be in the local native language (e.g. Japanese). 
+    - **Descriptions MUST be in ${targetLanguage}**.
     - Maintain "Node Purity" (Specific Place Names only).
     - Ensure Dining stops (Lunch/Dinner) have specific restaurant names.
     - Ensure the 'type' field is correctly set.
@@ -233,7 +234,8 @@ export const constructRecommendationPrompt = (
   location: string,
   interests: string,
   category: 'attraction' | 'food',
-  excludeNames: string[]
+  excludeNames: string[],
+  targetLanguage: string = "Traditional Chinese"
 ): string => {
   const categoryPrompt = category === 'food'
     ? "當地必吃美食、餐廳、咖啡廳、甜點店、街頭小吃 (請專注於餐飲)"
@@ -249,16 +251,20 @@ export const constructRecommendationPrompt = (
   
   回傳格式必須是 JSON 陣列，每個物件包含：
   - name: 地點名稱 (請使用當地語言，如日文、韓文)
-  - description: 一句話介紹 (繁體中文)
+  - description: 一句話介紹 (${targetLanguage})
   - category: 具體類別 (如：拉麵、燒肉、古蹟、百貨、夜景)
-  - reason: 為什麼推薦 (繁體中文)
+  - reason: 為什麼推薦 (${targetLanguage})
   - openHours: 營業時間 (如：09:00 - 18:00，若為 24 小時則註明，若不清楚請提供合理推估)
+  
+  **IMPORTANT LANGUAGE RULE:**
+  - Use ${targetLanguage} for all descriptions and reasons.
   `;
 };
 
 export const constructFeasibilityPrompt = (
   tripData: TripData,
-  modificationContext: string
+  modificationContext: string,
+  targetLanguage: string = "Traditional Chinese"
 ): string => {
   return `
     You are a professional travel logistics analyzer. 
@@ -279,8 +285,8 @@ export const constructFeasibilityPrompt = (
     {
        "feasible": boolean, // true if reasonable, false if physically impossible or extremely rushed
        "riskLevel": "low" | "moderate" | "high",
-       "issues": ["List of specific problems in Traditional Chinese"],
-       "suggestions": ["List of actionable solutions in Traditional Chinese e.g. 'Move X to Day 3', 'Remove Y'"]
+       "issues": ["List of specific problems in ${targetLanguage}"],
+       "suggestions": ["List of actionable solutions in ${targetLanguage} e.g. 'Move X to Day 3', 'Remove Y'"]
     }
 
     **Example Issues:**

@@ -7,7 +7,7 @@ import { aiService } from '../services'; // Import singleton service
 import { safeRender } from '../utils/formatters';
 import { getDayMapConfig } from '../utils/mapHelpers';
 import { getTripCover } from '../utils/tripUtils';
-import { constructExplorerUpdatePrompt } from '../config/aiConfig';
+
 import { useTranslation } from 'react-i18next';
 
 // Sub-components
@@ -224,29 +224,18 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
     const executeExplorerUpdate = async () => {
       setIsUpdatingFromExplorer(true);
       try {
-        const prompt = constructExplorerUpdatePrompt(
+        // Call backend with specific params
+        const result = await aiService.updateTripWithExplorer(
+          trip.data!, // Assuming trip.data is the safeTripData
           selectedDay,
           newMustVisit,
           newAvoid,
           keepExisting,
           removeExisting,
+          (thought) => console.log("AI Thinking:", thought),
+          user?.email || 'anon',
+          'my-secret-key',
           getPromptLanguage(i18n.language)
-        );
-
-        const syntheticHistory: Message[] = [
-          { role: 'user', text: prompt, timestamp: Date.now() }
-        ];
-
-        const lang = getPromptLanguage(i18n.language);
-        const result = await aiService.updateTrip(
-          trip.data!,
-          syntheticHistory,
-          (thought) => {
-            console.log("AI Thinking:", thought);
-          },
-          user?.email,
-          user?.apiSecret,
-          lang
         );
 
         if (result.updatedData) {

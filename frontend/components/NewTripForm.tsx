@@ -93,7 +93,7 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
 
 
 
-  const { balance, openPurchaseModal, isSubscribed } = usePoints();
+  const { balance, openPurchaseModal, isSubscribed, config } = usePoints();
 
   // Map i18n code to prompt language name
   const getPromptLanguage = (lng: string) => {
@@ -124,7 +124,7 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
   };
 
   // Calculate real-time cost
-  const estimatedCost = calculateTripCost(formData.dateRange);
+  const estimatedCost = calculateTripCost(formData.dateRange, config.TRIP_BASE_COST, config.TRIP_DAILY_COST);
   const finalCost = isSubscribed ? 0 : estimatedCost; // Subscriber benefit
 
   const handleSubmit = (e: React.FormEvent) => {

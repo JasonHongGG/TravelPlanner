@@ -7,7 +7,7 @@ import { aiService } from '../services';
 import { getStopIcon } from '../utils/icons';
 import { usePoints } from '../context/PointsContext';
 import { useAuth } from '../context/AuthContext';
-import { ATTRACTION_SEARCH_COST } from '../constants/pointsConfig';
+
 
 interface Props {
     isOpen: boolean;
@@ -41,7 +41,7 @@ export default function AttractionExplorer({
     const [location, setLocation] = useState(initialLocation);
     const [lastSearchLocation, setLastSearchLocation] = useState(initialLocation);
 
-    const { balance, openPurchaseModal, isSubscribed } = usePoints();
+    const { balance, openPurchaseModal, isSubscribed, config } = usePoints();
     const { user } = useAuth();
     const QUEUE_SIZE = 3; // Defined as per user request (3 batches/queues)
 
@@ -227,7 +227,7 @@ export default function AttractionExplorer({
 
         if (isNewSearch) {
             // Points Deduction Logic
-            const totalCost = ATTRACTION_SEARCH_COST * QUEUE_SIZE;
+            const totalCost = config.ATTRACTION_SEARCH_COST * QUEUE_SIZE;
 
             setSearchConfirmation({
                 query,
@@ -371,7 +371,7 @@ export default function AttractionExplorer({
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between text-sm">
                                     <span className="text-gray-500">{t('explorer.search_cost')}</span>
-                                    <span className="font-medium">{ATTRACTION_SEARCH_COST} 點</span>
+                                    <span className="font-medium">{config.ATTRACTION_SEARCH_COST} 點</span>
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
                                     <span className="text-gray-500">{t('explorer.queue_size')}</span>
