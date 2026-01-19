@@ -1,11 +1,10 @@
 
 import React, { useState, useRef } from 'react';
 import { TripInput } from '../types';
-import { X, Calendar, MapPin, Users, Heart, DollarSign, Train, Home, Clock, CheckSquare, Languages, AlertCircle, Download, Upload, Sparkles, Plane, Briefcase, Coins } from 'lucide-react';
+import { X, Calendar, MapPin, Users, Heart, DollarSign, Train, Home, Clock, CheckSquare, Languages, AlertCircle, Download, Upload, Sparkles, Plane, Briefcase, Coins, ArrowRight } from 'lucide-react';
 import AttractionExplorer from './AttractionExplorer';
 import { usePoints } from '../context/PointsContext';
 import { calculateTripCost } from '../utils/tripUtils';
-import InsufficientPointsModal from './InsufficientPointsModal';
 import DateRangePicker from './DateRangePicker';
 
 interface Props {
@@ -103,22 +102,10 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (balance < estimatedCost) {
-      setShowPointsModal(true);
-      return;
-    }
-
-    onSubmit(formData);
-    onClose();
+    setShowPointsModal(true);
   };
 
-  const handlePurchaseRedirect = () => {
-    setShowPointsModal(false);
-    // Ideally close the form too? Maybe keep form open so they can retry after purchase?
-    // User probably wants to save draft or just stay here. Let's keep modal open (NewTripForm), just close InsufficientPointsModal.
-    openPurchaseModal();
-  };
+
 
   const handleExport = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(formData, null, 2));
@@ -458,13 +445,113 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
         mode="planning"
       />
 
-      <InsufficientPointsModal
-        isOpen={showPointsModal}
-        onClose={() => setShowPointsModal(false)}
-        requiredPoints={estimatedCost}
-        currentPoints={balance}
-        onPurchaseClick={handlePurchaseRedirect}
+      <AttractionExplorer
+        isOpen={isExplorerOpen}
+        onClose={() => setIsExplorerOpen(false)}
+        initialLocation={formData.destination}
+        initialInterests={formData.interests}
+        onConfirm={handleExplorerConfirm}
+        currentStops={[]}
+        mode="planning"
       />
+
+      {/* Premium Confirmation Modal */}
+      {showPointsModal && (
+        <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300">
+            {/* Header Gradient */}
+            <div className="bg-gradient-to-r from-brand-600 to-sky-500 px-6 py-6 text-white relative overflow-hidden">
+              <div className="absolute -right-4 -top-4 text-white/10">
+                <Sparkles className="w-24 h-24" />
+              </div>
+              <h3 className="text-xl font-bold relative z-10 flex items-center gap-2">
+                <Plane className="w-5 h-5" />
+                確認生成行程
+              </h3>
+              <p className="text-brand-100 text-sm mt-1 relative z-10">
+                AI 將為您量身打造專屬的旅遊行程
+              </p>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <div className="text-gray-500 text-sm">目的地</div>
+                <div className="font-bold text-gray-900 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-brand-500" />
+                  {formData.destination}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">行程規劃費用</span>
+                  <span className="font-medium">{estimatedCost} 點</span>
+                </div>
+                <div className="h-px bg-gray-100 my-2"></div>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-gray-900">總計花費</span>
+                  <span className="font-black text-xl text-brand-600 flex items-center gap-1">
+                    <Coins className="w-5 h-5" />
+                    {estimatedCost}
+                  </span>
+                </div>
+              </div>
+
+              {/* Balance Preview */}
+              <div className="mt-6 bg-brand-50/50 rounded-xl p-3 flex items-center justify-between text-sm">
+                <div className="flex flex-col">
+                  <span className="text-gray-500 text-xs">目前點數</span>
+                  <span className="font-bold text-gray-700">{balance}</span>
+                </div>
+                <ArrowRight className="w-4 h-4 text-gray-400" />
+                <div className="flex flex-col items-end">
+                  <span className="text-gray-500 text-xs">剩餘點數</span>
+                  <span className={`font-bold ${balance - estimatedCost < 0 ? 'text-red-600' : 'text-brand-600'}`}>
+                    {balance - estimatedCost}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-3 mt-8">
+                <button
+                  onClick={() => setShowPointsModal(false)}
+                  className="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold hover:bg-gray-50 transition-colors"
+                >
+                  取消
+                </button>
+
+                {balance < estimatedCost ? (
+                  <button
+                    onClick={() => {
+                      setShowPointsModal(false);
+                      openPurchaseModal(); // Redirect to global purchase modal
+                      // Note: We might want to keep NewTripForm open? Yes, default behavior keeps it open behind.
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-gray-900 text-white font-bold hover:bg-black transition-all shadow-lg shadow-gray-200 flex items-center justify-center gap-2"
+                  >
+                    前往儲值中心
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      onSubmit(formData);
+                      onClose();
+                      setShowPointsModal(false);
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-brand-600 text-white font-bold hover:bg-brand-700 transition-all shadow-lg shadow-brand-200 flex items-center justify-center gap-2"
+                  >
+                    確認支付
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

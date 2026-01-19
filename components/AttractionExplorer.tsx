@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Sparkles, Plus, Minus, X, Loader2, Check, MapPin, Clock, Map as MapIcon, Utensils, Mountain, Lock, Trash2, RotateCcw, List, Ban, Layers, ChevronDown, ArrowDownCircle } from 'lucide-react';
+import { Search, Sparkles, Plus, Minus, X, Loader2, Check, MapPin, Clock, Map as MapIcon, Utensils, Mountain, Lock, Trash2, RotateCcw, List, Ban, Layers, ChevronDown, ArrowDownCircle, Coins, ArrowRight } from 'lucide-react';
 import { AttractionRecommendation, TripStop } from '../types';
 import { aiService } from '../services';
 import { getStopIcon } from '../utils/icons';
+import { usePoints } from '../context/PointsContext';
+import { ATTRACTION_SEARCH_COST } from '../constants/pointsConfig';
 
 interface Props {
     isOpen: boolean;
@@ -35,6 +37,16 @@ export default function AttractionExplorer({
 }: Props) {
     const [location, setLocation] = useState(initialLocation);
     const [lastSearchLocation, setLastSearchLocation] = useState(initialLocation);
+
+    const { balance, spendPoints, openPurchaseModal } = usePoints();
+    const QUEUE_SIZE = 3; // Defined as per user request (3 batches/queues)
+
+    const [searchConfirmation, setSearchConfirmation] = useState<{
+        query: string;
+        totalCost: number;
+        targetTab: TabType;
+    } | null>(null);
+
 
     const [activeTab, setActiveTab] = useState<TabType>('attraction');
 
@@ -210,13 +222,47 @@ export default function AttractionExplorer({
         const targetTab = overrideTab || activeTab;
 
         if (isNewSearch) {
-            setLastSearchLocation(query);
-            // Clear results AND buffer
-            setResults(prev => ({ ...prev, [targetTab]: [] }));
-            setBuffer(prev => ({ ...prev, [targetTab]: [] }));
-            setIsWaitingForBuffer(false);
+            // Points Deduction Logic
+            const totalCost = ATTRACTION_SEARCH_COST * QUEUE_SIZE;
+
+            setSearchConfirmation({
+                query,
+                totalCost,
+                targetTab
+            });
+            return; // Stop here, wait for modal confirmation
         }
 
+        // Only proceed immediately if NOT a new search (though handleSearch is mostly for new searches)
+        // or if we decide to separate logic. But for now, new search stops here.
+        executeSearchLogic(query, targetTab, isNewSearch);
+    };
+
+    const executeConfirmedSearch = async () => {
+        if (!searchConfirmation) return;
+        const { query, totalCost, targetTab } = searchConfirmation;
+
+        // Deduct Points
+        const success = await spendPoints(totalCost, `AI 景點探索: ${query} (${targetTab === 'food' ? '美食' : '景點'})`);
+        if (!success) {
+            alert("交易失敗，請稍後再試");
+            setSearchConfirmation(null);
+            return;
+        }
+
+        setSearchConfirmation(null); // Close modal
+
+        // Update UI state for search
+        setLastSearchLocation(query);
+        setResults(prev => ({ ...prev, [targetTab]: [] }));
+        setBuffer(prev => ({ ...prev, [targetTab]: [] }));
+        setIsWaitingForBuffer(false);
+
+        // Run the actual API call
+        executeSearchLogic(query, targetTab, true);
+    };
+
+    const executeSearchLogic = async (query: string, targetTab: TabType, isNewSearch: boolean) => {
         setInitialLoading(true);
 
         try {
@@ -284,7 +330,105 @@ export default function AttractionExplorer({
 
     return (
         <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
-            <div className="bg-white rounded-3xl w-full max-w-7xl h-full max-h-[95vh] flex flex-col overflow-hidden shadow-2xl">
+            {/* Premium Confirmation Modal */}
+            {searchConfirmation && (
+                <div className="absolute inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300">
+                        {/* Header Gradient */}
+                        <div className="bg-gradient-to-r from-brand-600 to-brand-500 px-6 py-6 text-white relative overflow-hidden">
+                            <div className="absolute -right-4 -top-4 text-white/10">
+                                <Sparkles className="w-24 h-24" />
+                            </div>
+                            <h3 className="text-xl font-bold relative z-10 flex items-center gap-2">
+                                <Sparkles className="w-5 h-5" />
+                                開啟 AI 探索
+                            </h3>
+                            <p className="text-brand-100 text-sm mt-1 relative z-10">
+                                AI 將為您深入分析並推薦最佳{searchConfirmation.targetTab === 'food' ? '美食' : '景點'}
+                            </p>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                <div className="text-gray-500 text-sm">搜尋目標</div>
+                                <div className="font-bold text-gray-900 flex items-center gap-2">
+                                    <MapPin className="w-4 h-4 text-brand-500" />
+                                    {searchConfirmation.query}
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-gray-500">單次搜尋費用</span>
+                                    <span className="font-medium">{ATTRACTION_SEARCH_COST} 點</span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-gray-500">預測探索隊列</span>
+                                    <span className="font-medium">x {QUEUE_SIZE} 組</span>
+                                </div>
+                                <div className="h-px bg-gray-100 my-2"></div>
+                                <div className="flex items-center justify-between">
+                                    <span className="font-bold text-gray-900">總計花費</span>
+                                    <span className="font-black text-xl text-brand-600 flex items-center gap-1">
+                                        <Coins className="w-5 h-5" />
+                                        {searchConfirmation.totalCost}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Balance Preview */}
+                            <div className="mt-6 bg-brand-50/50 rounded-xl p-3 flex items-center justify-between text-sm">
+                                <div className="flex flex-col">
+                                    <span className="text-gray-500 text-xs">目前點數</span>
+                                    <span className="font-bold text-gray-700">{balance}</span>
+                                </div>
+                                <ArrowRight className="w-4 h-4 text-gray-400" />
+                                <div className="flex flex-col items-end">
+                                    <span className="text-gray-500 text-xs">剩餘點數</span>
+                                    <span className={`font-bold ${balance - searchConfirmation.totalCost < 0 ? 'text-red-600' : 'text-brand-600'}`}>
+                                        {balance - searchConfirmation.totalCost}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="grid grid-cols-2 gap-3 mt-8">
+                                <button
+                                    onClick={() => setSearchConfirmation(null)}
+                                    className="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold hover:bg-gray-50 transition-colors"
+                                >
+                                    取消
+                                </button>
+
+                                {balance < searchConfirmation.totalCost ? (
+                                    <button
+                                        onClick={() => {
+                                            setSearchConfirmation(null);
+                                            openPurchaseModal();
+                                        }}
+                                        className="px-4 py-2.5 rounded-xl bg-gray-900 text-white font-bold hover:bg-black transition-all shadow-lg shadow-gray-200 flex items-center justify-center gap-2"
+                                    >
+                                        前往儲值中心
+                                        <ArrowRight className="w-4 h-4" />
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={executeConfirmedSearch}
+                                        className="px-4 py-2.5 rounded-xl bg-brand-600 text-white font-bold hover:bg-brand-700 transition-all shadow-lg shadow-brand-200 flex items-center justify-center gap-2"
+                                    >
+                                        確認支付
+                                        <ArrowRight className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="bg-white rounded-3xl w-full max-w-7xl h-full max-h-[95vh] flex flex-col overflow-hidden shadow-2xl relative">
+
 
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-gray-100 flex-none bg-white">
