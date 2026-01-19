@@ -1,0 +1,25 @@
+{
+    "name": "travel-planner-backend",
+    "version": "1.0.0",
+    "description": "Backend services for Travel Planner Dashboard",
+    "type": "module",
+    "main": "src/index.ts",
+    "scripts": {
+        "db": "tsx src/db-server.ts",
+        "copilot": "tsx src/copilot-server.ts",
+        "install-deps": "npm install"
+    },
+    "dependencies": {
+        "@github/copilot-sdk": "^0.1.12",
+        "cors": "^2.8.5",
+        "dotenv": "^17.2.3",
+        "express": "^5.2.1"
+    },
+    "devDependencies": {
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.6",
+        "@types/node": "^22.14.0",
+        "tsx": "^4.21.0",
+        "typescript": "~5.8.2"
+    }
+}

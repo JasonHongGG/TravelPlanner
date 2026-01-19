@@ -7,8 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "copilot-server": "tsx server/copilot-server.ts",
-    "db-server": "tsx server/db-server.ts"
+    "copilot-server": "npm run start:copilot --prefix backend",
+    "db-server": "npm run start:db --prefix backend"
   },
   "dependencies": {
     "@github/copilot-sdk": "^0.1.12",

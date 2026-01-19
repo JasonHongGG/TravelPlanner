@@ -59,5 +59,5 @@ export const getTripCover = (trip: Trip): string => {
     const index = seed % keywords.length;
     const keyword = keywords[index];
 
-    return `https://th.bing.com/th?q=${encodeURIComponent(city + ' ' + keyword)}&w=1280&h=720&c=7&rs=1&p=0`;
+    return `https://th.bing.com/th?q=${encodeURIComponent(city + ' ' + keyword)}&w=1920&h=1080&c=7&rs=1&p=0`;
 };
