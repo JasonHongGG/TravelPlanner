@@ -327,8 +327,8 @@ export default function AttractionExplorer({
                         <button
                             onClick={() => handleTabChange('attraction')}
                             className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${activeTab === 'attraction'
-                                    ? 'bg-sky-50 text-sky-700 ring-1 ring-sky-200 shadow-sm'
-                                    : 'text-gray-500 hover:bg-gray-50'
+                                ? 'bg-sky-50 text-sky-700 ring-1 ring-sky-200 shadow-sm'
+                                : 'text-gray-500 hover:bg-gray-50'
                                 }`}
                         >
                             <Mountain className="w-4 h-4" />
@@ -337,8 +337,8 @@ export default function AttractionExplorer({
                         <button
                             onClick={() => handleTabChange('food')}
                             className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${activeTab === 'food'
-                                    ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200 shadow-sm'
-                                    : 'text-gray-500 hover:bg-gray-50'
+                                ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200 shadow-sm'
+                                : 'text-gray-500 hover:bg-gray-50'
                                 }`}
                         >
                             <Utensils className="w-4 h-4" />
@@ -361,15 +361,15 @@ export default function AttractionExplorer({
                             <>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                     {currentList.map((item, idx) => {
-                                        const query = `${item.name} ${lastSearchLocation} ${activeTab === 'food' ? 'food' : 'view'}`;
-                                        const realImageUrl = `https://tse2.mm.bing.net/th?q=${encodeURIComponent(query)}&w=800&h=600&c=7&rs=1&p=0`;
+                                        const query = activeTab === 'food' ? `${item.name} food` : `${item.name}`;
+                                        const realImageUrl = `https://th.bing.com/th?q=${encodeURIComponent(query)}&w=800&h=600&c=7&rs=1&p=0`;
                                         const fallbackUrl = `https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80`;
 
                                         return (
                                             <div
                                                 key={`${item.name}-${idx}`}
                                                 className={`group bg-white rounded-xl overflow-hidden border transition-all duration-300 shadow-sm hover:shadow-md flex flex-col ${selections[item.name] === 'must' ? 'ring-2 ring-brand-500 border-brand-200' :
-                                                        selections[item.name] === 'avoid' ? 'opacity-60 grayscale' : 'border-gray-100'
+                                                    selections[item.name] === 'avoid' ? 'opacity-60 grayscale' : 'border-gray-100'
                                                     }`}
                                             >
                                                 <div className="h-40 bg-gray-200 relative overflow-hidden flex-none">
@@ -409,8 +409,8 @@ export default function AttractionExplorer({
                                                         <button
                                                             onClick={() => toggleSelect(item.name, 'must')}
                                                             className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${selections[item.name] === 'must'
-                                                                    ? 'bg-brand-600 text-white'
-                                                                    : 'bg-brand-50 text-brand-600 hover:bg-brand-100'
+                                                                ? 'bg-brand-600 text-white'
+                                                                : 'bg-brand-50 text-brand-600 hover:bg-brand-100'
                                                                 }`}
                                                         >
                                                             {selections[item.name] === 'must' ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
@@ -419,8 +419,8 @@ export default function AttractionExplorer({
                                                         <button
                                                             onClick={() => toggleSelect(item.name, 'avoid')}
                                                             className={`px-3 flex items-center justify-center py-2 rounded-lg text-xs font-bold transition-all ${selections[item.name] === 'avoid'
-                                                                    ? 'bg-gray-800 text-white'
-                                                                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                                                ? 'bg-gray-800 text-white'
+                                                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                                                                 }`}
                                                         >
                                                             <Minus className="w-3.5 h-3.5" />
@@ -506,8 +506,8 @@ export default function AttractionExplorer({
                             <button
                                 onClick={() => setActiveSidebarTab('must')}
                                 className={`flex-1 py-3 text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition-colors ${activeSidebarTab === 'must'
-                                        ? 'border-brand-600 text-brand-600 bg-brand-50/50'
-                                        : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                                    ? 'border-brand-600 text-brand-600 bg-brand-50/50'
+                                    : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'
                                     }`}
                             >
                                 <Check className="w-3 h-3" />
@@ -521,8 +521,8 @@ export default function AttractionExplorer({
                             <button
                                 onClick={() => setActiveSidebarTab('avoid')}
                                 className={`flex-1 py-3 text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition-colors ${activeSidebarTab === 'avoid'
-                                        ? 'border-red-500 text-red-600 bg-red-50/50'
-                                        : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                                    ? 'border-red-500 text-red-600 bg-red-50/50'
+                                    : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'
                                     }`}
                             >
                                 <Ban className="w-3 h-3" />
@@ -537,8 +537,8 @@ export default function AttractionExplorer({
                                 <button
                                     onClick={() => setActiveSidebarTab('current')}
                                     className={`flex-1 py-3 text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition-colors ${activeSidebarTab === 'current'
-                                            ? 'border-sky-600 text-sky-700 bg-sky-50/50'
-                                            : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                                        ? 'border-sky-600 text-sky-700 bg-sky-50/50'
+                                        : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'
                                         }`}
                                 >
                                     <Layers className="w-3 h-3" />
@@ -619,12 +619,12 @@ export default function AttractionExplorer({
                                         const status = stopStatuses[stop.name];
                                         return (
                                             <div key={i} className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${status === 'keep' ? 'bg-green-50 border-green-200 ring-1 ring-green-200' :
-                                                    status === 'remove' ? 'bg-red-50 border-red-200' :
-                                                        'bg-white border-gray-100'
+                                                status === 'remove' ? 'bg-red-50 border-red-200' :
+                                                    'bg-white border-gray-100'
                                                 }`}>
                                                 <div className={`mt-1 p-1.5 rounded-full flex-shrink-0 ${status === 'keep' ? 'bg-green-100 text-green-600' :
-                                                        status === 'remove' ? 'bg-red-100 text-red-600' :
-                                                            'bg-gray-100 text-gray-500'
+                                                    status === 'remove' ? 'bg-red-100 text-red-600' :
+                                                        'bg-gray-100 text-gray-500'
                                                     }`}>
                                                     <StopIcon className="w-3.5 h-3.5" />
                                                 </div>
