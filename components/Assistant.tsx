@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Bot, X, Send, Sparkles, User, Loader2, Maximize2, Minimize2, Lock } from 'lucide-react';
 import { Message } from '../types';
 import { safeRender } from '../utils/formatters';
@@ -178,7 +179,7 @@ export default function Assistant({ onUpdate, isGenerating: parentIsGenerating =
                   }
                                 `}>
                   <div className="prose prose-sm max-w-none">
-                    {safeRender(msg.text)}
+                    <ReactMarkdown>{String(msg.text || '')}</ReactMarkdown>
                   </div>
                   <div className={`text-[10px] mt-2 opacity-50 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
                     {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -196,7 +197,7 @@ export default function Assistant({ onUpdate, isGenerating: parentIsGenerating =
                 <div className="max-w-[85%] space-y-2">
                   {currentThought && (
                     <div className="text-xs text-gray-400 italic bg-gray-100 rounded-lg px-3 py-2 animate-in fade-in">
-                      思考中: {currentThought}
+                      {currentThought}
                     </div>
                   )}
                   <div className="flex gap-1">

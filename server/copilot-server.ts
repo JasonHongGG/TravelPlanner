@@ -165,6 +165,10 @@ app.post('/stream-update', async (req, res) => {
             if (event.type === "assistant.message_delta") {
                 // Send chunk
                 res.write(`data: ${JSON.stringify({ type: 'content', chunk: event.data.deltaContent })}\n\n`);
+            } else if (event.type === "assistant.message") {
+                if (event.data.content) {
+                    res.write(`data: ${JSON.stringify({ type: 'content', chunk: event.data.content })}\n\n`);
+                }
             } else if (event.type === "session.idle") {
                 unsubscribe();
                 res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);

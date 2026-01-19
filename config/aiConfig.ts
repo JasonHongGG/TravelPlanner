@@ -149,6 +149,9 @@ export const constructUpdatePrompt = (currentData: TripData, history: Message[])
     2.  Then, output a special separator: "___UPDATE_JSON___".
     3.  Finally, output the **PARTIAL** updated JSON structure.
 
+    **CRITICAL SEPARATOR INSTRUCTION**:
+    Values MUST be separated by "___UPDATE_JSON___" on a new line. Do not hide it in markdown.
+
     **CRITICAL PERFORMANCE INSTRUCTION**:
     To ensure speed, you support **PARTIAL JSON UPDATES**.
     - If you are modifying specific days (e.g. Day 2), **ONLY** return the \`days\` array containing the **changed day objects**. 
@@ -166,13 +169,13 @@ export const constructUpdatePrompt = (currentData: TripData, history: Message[])
 };
 
 export const constructExplorerUpdatePrompt = (
-    dayIndex: number,
-    newMustVisit: string[],
-    newAvoid: string[],
-    keepExisting: string[],
-    removeExisting: string[]
+  dayIndex: number,
+  newMustVisit: string[],
+  newAvoid: string[],
+  keepExisting: string[],
+  removeExisting: string[]
 ): string => {
-    return `
+  return `
     任務：重新規劃第 ${dayIndex} 天的行程。
 
     請根據以下嚴格指令進行調整：
@@ -206,17 +209,17 @@ export const constructExplorerUpdatePrompt = (
 };
 
 export const constructRecommendationPrompt = (
-    location: string, 
-    interests: string,
-    category: 'attraction' | 'food',
-    excludeNames: string[]
+  location: string,
+  interests: string,
+  category: 'attraction' | 'food',
+  excludeNames: string[]
 ): string => {
-  const categoryPrompt = category === 'food' 
-    ? "當地必吃美食、餐廳、咖啡廳、甜點店、街頭小吃 (請專注於餐飲)" 
+  const categoryPrompt = category === 'food'
+    ? "當地必吃美食、餐廳、咖啡廳、甜點店、街頭小吃 (請專注於餐飲)"
     : "熱門景點、秘境、博物館、購物區、自然景觀 (請排除純餐廳)";
 
-  const excludePrompt = excludeNames.length > 0 
-    ? `請絕對**不要**重複推薦以下地點：${excludeNames.join(', ')}。` 
+  const excludePrompt = excludeNames.length > 0
+    ? `請絕對**不要**重複推薦以下地點：${excludeNames.join(', ')}。`
     : "";
 
   return `請針對目的地「${location}」推薦 12 個${categoryPrompt}。

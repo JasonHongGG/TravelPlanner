@@ -172,10 +172,14 @@ export class CopilotService implements IAIService {
 
             const partialUpdate = this.parseJsonFromResponse(cleanJson, false);
             const updatedData = this.mergeTripData(currentData, partialUpdate);
-            const finalText = fullText.split(delimiter)[0];
-            return { responseText: finalText, updatedData: updatedData };
+            const finalText = fullText.split(delimiter)[0].trim();
+            // Fallback if AI skips the conversational confirmation
+            const safeResponseText = finalText || "好的，已為您更新行程。";
+            return { responseText: safeResponseText, updatedData: updatedData };
         } else {
-            return { responseText: fullText };
+            // Fallback if AI returns absolutely nothing
+            const safeResponseText = fullText.trim() || "抱歉，我無法處理您的請求，請再試一次。";
+            return { responseText: safeResponseText };
         }
     }
 
