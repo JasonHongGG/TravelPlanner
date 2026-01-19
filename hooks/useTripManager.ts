@@ -95,7 +95,7 @@ export const useTripManager = () => {
     // Trigger AI Generation
     aiService.generateTrip(trip.input)
       .then(async (data) => {
-        const success = await spendPoints(cost, `重試生成行程: ${trip.input.destination}`);
+        const success = await spendPoints(cost, `生成行程: ${trip.input.destination}`);
         if (!success) {
           console.warn("Points deduction failed.");
         }

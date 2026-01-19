@@ -1,4 +1,5 @@
 import { TRIP_BASE_COST, TRIP_DAILY_COST } from '../constants/pointsConfig';
+import { Trip } from '../types';
 
 export const calculateTripCost = (dateRange: string): number => {
     // Default to at least 1 day if parsing fails
@@ -36,4 +37,20 @@ export const calculateTripCost = (dateRange: string): number => {
     if (days < 1) days = 1;
 
     return TRIP_BASE_COST + (days * TRIP_DAILY_COST);
+};
+
+export const getTripCover = (trip: Trip): string => {
+    if (!trip || !trip.input || !trip.input.destination) return '';
+
+    const city = trip.input.destination.split(',')[0].trim();
+
+    // Deterministic random based on Trip ID
+    // We sum the char codes of the trip ID to get a pseudo-random seed
+    const seed = trip.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+
+    const keywords = ["landmark", "scenery", "travel", "attraction", "view"];
+    const index = seed % keywords.length;
+    const keyword = keywords[index];
+
+    return `https://th.bing.com/th?q=${encodeURIComponent(city + ' ' + keyword)}&w=1280&h=720&c=7&rs=1&p=0`;
 };

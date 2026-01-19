@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Trip } from '../types';
+import { getTripCover } from '../utils/tripUtils';
 import UserProfileMenu from './UserProfileMenu';
 import { Plus, Map, Loader2, Calendar, Users, Trash2, Download, Upload, MapPin, ArrowRight, MoreHorizontal, Clock, Sparkles, Check, RefreshCw } from 'lucide-react';
 
@@ -80,8 +81,7 @@ interface TripCardProps {
 // New Trip Card Component
 const TripCard: React.FC<TripCardProps> = ({ trip, onSelect, onDelete, onExport, onRetry }) => {
   // Generate a cover image based on destination
-  const city = trip.input.destination.split(',')[0].split(' ')[0]; // Simple extraction
-  const imageUrl = `https://loremflickr.com/800/500/${encodeURIComponent(city)},travel/all`;
+  const imageUrl = getTripCover(trip);
 
   return (
     <div
