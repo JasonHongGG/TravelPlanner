@@ -154,7 +154,8 @@ export default function AttractionExplorer({
                 lastSearchLocation,
                 initialInterests,
                 currentTab,
-                existingNames
+                existingNames,
+                user?.email
             );
 
             if (isMounted.current && newItems.length > 0) {
@@ -239,7 +240,7 @@ export default function AttractionExplorer({
 
         // Only proceed immediately if NOT a new search (though handleSearch is mostly for new searches)
         // or if we decide to separate logic. But for now, new search stops here.
-        executeSearchLogic(query, targetTab, isNewSearch);
+        executeSearchLogic(query, targetTab, isNewSearch, user?.email);
     };
 
     const executeConfirmedSearch = async () => {
@@ -254,14 +255,14 @@ export default function AttractionExplorer({
         setBuffer(prev => ({ ...prev, [targetTab]: [] }));
         setIsWaitingForBuffer(false);
 
-        // Security: Pass user ID and apiSecret to backend via service
+        // Security: Pass user ID to backend via service
         // Note: Service handles cost calculation (backend), we just pass credentials
-        executeSearchLogic(query, targetTab, true, user?.email, user?.apiSecret);
+        executeSearchLogic(query, targetTab, true, user?.email);
     };
 
 
 
-    const executeSearchLogic = async (query: string, targetTab: TabType, isNewSearch: boolean, userId?: string, apiSecret?: string) => {
+    const executeSearchLogic = async (query: string, targetTab: TabType, isNewSearch: boolean, userId?: string) => {
         setInitialLoading(true);
 
         try {
@@ -277,8 +278,8 @@ export default function AttractionExplorer({
             };
             const lang = getPromptLanguage(i18n.language);
 
-            // Pass userId, apiSecret, and language
-            const newItems = await aiService.getRecommendations(query, initialInterests, targetTab, excludeNames, userId, apiSecret, lang);
+            // Pass userId and language
+            const newItems = await aiService.getRecommendations(query, initialInterests, targetTab, excludeNames, userId, lang);
 
             if (isMounted.current) {
                 setResults(prev => ({

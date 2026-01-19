@@ -16,7 +16,7 @@ export class BackendAIService {
     static getProvider(): IAIProvider {
         if (this.instance) return this.instance;
 
-        const providerType = process.env.AI_PROVIDER || 'gemini'; // Default to Gemini if not set, or Copilot?
+        const providerType = process.env.AI_PROVIDER || 'copilot'; // Default to Gemini if not set, or Copilot?
 
         console.log(`[BackendAIService] Initializing AI Provider: ${providerType}`);
 

@@ -6,7 +6,6 @@ interface User {
     name: string;
     email: string;
     picture: string;
-    apiSecret?: string; // New Security Field
     subscription?: {
         active: boolean;
         startDate: number;
@@ -32,20 +31,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (token) {
             try {
                 const decoded: any = jwtDecode(token);
-                // NEW: Sync with DB Server to get latest state & API Secret
+                if (decoded?.exp && Date.now() >= decoded.exp * 1000) {
+                    localStorage.removeItem('google_auth_token');
+                    return;
+                }
+                // Sync with DB Server to get latest state
                 fetch('http://localhost:3002/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        email: decoded.email,
-                        name: decoded.name,
-                        picture: decoded.picture
+                        idToken: token
                     })
                 })
                     .then(res => res.json())
                     .then(userData => {
                         if (userData.error) {
                             console.error('Auth sync error:', userData.error);
+                            if (userData.error.includes('Token')) {
+                                localStorage.removeItem('google_auth_token');
+                            }
                             return;
                         }
                         setUser(userData);
@@ -64,15 +68,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const login = async (token: string) => {
         try {
             const decoded: any = jwtDecode(token);
+            if (decoded?.exp && Date.now() >= decoded.exp * 1000) {
+                throw new Error('Token expired. Please login again.');
+            }
 
             // Authenticate with DB Server
             const res = await fetch('http://localhost:3002/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    email: decoded.email,
-                    name: decoded.name,
-                    picture: decoded.picture
+                    idToken: token
                 })
             });
 

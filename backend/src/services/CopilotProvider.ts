@@ -2,7 +2,7 @@
 import { IAIProvider, TripInput, TripData, Message, AttractionRecommendation, FeasibilityResult, UpdateResult } from "./aiProvider";
 import { SERVICE_CONFIG } from "../config/serviceConfig";
 
-const COPILOT_SERVER_URL = "http://localhost:3002/process";
+const COPILOT_SERVER_URL = "http://localhost:3003/process";
 
 export class CopilotProvider implements IAIProvider {
 

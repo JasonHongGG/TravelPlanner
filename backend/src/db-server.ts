@@ -1,9 +1,11 @@
 
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { requireAuth, verifyIdToken } from './utils/auth';
 
 const app = express();
 const port = 3002;
@@ -21,14 +23,40 @@ if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
+type StoredUser = {
+    email: string;
+    name?: string;
+    picture?: string;
+    points: number;
+    transactions: Array<{
+        id: string;
+        date: number;
+        amount: number;
+        type: string;
+        description: string;
+    }>;
+    subscription?: {
+        active: boolean;
+        startDate: number;
+        endDate: number;
+        planId: string;
+    };
+    apiSecret?: string;
+};
+
+const toSafeUser = (user: StoredUser) => {
+    const { apiSecret, ...safeUser } = user;
+    return safeUser;
+};
+
 // Helper to read/write all users
-const readUsers = (): Record<string, any> => {
+const readUsers = (): Record<string, StoredUser> => {
     if (!fs.existsSync(USERS_FILE)) {
         return {};
     }
     try {
         const data = fs.readFileSync(USERS_FILE, 'utf-8');
-        return JSON.parse(data);
+        return JSON.parse(data) as Record<string, StoredUser>;
     } catch (e) {
         console.error("Error reading users file, returning empty", e);
         return {};
@@ -41,22 +69,26 @@ const writeUsers = (users: Record<string, any>) => {
 
 // --- Endpoints ---
 
-// POST /auth/login - Secure Login & Secret Generation
-app.post('/auth/login', (req, res) => {
+// POST /auth/login - Secure Login & User Provisioning
+app.post('/auth/login', async (req, res) => {
     try {
-        const { email, name, picture } = req.body;
-        if (!email) return res.status(400).json({ error: "Email required" });
+        const { idToken } = req.body;
+        if (!idToken) return res.status(400).json({ error: "idToken required" });
+
+        const authUser = await verifyIdToken(idToken);
+        const email = authUser.email;
+        const name = authUser.name;
+        const picture = authUser.picture;
 
         const users = readUsers();
 
         if (!users[email]) {
-            // Create new user with API Secret
+            // Create new user
             const newUser = {
                 email,
                 name,
                 picture,
                 points: 500,
-                apiSecret: crypto.randomUUID(),
                 transactions: [
                     {
                         id: 'welcome-bonus',
@@ -70,23 +102,16 @@ app.post('/auth/login', (req, res) => {
             users[email] = newUser;
             writeUsers(users);
             console.log(`[DB Server] Created new user: ${email}`);
-            res.json(newUser);
+            res.json(toSafeUser(newUser));
         } else {
-            // Existing User: Ensure API Secret exists (Migration)
+            // Existing User: Update profile
             let changed = false;
-            if (!users[email].apiSecret) {
-                users[email].apiSecret = crypto.randomUUID();
-                changed = true;
-                console.log(`[DB Server] Generated missing API secret for ${email}`);
-            }
-
-            // Update profile
             if (name && users[email].name !== name) { users[email].name = name; changed = true; }
             if (picture && users[email].picture !== picture) { users[email].picture = picture; changed = true; }
 
             if (changed) writeUsers(users);
 
-            res.json(users[email]);
+            res.json(toSafeUser(users[email]));
         }
     } catch (error: any) {
         console.error(`[DB Server] Login error:`, error);
@@ -94,25 +119,21 @@ app.post('/auth/login', (req, res) => {
     }
 });
 
-// GET /users/:email - PROTECTED (Optional, but good practice. For now leave open or check secret?)
-// For this mock, we'll leave GET open for debugging but critical actions are protected.
-app.get('/users/:email', (req, res) => {
+// GET /users/:email - PROTECTED
+app.get('/users/:email', requireAuth, (req, res) => {
     try {
-        const { email } = req.params;
+        const emailParam = req.params.email;
+        const email = Array.isArray(emailParam) ? emailParam[0] : emailParam;
         const users = readUsers();
+        const authUser = (req as any).user;
 
-        // Don't return secret on public GET? 
-        // Ideally yes, but Client needs it? Client gets it from /auth/login.
-        // So we can strip it here to be safe.
+        if (!authUser?.email || authUser.email !== email) {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
         if (users[email]) {
-            const { apiSecret, ...safeUser } = users[email];
-            // Actually, existing frontend might rely on full object? 
-            // Let's return full object for now to avoid breaking existing pollers if any.
-            // But realistically, ONLY /auth/login should return the secret.
-            res.json(users[email]);
+            res.json(toSafeUser(users[email]));
         } else {
-            // ... existing create logic ... (Removed, we use /auth/login now for creation)
-            // But to keep backward compatibility with existing frontend calls if any:
             res.status(404).json({ error: "User not found. Please login." });
         }
     } catch (error: any) {
@@ -122,11 +143,12 @@ app.get('/users/:email', (req, res) => {
 
 
 // POST /users/:email/transaction - SECURED
-app.post('/users/:email/transaction', (req, res) => {
+app.post('/users/:email/transaction', requireAuth, (req, res) => {
     try {
-        const { email } = req.params;
+        const emailParam = req.params.email;
+        const email = Array.isArray(emailParam) ? emailParam[0] : emailParam;
         const { transaction } = req.body;
-        const apiSecret = req.headers['x-api-secret'];
+        const authUser = (req as any).user;
 
         console.log(`[DB Server] Processing transaction for ${email}:`, transaction.type);
 
@@ -136,16 +158,8 @@ app.post('/users/:email/transaction', (req, res) => {
             return res.status(404).json({ error: "User not found" });
         }
 
-        // SECURITY CHECK
-        // If user has a secret (new users do), we MUST match it.
-        // If user is legacy (no secret), we allow (but /auth/login migrates them instantly).
-        if (users[email].apiSecret) {
-            if (users[email].apiSecret !== apiSecret) {
-                console.warn(`[Security] Unauthorized transaction attempt for ${email}. Invalid Secret.`);
-                return res.status(403).json({ error: "Unauthorized: Invalid API Secret" });
-            }
-        } else {
-            console.warn(`[Security] Warning: User ${email} has no secret set!`);
+        if (!authUser?.email || authUser.email !== email) {
+            return res.status(403).json({ error: "Unauthorized" });
         }
 
         const userData = users[email];

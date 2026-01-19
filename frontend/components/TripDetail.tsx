@@ -104,7 +104,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
       // For Explorer, we check against the CURRENT data because the new data doesn't exist yet
       const lang = getPromptLanguage(i18n.language);
       // Pass user credentials!
-      const result = await aiService.checkFeasibility(trip.data, context, user?.email, user?.apiSecret, lang);
+      const result = await aiService.checkFeasibility(trip.data, context, user?.email, lang);
 
       // CRITICAL: Turn off feasibility loading state BEFORE executing the update.
       // Otherwise "Evaluating..." overrides "Reshaping..." in the UI because both flags would be true.
@@ -157,7 +157,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
 
     // 1. 先讓 AI 處理對話與生成 (無論是聊天還是修改)
     // Pass user credentials
-    const result = await aiService.updateTrip(trip.data!, history, onThought, user?.email, user?.apiSecret, lang);
+    const result = await aiService.updateTrip(trip.data!, history, onThought, user?.email, lang);
 
     // 2. 如果結果中沒有 updatedData，表示 AI 認為這只是一般對話，不需要檢查可行性
     if (!result.updatedData) {
@@ -173,7 +173,6 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
         result.updatedData, // Check the PROPOSED itinerary
         `User Chat Request: ${lastMsg}`,
         user?.email,
-        user?.apiSecret,
         lang
       );
 
@@ -233,8 +232,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
           keepExisting,
           removeExisting,
           (thought) => console.log("AI Thinking:", thought),
-          user?.email || 'anon',
-          'my-secret-key',
+          user?.email,
           getPromptLanguage(i18n.language)
         );
 

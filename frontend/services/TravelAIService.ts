@@ -5,6 +5,13 @@ const SERVER_URL = "http://localhost:3001";
 
 export class TravelAIService {
 
+    private getAuthHeaders(): Record<string, string> {
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        const token = localStorage.getItem('google_auth_token');
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        return headers;
+    }
+
     private parseJsonFromResponse(text: string, strict = true): any {
         const start = text.indexOf('{');
         const end = text.lastIndexOf('}');
@@ -52,11 +59,9 @@ export class TravelAIService {
     private async streamAndAccumulate(
         endpoint: string,
         body: any,
-        apiSecret?: string,
         onChunk?: (text: string) => void
     ): Promise<string> {
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (apiSecret) headers['x-api-secret'] = apiSecret;
+        const headers = this.getAuthHeaders();
 
         const response = await fetch(`${SERVER_URL}${endpoint}`, {
             method: 'POST',
@@ -108,11 +113,9 @@ export class TravelAIService {
     private async postGenerate(
         action: string,
         description: string,
-        bodyParams: any,
-        apiSecret?: string
+        bodyParams: any
     ): Promise<string> {
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (apiSecret) headers['x-api-secret'] = apiSecret;
+        const headers = this.getAuthHeaders();
 
         const body = {
             action,
@@ -135,7 +138,7 @@ export class TravelAIService {
         return data.text;
     }
 
-    async generateTrip(input: TripInput, userId?: string, apiSecret?: string): Promise<TripData> {
+    async generateTrip(input: TripInput, userId?: string): Promise<TripData> {
         // Model is determined by backend configuration
         const responseText = await this.streamAndAccumulate(
             '/stream-update',
@@ -144,8 +147,7 @@ export class TravelAIService {
                 action: 'GENERATE_TRIP',
                 description: `Generate Trip: ${input.destination}`,
                 tripInput: input
-            },
-            apiSecret
+            }
         );
 
         let cleanJson = responseText.trim();
@@ -163,13 +165,11 @@ export class TravelAIService {
         history: Message[],
         onThought?: ((text: string) => void) | undefined,
         userId?: string,
-        apiSecret?: string,
         language: string = "Traditional Chinese"
     ): Promise<UpdateResult> {
         // Model is determined by backend configuration
 
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (apiSecret) headers['x-api-secret'] = apiSecret;
+        const headers = this.getAuthHeaders();
 
         const response = await fetch(`${SERVER_URL}/stream-update`, {
             method: 'POST',
@@ -286,7 +286,6 @@ export class TravelAIService {
         removeExisting: string[],
         onThought?: (text: string) => void,
         userId?: string,
-        apiSecret?: string,
         language?: string
     ): Promise<UpdateResult> {
         const body = {
@@ -300,7 +299,7 @@ export class TravelAIService {
             language
         };
 
-        const responseText = await this.streamAndAccumulate('/stream-update', body, apiSecret, onThought);
+        const responseText = await this.streamAndAccumulate('/stream-update', body, onThought);
 
         const delimiter = "___UPDATE_JSON___";
         const delimiterIndex = responseText.indexOf(delimiter);
@@ -328,7 +327,6 @@ export class TravelAIService {
         category: "attraction" | "food" = 'attraction',
         excludeNames: string[] = [],
         userId?: string,
-        apiSecret?: string,
         language: string = "Traditional Chinese"
     ): Promise<AttractionRecommendation[]> {
 
@@ -336,8 +334,7 @@ export class TravelAIService {
         const responseText = await this.postGenerate(
             'GET_RECOMMENDATIONS',
             `Recommendations: ${location} (${category})`,
-            { location, interests, category, excludeNames, language },
-            apiSecret
+            { location, interests, category, excludeNames, language }
         );
 
         try {
@@ -359,7 +356,6 @@ export class TravelAIService {
         currentData: TripData,
         modificationContext: string,
         userId?: string,
-        apiSecret?: string,
         language: string = "Traditional Chinese"
     ): Promise<FeasibilityResult> {
 
@@ -367,8 +363,7 @@ export class TravelAIService {
         const responseText = await this.postGenerate(
             'CHECK_FEASIBILITY',
             `Feasibility Check`,
-            { tripData: currentData, modificationContext, language },
-            apiSecret
+            { tripData: currentData, modificationContext, language }
         );
 
         try {
