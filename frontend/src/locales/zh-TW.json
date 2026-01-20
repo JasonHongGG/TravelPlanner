@@ -148,6 +148,31 @@
             "uploading": "上傳中..."
         }
     },
+    "pro_promo": {
+        "title": "解鎖完整旅遊體驗",
+        "desc": "升級至 PRO 會員，享受無限制的智能旅遊規劃服務",
+        "subtitle": "專屬特權，讓您的旅行更輕鬆",
+        "benefits": {
+            "export": {
+                "title": "匯入/匯出行程備份",
+                "desc": "安全備份您的心血結晶，隨時存取"
+            },
+            "ai": {
+                "title": "無限旅程生成",
+                "desc": "免扣點數，無限次免費生成您的專屬行程"
+            },
+            "sync": {
+                "title": "自動雲端備份",
+                "desc": "私人安全的自動同步機制，資料絕不遺失"
+            },
+            "support": {
+                "title": "AI 旅遊顧問",
+                "desc": "專屬智能顧問，隨時解答您的旅遊疑問"
+            }
+        },
+        "upgrade_btn": "立即升級會員",
+        "cancel_btn": "稍後再說"
+    },
     "timeline": {
         "select_day": "選擇一天以查看詳情",
         "day_label": "第 {{day}} 天",

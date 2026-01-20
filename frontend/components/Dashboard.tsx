@@ -6,6 +6,8 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { Plus, Map, Upload, ArrowRight, MoreHorizontal, Clock, Sparkles, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import TripCard from './dashboard/TripCard';
+import { usePoints } from '../context/PointsContext';
+import ProFeaturePromoModal from './ProFeaturePromoModal';
 
 interface Props {
   trips: Trip[];
@@ -24,10 +26,18 @@ interface Props {
 export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip, onImportTrip, onRetryTrip, onOpenGallery }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t, i18n } = useTranslation();
+  const { isSubscribed, openPurchaseModal } = usePoints();
+  const [isPromoModalOpen, setIsPromoModalOpen] = React.useState(false);
 
   const handleExport = (e: React.MouseEvent, trip: Trip) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (!isSubscribed) {
+      setIsPromoModalOpen(true);
+      return;
+    }
+
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(trip, null, 2));
     const fileName = `trip_backup_${trip.title || 'trip'}_${new Date().toISOString().slice(0, 10)}.json`;
 
@@ -40,6 +50,10 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
   };
 
   const handleImportClick = () => {
+    if (!isSubscribed) {
+      setIsPromoModalOpen(true);
+      return;
+    }
     fileInputRef.current?.click();
   };
 
@@ -198,6 +212,16 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
         )}
 
       </main>
+
+      {/* Pro Feature Promo Modal */}
+      <ProFeaturePromoModal
+        isOpen={isPromoModalOpen}
+        onClose={() => setIsPromoModalOpen(false)}
+        onUpgrade={() => {
+          setIsPromoModalOpen(false);
+          openPurchaseModal();
+        }}
+      />
     </div>
   );
 }

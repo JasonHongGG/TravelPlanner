@@ -40,7 +40,7 @@ export const AVAILABLE_PACKAGES: PointPackage[] = [
         points: 0,
         price: 399,
         name: '旅遊貼身助理',
-        description: '無限 AI 生成 + 專屬顧問',
+        description: '無限 AI 生成 + 專屬顧問 + ...',
         type: 'subscription'
     }
 ];
