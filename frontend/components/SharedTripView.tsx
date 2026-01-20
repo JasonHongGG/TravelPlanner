@@ -148,8 +148,8 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
     const currentDayData = days.find(d => d.day === selectedDay);
     const headerImageUrl = getTripCover(trip);
 
-    // 內容置中的 class（地圖關閉時）
-    const centeredContentClass = !isMapOpen ? 'max-w-5xl mx-auto' : '';
+    // 內容置中的 class（常駐以確保動畫平滑）
+    const centeredContentClass = 'w-full max-w-5xl mx-auto';
 
     return (
         <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
@@ -252,8 +252,8 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
                     <div className="flex-1 bg-gray-50">
                         {activeTab === 'itinerary' && (
                             <>
-                                {/* DaySelector - Full Width Background, Centered Content */}
-                                <div className="bg-white border-b border-gray-100">
+                                {/* DaySelector - Full Width Background, Centered Content, Sticky */}
+                                <div className="bg-white border-b border-gray-100 sticky top-[48px] z-30">
                                     <div className={centeredContentClass}>
                                         <DaySelector days={days} selectedDay={selectedDay} onSelectDay={setSelectedDay} />
                                     </div>

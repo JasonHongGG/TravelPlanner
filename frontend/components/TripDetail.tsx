@@ -477,7 +477,8 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
 
         {/* Left Column: Itinerary (Scrollable) */}
         {/* Adjusted width logic based on isMapOpen state */}
-        <div className={`w-full flex flex-col scrollbar-hide bg-gray-50 overflow-y-auto transition-all duration-300 ease-in-out ${isMapOpen ? 'lg:w-7/12 xl:w-1/2' : 'lg:w-full'}`}>
+        <div className={`flex flex-col scrollbar-hide bg-gray-50 overflow-y-auto transition-all duration-300 ease-in-out ${isMapOpen ? 'w-full lg:w-7/12 xl:w-1/2' : 'w-full'}`}>
+          {/* Centered content class when map is closed */}
 
           {/* Header Image */}
           <div className="h-64 md:h-80 w-full relative shrink-0 group">
@@ -496,10 +497,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
               {/* Back button is in the sticky header, but we can add one here for full screen feel if needed, or just keep actions */}
               <div></div>
               <div className="flex gap-2">
-                <button className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all">
-                  <span className="sr-only">分享</span>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
-                </button>
+                {/* Share button removed as it is now in the main header */}
               </div>
             </div>
 
@@ -563,42 +561,44 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
             </div>
           </div>
 
-          {/* Tab Navigation (Main Sections) & Map Toggle */}
-          <div className="bg-white border-b border-gray-200 sticky top-0 z-40 px-6 pt-4 flex-none shadow-sm flex justify-between items-center">
-            <div className="flex space-x-6">
-              <button
-                onClick={() => setActiveTab('itinerary')}
-                className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'itinerary' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-              >
-                {t('trip_detail.tabs.itinerary')}
-              </button>
-              <button
-                onClick={() => setActiveTab('budget')}
-                className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'budget' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-              >
-                {t('trip_detail.tabs.budget')}
-              </button>
-              <button
-                onClick={() => setActiveTab('risks')}
-                className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'risks' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-              >
-                {t('trip_detail.tabs.risks')}
-              </button>
-            </div>
+          {/* Tab Navigation (Main Sections) & Map Toggle - Full Width Background, Centered Content */}
+          <div className="bg-white border-b border-gray-200 sticky top-0 z-40 flex-none shadow-sm">
+            <div className="px-6 flex justify-between items-end w-full max-w-5xl mx-auto">
+              <div className="flex space-x-6">
+                <button
+                  onClick={() => setActiveTab('itinerary')}
+                  className={`pt-4 pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'itinerary' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                >
+                  {t('trip_detail.tabs.itinerary')}
+                </button>
+                <button
+                  onClick={() => setActiveTab('budget')}
+                  className={`pt-4 pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'budget' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                >
+                  {t('trip_detail.tabs.budget')}
+                </button>
+                <button
+                  onClick={() => setActiveTab('risks')}
+                  className={`pt-4 pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'risks' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                >
+                  {t('trip_detail.tabs.risks')}
+                </button>
+              </div>
 
-            {/* Map Toggle Button - Placed here for better coordination */}
-            <div className="hidden lg:block pb-2">
-              <button
-                onClick={() => setIsMapOpen(!isMapOpen)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${isMapOpen
-                  ? 'bg-brand-50 text-brand-600 border-brand-200 shadow-inner'
-                  : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-gray-700'
-                  }`}
-                title={isMapOpen ? t('trip_detail.map.hide') : t('trip_detail.map.show')}
-              >
-                {isMapOpen ? <PanelRightClose className="w-4 h-4" /> : <MapIcon className="w-4 h-4" />}
-                {isMapOpen ? t('trip_detail.map.hide') : t('trip_detail.map.mode')}
-              </button>
+              {/* Map Toggle Button - Placed here for better coordination */}
+              <div className="hidden lg:flex items-center h-full py-3">
+                <button
+                  onClick={() => setIsMapOpen(!isMapOpen)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${isMapOpen
+                    ? 'bg-brand-50 text-brand-600 border-brand-200 shadow-inner'
+                    : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-gray-700'
+                    }`}
+                  title={isMapOpen ? t('trip_detail.map.hide') : t('trip_detail.map.show')}
+                >
+                  {isMapOpen ? <PanelRightClose className="w-4 h-4" /> : <MapIcon className="w-4 h-4" />}
+                  {isMapOpen ? '隱藏地圖' : '顯示地圖'}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -608,13 +608,19 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
             {/* 1. Itinerary View */}
             {activeTab === 'itinerary' && (
               <>
-                <DaySelector
-                  days={days}
-                  selectedDay={selectedDay}
-                  onSelectDay={setSelectedDay}
-                />
+                {/* DaySelector - Full Width Background, Centered Content, Sticky */}
+                <div className="bg-white border-b border-gray-100 sticky top-[48px] z-30">
+                  <div className="w-full max-w-5xl mx-auto">
+                    <DaySelector
+                      days={days}
+                      selectedDay={selectedDay}
+                      onSelectDay={setSelectedDay}
+                    />
+                  </div>
+                </div>
 
-                <div className="p-6 pb-24">
+                {/* ItineraryTimeline - Centered Content */}
+                <div className="p-6 pb-24 w-full max-w-5xl mx-auto">
                   <ItineraryTimeline
                     dayData={currentDayData}
                     onFocusStop={handleFocusStop}
@@ -626,12 +632,14 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
 
             {/* 2. Budget View */}
             {activeTab === 'budget' && (
-              <BudgetView tripMeta={tripMeta} days={days} />
+              <div className="w-full max-w-5xl mx-auto">
+                <BudgetView tripMeta={tripMeta} days={days} />
+              </div>
             )}
 
             {/* 3. Risks View */}
             {activeTab === 'risks' && (
-              <div className="p-6">
+              <div className="p-6 w-full max-w-5xl mx-auto">
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                   <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <AlertTriangle className="text-orange-500" /> {t('trip.risks_title')}
