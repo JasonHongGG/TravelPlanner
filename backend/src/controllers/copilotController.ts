@@ -53,6 +53,10 @@ export async function processCopilot(req: Request, res: Response) {
         console.log(`[Copilot Server] Processing Action: ${action}`);
         const activeClient = await ensureClient();
 
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+
         let prompt = "";
         let model = 'gpt-4o';
 
@@ -86,32 +90,51 @@ export async function processCopilot(req: Request, res: Response) {
                 return res.status(400).json({ error: "Unknown Action" });
         }
 
-        const session = await activeClient.createSession({ model });
-        const response = await (session as any).send({
-            systemPrompt: SYSTEM_INSTRUCTION,
-            userPrompt: prompt
+        const session = await activeClient.createSession({
+            model,
+            streaming: true,
+            systemMessage: { mode: "append", content: SYSTEM_INSTRUCTION }
         });
 
         let fullResponse = "";
+        let hasDelta = false;
 
-        for await (const event of response as AsyncIterable<any>) {
-            console.log(`[Copilot Server] Event: ${event.type}`);
+        const unsubscribe = session.on((event) => {
+            if (event.type !== "assistant.message_delta" && event.type !== "assistant.message" && event.type !== "assistant.reasoning_delta")
+                console.log(`[Copilot Server] Event: ${event.type}`);
 
-            if (event.type === 'message' && event.message?.content?.length) {
-                const candidate = event.message.content.find((c: any) => c.type === 'text')?.text;
-
-                console.log("[Copilot Server] Full Message Event Keys:", Object.keys(event));
-                console.log("[Copilot Server] Full Message Event Data:", JSON.stringify(event, null, 2));
-                console.log("[Copilot Server] Extracted Candidate:", typeof candidate, candidate ? candidate.substring(0, 50) : "null");
-
-                if (candidate) {
-                    fullResponse += candidate;
-                    res.write(`data: ${JSON.stringify({ type: 'chunk', text: candidate })}\n\n`);
+            if (event.type === "assistant.message_delta") {
+                const delta = event.data?.deltaContent || "";
+                if (delta) {
+                    hasDelta = true;
+                    fullResponse += delta;
+                    res.write(`data: ${JSON.stringify({ type: 'chunk', chunk: delta })}\n\n`);
                 }
             }
+
+            if (event.type === "assistant.message") {
+                const content = event.data?.content || "";
+                if (content && !hasDelta) {
+                    fullResponse += content;
+                    res.write(`data: ${JSON.stringify({ type: 'chunk', chunk: content })}\n\n`);
+                }
+            }
+        });
+
+        const timeoutMs = action === 'GENERATE_TRIP' ? 600000 : 600000;
+        const finalEvent = await session.sendAndWait({ prompt }, timeoutMs);
+        unsubscribe();
+
+        if (!fullResponse && finalEvent?.data?.content) {
+            fullResponse = finalEvent.data.content;
+            res.write(`data: ${JSON.stringify({ type: 'chunk', chunk: fullResponse })}\n\n`);
         }
 
         console.log("[Copilot Server] Output Preview:", fullResponse.substring(0, 200).replace(/\n/g, ' '));
+
+        if (!fullResponse) {
+            res.write(`data: ${JSON.stringify({ type: 'error', message: 'No content returned from Copilot.' })}\n\n`);
+        }
         res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
         res.end();
 

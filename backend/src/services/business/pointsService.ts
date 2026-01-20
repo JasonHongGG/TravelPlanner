@@ -14,7 +14,8 @@ export async function deductPoints(
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
+                'Authorization': `Bearer ${authToken}`,
+                'Idempotency-Key': crypto.randomUUID()
             },
             body: JSON.stringify({
                 transaction: {

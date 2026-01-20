@@ -5,11 +5,12 @@ import { BackendAIService } from './services/BackendAIService';
 import apiRoutes from './routes/apiRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { configService } from './config/configService';
+import { corsOptions } from './config/corsConfig';
 
 const app = express();
 const port = process.env.PORT || 3001;
 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Request logging middleware

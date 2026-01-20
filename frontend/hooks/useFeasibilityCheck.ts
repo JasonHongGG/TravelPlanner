@@ -73,6 +73,7 @@ export const useFeasibilityCheck = ({
 
   return {
     isCheckingFeasibility,
+    setIsCheckingFeasibility,
     feasibilityResult,
     performFeasibilityCheck,
     setChatPendingUpdate,

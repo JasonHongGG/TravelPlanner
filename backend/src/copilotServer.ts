@@ -4,11 +4,12 @@ import cors from 'cors';
 import copilotRoutes from './routes/copilotRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { configService } from './config/configService';
+import { corsOptions } from './config/corsConfig';
 
 const app = express();
 const port = process.env.COPILOT_SERVER_PORT || 3003;
 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.use('/', copilotRoutes);

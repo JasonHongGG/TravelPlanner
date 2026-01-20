@@ -64,6 +64,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
   // Feasibility Check State
   const {
     isCheckingFeasibility,
+    setIsCheckingFeasibility,
     feasibilityResult,
     performFeasibilityCheck,
     setChatPendingUpdate,

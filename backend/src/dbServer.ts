@@ -4,11 +4,12 @@ import cors from 'cors';
 import dbRoutes from './routes/dbRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { configService } from './config/configService';
+import { corsOptions } from './config/corsConfig';
 
 const app = express();
 const port = process.env.DB_SERVER_PORT || 3002;
 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.use('/', dbRoutes);

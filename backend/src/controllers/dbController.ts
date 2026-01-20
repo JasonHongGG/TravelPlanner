@@ -76,6 +76,13 @@ export function addTransaction(req: Request, res: Response) {
         const email = Array.isArray(emailParam) ? emailParam[0] : emailParam;
         const { transaction } = req.body;
         const authUser = (req as Request & { user?: { email?: string } }).user;
+        const idempotencyKey = req.headers['idempotency-key'];
+        if (!idempotencyKey || typeof idempotencyKey !== 'string') {
+            return res.status(400).json({ error: "Idempotency-Key header is required." });
+        }
+        if (!transaction || !transaction.id) {
+            return res.status(400).json({ error: "Transaction with id is required." });
+        }
 
         console.log(`[DB Server] Processing transaction for ${email}:`, transaction.type);
 
@@ -90,6 +97,15 @@ export function addTransaction(req: Request, res: Response) {
         }
 
         const userData = users[email];
+
+        if (!userData.idempotencyKeys) userData.idempotencyKeys = {};
+        const existingKey = userData.idempotencyKeys[idempotencyKey];
+        if (existingKey) {
+            if (existingKey.transactionId && transaction?.id && existingKey.transactionId !== transaction.id) {
+                return res.status(409).json({ error: "Idempotency-Key reuse with different transaction." });
+            }
+            return res.json(toSafeUser(userData));
+        }
 
         if (transaction.metadata?.requiresSubscription) {
             const isSubscribed = userData.subscription?.active && userData.subscription.endDate > Date.now();
@@ -131,11 +147,25 @@ export function addTransaction(req: Request, res: Response) {
         if (!userData.transactions) userData.transactions = [];
         userData.transactions.unshift(transaction);
 
+        userData.idempotencyKeys[idempotencyKey] = {
+            transactionId: transaction.id,
+            createdAt: Date.now()
+        };
+
+        const keyList = Object.entries(userData.idempotencyKeys);
+        if (keyList.length > 100) {
+            const sorted = keyList.sort((a, b) => a[1].createdAt - b[1].createdAt);
+            const toRemove = sorted.slice(0, Math.max(0, sorted.length - 100));
+            for (const [key] of toRemove) {
+                delete userData.idempotencyKeys[key];
+            }
+        }
+
         users[email] = userData;
         writeUsers(users);
 
         console.log(`[DB Server] Transaction recorded successfully for ${email}. New Balance: ${userData.points}`);
-        res.json(userData);
+        res.json(toSafeUser(userData));
 
     } catch (error: any) {
         console.error(`[DB Server] Error adding transaction for ${req.params.email}:`, error);

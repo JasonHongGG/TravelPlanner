@@ -198,6 +198,7 @@ export class TravelAIService {
         let isJsonMode = false;
         let jsonBuffer = "";
         const delimiter = "___UPDATE_JSON___";
+        const guardLength = delimiter.length - 1;
         let displayedText = "";
 
         const typewrite = async (newText: string) => {
@@ -240,11 +241,12 @@ export class TravelAIService {
 
                                     jsonBuffer = fullText.substring(delimiterIndex + delimiter.length);
                                 } else {
-                                    // Careful: Only type component of fullText that hasn't changed?
-                                    // Actually, we should just type 'text'.
-                                    // But what if 'text' contains part of delimiter? 
-                                    // Usually unlikely to break significantly.
-                                    await typewrite(text);
+                                    const safeEnd = Math.max(0, fullText.length - guardLength);
+                                    const safeText = fullText.substring(0, safeEnd);
+                                    const newThoughtPart = safeText.substring(displayedText.length);
+                                    if (newThoughtPart) {
+                                        await typewrite(newThoughtPart);
+                                    }
                                 }
                             } else {
                                 fullText += text;
@@ -257,6 +259,13 @@ export class TravelAIService {
                         // ignore
                     }
                 }
+            }
+        }
+
+        if (!isJsonMode) {
+            const remainingText = fullText.substring(displayedText.length);
+            if (remainingText) {
+                await typewrite(remainingText);
             }
         }
 
