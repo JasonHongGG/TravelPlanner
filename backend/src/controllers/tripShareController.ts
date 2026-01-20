@@ -85,10 +85,14 @@ export function deleteTrip(req: Request, res: Response) {
             return res.status(401).json({ error: 'Authentication required' });
         }
 
-        const success = tripShareService.deleteTrip(tripId, authUser.email);
+        const result = tripShareService.deleteTrip(tripId, authUser.email);
 
-        if (!success) {
-            return res.status(403).json({ error: 'Trip not found or not authorized' });
+        if (result === 'not_found') {
+            return res.status(404).json({ error: 'Trip not found' });
+        }
+
+        if (result === 'unauthorized') {
+            return res.status(403).json({ error: 'Unauthorized' });
         }
 
         res.json({ message: 'Trip deleted successfully' });

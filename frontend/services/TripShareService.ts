@@ -60,6 +60,11 @@ class TripShareService {
             headers: this.getAuthHeaders()
         });
 
+        // If 404, it means trip is already gone, which corresponds to "unshared" state.
+        if (response.status === 404) {
+            return;
+        }
+
         if (!response.ok) {
             const error = await response.json();
             throw new Error(error.error || 'Failed to delete trip');
