@@ -117,6 +117,7 @@
         "error_update": "旅程の更新中にエラーが発生しました。もう一度お試しください。",
         "back_to_dashboard": "ダッシュボードに戻る",
         "generating": "夢の旅を計画中...",
+        "generating_desc": "AIがあなたの興味や好みを分析し、最適なルートを調整しています。少々お待ちください...",
         "checking_feasibility": "実現可能性をチェック中",
         "check_desc": "AIがスケジュールとルートを確認しています...",
         "reshaping": "旅程を再調整中",
@@ -126,7 +127,9 @@
         "destination": "目的地",
         "date_range": "日程",
         "travelers": "人数",
-        "interests": "興味"
+        "interests": "興味",
+        "navigate": "ナビゲーション",
+        "alternatives": "代替案"
     },
     "trip_detail": {
         "tabs": {
@@ -142,8 +145,34 @@
         "cover": {
             "change": "カバーを変更",
             "reset": "デフォルトに戻す",
+            "random": "ランダムカバー",
             "uploading": "アップロード中..."
         }
+    },
+    "pro_promo": {
+        "title": "完全な旅行体験をアンロック",
+        "desc": "PROメンバーにアップグレードして、無制限のスマート旅行計画サービスを楽しみましょう",
+        "subtitle": "旅行をより快適にするための特別な特典",
+        "benefits": {
+            "export": {
+                "title": "バックアップのインポート/エクスポート",
+                "desc": "あなたの大切な計画を安全にバックアップし、いつでもアクセス可能"
+            },
+            "ai": {
+                "title": "無制限の旅程生成",
+                "desc": "ポイント消費なし、あなただけの旅程を何度でも無料で生成"
+            },
+            "sync": {
+                "title": "自動クラウドバックアップ",
+                "desc": "プライベートで安全な自動同期、データを失うことはありません"
+            },
+            "support": {
+                "title": "AIトラベルコンサルタント",
+                "desc": "専属のAIコンサルタントが、いつでも旅行の質問にお答えします"
+            }
+        },
+        "upgrade_btn": "今すぐアップグレード",
+        "cancel_btn": "後で"
     },
     "timeline": {
         "select_day": "日付を選択して詳細を表示",

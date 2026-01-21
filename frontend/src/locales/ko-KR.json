@@ -117,6 +117,7 @@
         "error_update": "일정 업데이트 중 오류가 발생했습니다. 다시 시도해주세요.",
         "back_to_dashboard": "대시보드로 돌아가기",
         "generating": "꿈의 여행을 계획하는 중...",
+        "generating_desc": "AI가 귀하의 관심사와 선호도를 분석하여 최적의 경로를 정렬하고 있습니다. 잠시만 기다려주세요...",
         "checking_feasibility": "실현 가능성 확인 중",
         "check_desc": "AI가 일정과 경로를 확인하고 있습니다...",
         "reshaping": "일정 재구성 중",
@@ -126,7 +127,9 @@
         "destination": "목적지",
         "date_range": "날짜 범위",
         "travelers": "인원",
-        "interests": "관심사"
+        "interests": "관심사",
+        "navigate": "길찾기",
+        "alternatives": "대안"
     },
     "trip_detail": {
         "tabs": {
@@ -142,8 +145,34 @@
         "cover": {
             "change": "커버 변경",
             "reset": "기본값 복원",
+            "random": "랜덤 커버",
             "uploading": "업로드 중..."
         }
+    },
+    "pro_promo": {
+        "title": "완벽한 여행 경험 잠금 해제",
+        "desc": "PRO 멤버로 업그레이드하고 무제한 스마트 여행 계획 서비스를 즐기세요",
+        "subtitle": "여행을 더 편안하게 만드는 특별한 혜택",
+        "benefits": {
+            "export": {
+                "title": "백업 가져오기/내보내기",
+                "desc": "소중한 계획을 안전하게 백업하고 언제든지 액세스하세요"
+            },
+            "ai": {
+                "title": "무제한 여행 생성",
+                "desc": "포인트 차감 없이 나만의 여행을 무제한으로 무료 생성"
+            },
+            "sync": {
+                "title": "자동 클라우드 백업",
+                "desc": "안전한 개인 자동 동기화로 데이터를 절대 잃어버리지 마세요"
+            },
+            "support": {
+                "title": "AI 여행 컨설턴트",
+                "desc": "언제든지 여행 질문에 답변해 드리는 전담 AI 컨설턴트"
+            }
+        },
+        "upgrade_btn": "지금 업그레이드",
+        "cancel_btn": "나중에"
     },
     "timeline": {
         "select_day": "날짜를 선택하여 상세 정보 보기",
