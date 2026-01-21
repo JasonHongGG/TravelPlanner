@@ -311,10 +311,12 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
                     onChange={(start, end) => {
                       setDateSelection({ start, end });
                       if (start && end) {
-                        // Format: YYYY/MM/DD - YYYY/MM/DD (N Days)
-                        const fmt = (d: Date) => `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+                        // Format: YYYY/MM/DD - MM/DD (N Days) if same year, else YYYY/MM/DD - YYYY/MM/DD (N Days)
+                        const fmtFull = (d: Date) => `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+                        const fmtShort = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
                         const diff = Math.round((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
-                        const str = `${fmt(start)} - ${fmt(end)} ${t('new_trip.days_count', { count: diff })}`;
+                        const endFormat = start.getFullYear() === end.getFullYear() ? fmtShort(end) : fmtFull(end);
+                        const str = `${fmtFull(start)} - ${endFormat} ${t('new_trip.days_count', { count: diff })}`;
                         handleChange('dateRange', str);
                         if (JSON.stringify(dateSelection) !== JSON.stringify({ start, end })) {
                           setIsDatePickerOpen(false); // Close on selection completion
