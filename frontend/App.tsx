@@ -66,7 +66,6 @@ export default function App() {
 
   const handleImportTrip = (tripData: Trip) => {
     importTrip(tripData);
-    alert("行程匯入成功！");
   };
 
   const handleViewGalleryTrip = (tripId: string) => {

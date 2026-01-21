@@ -118,15 +118,16 @@ export default function AttractionExplorer({
         const currentLen = results[activeTab].length;
         if (currentLen === 0) return;
 
-        // Buffer Target: We want to keep about 2 batches (approx 24 items) in reserve
+        // Buffer Target: We want to keep QUEUE_SIZE batches (approx 12 * QUEUE_SIZE items) in reserve
         const bufferLen = buffer[activeTab].length;
-        const BUFFER_TARGET = 24;
+        const BUFFER_TARGET = 12 * QUEUE_SIZE;
 
         // If buffer is low and we aren't currently fetching, fetch more in background
-        if (bufferLen < BUFFER_TARGET && !isPreloading && !initialLoading) {
+        // Only if QUEUE_SIZE > 0
+        if (QUEUE_SIZE > 0 && bufferLen < BUFFER_TARGET && !isPreloading && !initialLoading) {
             fetchNextBatchBackground();
         }
-    }, [results, buffer, activeTab, isPreloading, initialLoading]);
+    }, [results, buffer, activeTab, isPreloading, initialLoading, QUEUE_SIZE]);
 
     // Watch for buffer updates to fulfill waiting requests
     useEffect(() => {
@@ -229,7 +230,8 @@ export default function AttractionExplorer({
 
         if (isNewSearch) {
             // Points Deduction Logic
-            const totalCost = config.ATTRACTION_SEARCH_COST * QUEUE_SIZE;
+            // Base cost (1 batch) + Preload cost (QUEUE_SIZE batches)
+            const totalCost = config.ATTRACTION_SEARCH_COST * (1 + QUEUE_SIZE);
 
             setSearchConfirmation({
                 query,
@@ -333,10 +335,9 @@ export default function AttractionExplorer({
     const currentCount = currentStops.length;
 
     // Calculate batch status for UI
-    // If buffer has 0-11 items, we are loading the 1st batch of the 2-batch limit.
-    // If buffer has 12+ items, we are loading the 2nd batch.
+    // Dynamic based on buffer size (12 items per batch)
     const bufferCount = buffer[activeTab].length;
-    const preloadingBatchNumber = bufferCount < 12 ? 1 : 2;
+    const preloadingBatchNumber = Math.min(QUEUE_SIZE, Math.floor(bufferCount / 12) + 1);
 
     if (!isOpen) return null;
 
@@ -634,10 +635,10 @@ export default function AttractionExplorer({
 
                                         {/* Pre-loading Status Text */}
                                         <div className="h-5 text-[10px] text-gray-400 font-medium flex items-center gap-1.5">
-                                            {isPreloading && !isWaitingForBuffer && (
+                                            {QUEUE_SIZE > 0 && isPreloading && !isWaitingForBuffer && (
                                                 <>
                                                     <Loader2 className="w-3 h-3 animate-spin" />
-                                                    <span>{t('explorer.preloading', { current: preloadingBatchNumber, total: 2 })}</span>
+                                                    <span>{t('explorer.preloading', { current: preloadingBatchNumber, total: QUEUE_SIZE })}</span>
                                                 </>
                                             )}
                                         </div>
