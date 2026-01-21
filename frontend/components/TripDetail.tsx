@@ -152,73 +152,106 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
     trip,
     onUpdateTrip,
     userEmail: user?.email,
-    language: getPromptLanguage(i18n.language),
+    language: trip.input.language || getPromptLanguage(i18n.language),
     onCancelExplorer: () => setIsUpdatingFromExplorer(false)
   });
 
+
+  // AI Process State for Unified UI Feedback
+  const [aiProcessState, setAiProcessState] = useState<'idle' | 'planning' | 'checking' | 'reshaping'>('idle');
 
   // AI Update Handler (Used by Assistant)
   // Modified Logic: Generate First -> Check Data -> Apply
   const handleAiUpdate = async (history: Message[], onThought: (text: string) => void): Promise<string> => {
     if (!trip.data) return "";
 
-    const lang = getPromptLanguage(i18n.language);
+    const chatLang = getPromptLanguage(i18n.language);
+    const tripLang = trip.input.language || chatLang;
 
-    // 1. 先讓 AI 處理對話與生成 (無論是聊天還是修改)
-    // Pass user credentials
-    const result = await aiService.updateTrip(trip.data!, history, onThought, user?.email, lang);
+    // Phase 1: Planning (Generating JSON) - This fills the "freeze" gap
+    // Removed to allow non-blocking chat. Assistant component handles "Thinking..." UI.
+    // setAiProcessState('planning');
 
-    // 2. 如果結果中沒有 updatedData，表示 AI 認為這只是一般對話，不需要檢查可行性
-    if (!result.updatedData) {
-      return result.responseText;
-    }
-
-    // 3. 如果有 updatedData，表示行程被修改了，這時候才進行檢查
-    // 注意：我們檢查的是 result.updatedData (新行程)，看看新行程是否合理
-    setIsCheckingFeasibility(true);
     try {
-      const lastMsg = history[history.length - 1].text;
-      const checkResult = await aiService.checkFeasibility(
-        result.updatedData, // Check the PROPOSED itinerary
-        `User Chat Request: ${lastMsg}`,
+      // 1. 先讓 AI 處理對話與生成 (無論是聊天還是修改)
+      // Pass user credentials
+      const result = await aiService.updateTrip(
+        trip.data!,
+        history,
+        onThought,
         user?.email,
-        lang
+        chatLang,
+        tripLang,
+        () => setAiProcessState('planning') // Trigger planning state only when JSON generation starts
       );
 
-      // Check finished
-      setIsCheckingFeasibility(false);
-
-      if (!checkResult.feasible || checkResult.riskLevel === 'high') {
-        // 4a. 風險高 -> 顯示 Modal，暫存數據 (pendingNewData)
-        setChatPendingUpdate(checkResult, result.updatedData);
-
-        // 我們仍回傳 AI 的文字回應，讓對話框顯示「好的，我已為您安排...」
-        // 但實際上 UI 尚未更新，直到用戶在 Modal 點擊確認
+      // 2. 如果結果中沒有 updatedData，表示 AI 認為這只是一般對話，不需要檢查可行性
+      if (!result.updatedData) {
+        setAiProcessState('idle');
         return result.responseText;
       }
-    } catch (e) {
-      console.warn("Feasibility check failed, proceeding anyway", e);
-      setIsCheckingFeasibility(false);
-    }
 
-    // 4b. 風險低或檢查通過 -> 直接更新
-    setIsReshaping(true);
-    try {
-      await new Promise(r => setTimeout(r, 300));
-      onUpdateTrip(trip.id, result.updatedData);
-    } finally {
-      setIsReshaping(false);
+      // Phase 2: Checking Feasibility
+      setAiProcessState('checking'); // Update UI State
+      setIsCheckingFeasibility(true); // Keep hook state in sync if needed by hook logic
+
+      try {
+        // UX Delay: Allow user to see "Checking Feasibility" state
+        await new Promise(r => setTimeout(r, 1500));
+
+        const lastMsg = history[history.length - 1].text;
+        const checkResult = await aiService.checkFeasibility(
+          result.updatedData, // Check the PROPOSED itinerary
+          `User Chat Request: ${lastMsg}`,
+          user?.email,
+          chatLang
+        );
+
+        // Check finished
+        setIsCheckingFeasibility(false);
+
+        if (!checkResult.feasible || checkResult.riskLevel === 'high') {
+          // 4a. 風險高 -> 顯示 Modal，暫存數據 (pendingNewData)
+          setChatPendingUpdate(checkResult, result.updatedData);
+          setAiProcessState('idle'); // Hide overlay, show Modal
+
+          // 我們仍回傳 AI 的文字回應，讓對話框顯示「好的，我已為您安排...」
+          // 但實際上 UI 尚未更新，直到用戶在 Modal 點擊確認
+          return result.responseText;
+        }
+      } catch (e) {
+        console.warn("Feasibility check failed, proceeding anyway", e);
+        setIsCheckingFeasibility(false);
+      }
+
+      // Phase 3: Reshaping (Applying Update)
+      setAiProcessState('reshaping');
+      setIsReshaping(true);
+      try {
+        await new Promise(r => setTimeout(r, 1500));
+        onUpdateTrip(trip.id, result.updatedData);
+      } finally {
+        setIsReshaping(false);
+        setAiProcessState('idle'); // Done
+      }
+      return result.responseText;
+
+    } catch (e) {
+      console.error("AI Update Failed", e);
+      setAiProcessState('idle');
+      return "抱歉，處理您的請求時發生錯誤，請稍後再試。";
     }
-    return result.responseText;
   };
 
   const handleFeasibilityConfirmWithReshape = async () => {
+    setAiProcessState('reshaping');
     setIsReshaping(true);
     try {
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise(r => setTimeout(r, 1500));
       await handleFeasibilityConfirm();
     } finally {
       setIsReshaping(false);
+      setAiProcessState('idle');
     }
   };
 
@@ -257,7 +290,9 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
           removeExisting,
           (thought) => console.log("AI Thinking:", thought),
           user?.email,
-          getPromptLanguage(i18n.language)
+          getPromptLanguage(i18n.language),
+          trip.input.language || getPromptLanguage(i18n.language),
+          () => setAiProcessState('planning')
         );
 
         if (result.updatedData) {
@@ -455,7 +490,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
       )}
 
       {/* Global Loading Overlay for Explorer Update or Checking */}
-      {(isUpdatingFromExplorer || isCheckingFeasibility || isReshaping) && (
+      {(isUpdatingFromExplorer || aiProcessState !== 'idle') && (
         <div className="absolute inset-0 z-[70] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-300">
           <div className="bg-white p-8 rounded-2xl shadow-2xl border border-gray-100 flex flex-col items-center max-w-sm text-center">
             <div className="relative mb-4">
@@ -465,13 +500,17 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
               </div>
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">
-              {isCheckingFeasibility ? t('trip.checking_feasibility') : t('trip.reshaping')}
+              {aiProcessState === 'planning' && (t('trip.ai_planning') || "AI 正在規劃行程...")}
+              {aiProcessState === 'checking' && t('trip.checking_feasibility')}
+              {aiProcessState === 'reshaping' && t('trip.reshaping')}
+              {/* Fallback for simple explorer update if needed */}
+              {isUpdatingFromExplorer && !['planning', 'checking', 'reshaping'].includes(aiProcessState) && t('trip.reshaping')}
             </h3>
             <p className="text-gray-500 text-sm">
-              {isCheckingFeasibility
-                ? t('trip.check_desc')
-                : t('trip.reshape_desc')
-              }
+              {aiProcessState === 'planning' && (t('trip.plan_desc') || "正在根據您的需求調整路線與景點...")}
+              {aiProcessState === 'checking' && t('trip.check_desc')}
+              {aiProcessState === 'reshaping' && t('trip.reshape_desc')}
+              {isUpdatingFromExplorer && !['planning', 'checking', 'reshaping'].includes(aiProcessState) && t('trip.reshape_desc')}
             </p>
           </div>
         </div>

@@ -129,7 +129,9 @@
         "travelers": "人数",
         "interests": "興味",
         "navigate": "ナビゲーション",
-        "alternatives": "代替案"
+        "alternatives": "代替案",
+        "ai_planning": "AIが旅程を計画中...",
+        "plan_desc": "ご要望に基づいてルートやスポットを調整しています..."
     },
     "trip_detail": {
         "tabs": {

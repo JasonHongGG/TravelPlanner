@@ -60,7 +60,8 @@ export class TravelAIService {
     private async streamAndAccumulate(
         endpoint: string,
         body: any,
-        onChunk?: (text: string) => void
+        onChunk?: (text: string) => void,
+        onPlanningStart?: () => void
     ): Promise<string> {
         const headers = this.getAuthHeaders();
 
@@ -98,6 +99,10 @@ export class TravelAIService {
                             const text = data.chunk;
                             fullText += text;
                             if (onChunk) onChunk(text);
+
+                            if (fullText.includes("___UPDATE_JSON___") && onPlanningStart) {
+                                onPlanningStart();
+                            }
                         } else if (data.type === 'error') {
                             throw new Error(data.message);
                         }
@@ -164,7 +169,9 @@ export class TravelAIService {
         history: Message[],
         onThought?: ((text: string) => void) | undefined,
         userId?: string,
-        language: string = "Traditional Chinese"
+        language: string = "Traditional Chinese",
+        tripLanguage: string = "Traditional Chinese",
+        onPlanningStart?: () => void
     ): Promise<UpdateResult> {
         // Model is determined by backend configuration
 
@@ -180,7 +187,8 @@ export class TravelAIService {
                 description: `Update Trip: ${history[history.length - 1]?.text.substring(0, 20)}...`,
                 currentData,
                 history: history.slice(-10),
-                language
+                language,
+                tripLanguage // Add this
             })
         });
 
@@ -234,6 +242,10 @@ export class TravelAIService {
 
                                 if (delimiterIndex !== -1) {
                                     isJsonMode = true;
+
+                                    // Trigger start of planning phase
+                                    if (onPlanningStart) onPlanningStart();
+
                                     const fullThought = fullText.substring(0, delimiterIndex);
                                     const newThoughtPart = fullThought.substring(displayedText.length);
 
@@ -293,7 +305,9 @@ export class TravelAIService {
         removeExisting: string[],
         onThought?: (text: string) => void,
         userId?: string,
-        language?: string
+        language?: string,
+        tripLanguage?: string,
+        onPlanningStart?: () => void
     ): Promise<UpdateResult> {
         const body = {
             action: 'EXPLORER_UPDATE',
@@ -303,10 +317,11 @@ export class TravelAIService {
             newAvoid,
             keepExisting,
             removeExisting,
-            language
+            language,
+            tripLanguage
         };
 
-        const responseText = await this.streamAndAccumulate('/stream-update', body, onThought);
+        const responseText = await this.streamAndAccumulate('/stream-update', body, onThought, onPlanningStart);
 
         const delimiter = "___UPDATE_JSON___";
         const delimiterIndex = responseText.indexOf(delimiter);

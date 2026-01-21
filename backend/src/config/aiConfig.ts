@@ -132,7 +132,12 @@ export const constructTripPrompt = (input: TripInput): string => {
   `;
 };
 
-export const constructUpdatePrompt = (currentData: TripData, history: Message[], targetLanguage: string = "Traditional Chinese"): string => {
+export const constructUpdatePrompt = (
+  currentData: TripData,
+  history: Message[],
+  chatLanguage: string = "Traditional Chinese",
+  tripLanguage: string = "Traditional Chinese"
+): string => {
   const historyText = history.map(m => `${m.role.toUpperCase()}: ${m.text}`).join('\n');
   const lastUserMessage = history[history.length - 1]?.text || "";
 
@@ -151,7 +156,7 @@ export const constructUpdatePrompt = (currentData: TripData, history: Message[],
     **Scenario A: Discussion / Research Phase**
     If the user is asking for suggestions, options (e.g., "Add a supper spot", "What is good to eat nearby?"), or the request is vague:
     1.  **DO NOT** generate the JSON itinerary yet.
-    2.  Provide a helpful, conversational response listing specific options, pros/cons, or asking clarifying questions. **Use ${targetLanguage}.**
+    2.  Provide a helpful, conversational response listing specific options, pros/cons, or asking clarifying questions. **Use ${chatLanguage}.**
     3.  End your response there.
 
     **CRITICAL FORMATTING RULES FOR CHAT (Strictly Enforce):**
@@ -163,7 +168,7 @@ export const constructUpdatePrompt = (currentData: TripData, history: Message[],
 
     **Scenario B: Decision / Action Phase**
     If the user has made a selection (e.g., "Let's go with option A", "Add the ramen shop"), or gave a direct command (e.g., "Delete day 2"):
-    1.  First, write a brief confirmation of what you are doing. **IMPORTANT: Do NOT use technical terms like 'JSON' or 'Data' in this confirmation. Use natural language like "I will update your itinerary with [Selection]" or "Adding that spot to your plan now". Use ${targetLanguage}.**
+    1.  First, write a brief confirmation of what you are doing. **IMPORTANT: Do NOT use technical terms like 'JSON' or 'Data' in this confirmation. Use natural language like "I will update your itinerary with [Selection]" or "Adding that spot to your plan now". Use ${chatLanguage}.**
     2.  Then, output a special separator: "___UPDATE_JSON___".
     3.  Finally, output the **PARTIAL** updated JSON structure.
 
@@ -180,7 +185,7 @@ export const constructUpdatePrompt = (currentData: TripData, history: Message[],
 
     **CONTENT RULES FOR JSON UPDATE**: 
     - **Language**: Place names MUST be in the local native language (e.g. Japanese). 
-    - **Descriptions MUST be in ${targetLanguage}**.
+    - **Descriptions MUST be in ${tripLanguage}**.
     - Maintain "Node Purity" (Specific Place Names only).
     - Ensure Dining stops (Lunch/Dinner) have specific restaurant names.
     - Ensure the 'type' field is correctly set.
@@ -192,7 +197,9 @@ export const constructExplorerUpdatePrompt = (
   newMustVisit: string[],
   newAvoid: string[],
   keepExisting: string[],
-  removeExisting: string[]
+  removeExisting: string[],
+  chatLanguage: string = "Traditional Chinese",
+  tripLanguage: string = "Traditional Chinese"
 ): string => {
   return `
     任務：重新規劃第 ${dayIndex} 天的行程。
@@ -216,13 +223,13 @@ export const constructExplorerUpdatePrompt = (
         - 如果原本的餐廳被移除，請務必在附近安排新的高評價餐廳（符合該時段，如午餐或晚餐）。
 
     **輸出要求**：
-    1.  先用繁體中文簡述你做了哪些調整（例如：「已為您加入[新景點]，並保留了[保留景點]，為了行程順暢，我調整了...」）。
+    1.  先用**${chatLanguage}**簡述你做了哪些調整（例如：「已為您加入[新景點]，並保留了[保留景點]，為了行程順暢，我調整了...」）。
     2.  輸出分隔符 "___UPDATE_JSON___"。
     3.  輸出 JSON，僅包含更新後的第 ${dayIndex} 天資料 (Partial Update)。
 
     **核心原則複誦**：
     - 地點名稱維持當地原生語言 (Node Purity)。
-    - 描述使用繁體中文。
+    - **行程描述與備註使用 ${tripLanguage}**。
     - 確保交通邏輯合理。
     `;
 };

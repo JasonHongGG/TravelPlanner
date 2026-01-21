@@ -129,7 +129,9 @@
         "travelers": "Travelers",
         "interests": "Interests",
         "navigate": "Navigate",
-        "alternatives": "Alternatives"
+        "alternatives": "Alternatives",
+        "ai_planning": "Planning your trip...",
+        "plan_desc": "AI is adjusting route and attractions based on your request..."
     },
     "trip_detail": {
         "tabs": {

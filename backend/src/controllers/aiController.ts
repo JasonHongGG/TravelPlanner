@@ -68,7 +68,7 @@ export async function generate(req: Request, res: Response) {
 
 export async function streamUpdate(req: Request, res: Response) {
     try {
-        const { userId: requestedUserId, action, description, currentData, history, language, tripInput, dayIndex, newMustVisit, newAvoid, keepExisting, removeExisting } = req.body;
+        const { userId: requestedUserId, action, description, currentData, history, language, tripLanguage, tripInput, dayIndex, newMustVisit, newAvoid, keepExisting, removeExisting } = req.body;
         const authToken = (req.headers.authorization || '').replace('Bearer ', '');
         const authUser = (req as Request & { user?: { email?: string } }).user;
         const userId = authUser?.email as string;
@@ -98,7 +98,7 @@ export async function streamUpdate(req: Request, res: Response) {
         };
 
         if (action === 'CHAT_UPDATE') {
-            await provider.updateTrip(currentData, history, onThought, userId, undefined, language);
+            await provider.updateTrip(currentData, history, onThought, userId, undefined, language, tripLanguage);
             res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
             res.end();
 
@@ -113,7 +113,8 @@ export async function streamUpdate(req: Request, res: Response) {
                 onThought,
                 userId,
                 undefined,
-                language
+                language,
+                tripLanguage
             );
             res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
             res.end();

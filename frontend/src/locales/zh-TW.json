@@ -129,7 +129,9 @@
         "travelers": "人數",
         "interests": "興趣偏好",
         "navigate": "路線導航",
-        "alternatives": "替代方案"
+        "alternatives": "替代方案",
+        "ai_planning": "AI 正在規劃行程...",
+        "plan_desc": "正在根據您的需求調整路線與景點..."
     },
     "trip_detail": {
         "tabs": {

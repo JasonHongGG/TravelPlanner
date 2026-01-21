@@ -9,7 +9,7 @@ export interface UpdateResult {
 
 export interface IAIProvider {
     generateTrip(input: TripInput, userId?: string, apiSecret?: string): Promise<TripData>;
-    updateTrip(currentData: TripData, history: Message[], onThought?: (text: string) => void, userId?: string, apiSecret?: string, language?: string): Promise<UpdateResult>;
+    updateTrip(currentData: TripData, history: Message[], onThought?: (text: string) => void, userId?: string, apiSecret?: string, language?: string, tripLanguage?: string): Promise<UpdateResult>;
     getRecommendations(location: string, interests: string, category: 'attraction' | 'food', excludeNames?: string[], userId?: string, apiSecret?: string, language?: string): Promise<AttractionRecommendation[]>;
     checkFeasibility(currentData: TripData, modificationContext: string, userId?: string, apiSecret?: string, language?: string): Promise<FeasibilityResult>;
     updateTripWithExplorer(
@@ -22,6 +22,7 @@ export interface IAIProvider {
         onThought?: (text: string) => void,
         userId?: string,
         apiSecret?: string,
-        language?: string
+        language?: string,
+        tripLanguage?: string
     ): Promise<UpdateResult>;
 }

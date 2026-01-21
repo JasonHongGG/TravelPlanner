@@ -87,8 +87,8 @@ export class CopilotProvider implements IAIProvider {
         return this.parseJson(text) as TripData;
     }
 
-    async updateTrip(currentData: TripData, history: Message[], onThought?: ((text: string) => void) | undefined, userId?: string, apiSecret?: string, language?: string): Promise<UpdateResult> {
-        const text = await this.callCopilot('CHAT_UPDATE', { currentData, history, language }, onThought);
+    async updateTrip(currentData: TripData, history: Message[], onThought?: ((text: string) => void) | undefined, userId?: string, apiSecret?: string, language?: string, tripLanguage?: string): Promise<UpdateResult> {
+        const text = await this.callCopilot('CHAT_UPDATE', { currentData, history, language, tripLanguage }, onThought);
         const delimiter = "___UPDATE_JSON___";
         const parts = text.split(delimiter);
         let updatedData = undefined;
@@ -110,8 +110,8 @@ export class CopilotProvider implements IAIProvider {
         return this.parseJson(text) as FeasibilityResult;
     }
 
-    async updateTripWithExplorer(currentData: TripData, dayIndex: number, newMustVisit: string[], newAvoid: string[], keepExisting: string[], removeExisting: string[], onThought?: ((text: string) => void) | undefined, userId?: string, apiSecret?: string, language?: string): Promise<UpdateResult> {
-        const text = await this.callCopilot('EXPLORER_UPDATE', { currentData, dayIndex, newMustVisit, newAvoid, keepExisting, removeExisting, language }, onThought);
+    async updateTripWithExplorer(currentData: TripData, dayIndex: number, newMustVisit: string[], newAvoid: string[], keepExisting: string[], removeExisting: string[], onThought?: ((text: string) => void) | undefined, userId?: string, apiSecret?: string, language?: string, tripLanguage?: string): Promise<UpdateResult> {
+        const text = await this.callCopilot('EXPLORER_UPDATE', { currentData, dayIndex, newMustVisit, newAvoid, keepExisting, removeExisting, language, tripLanguage }, onThought);
         const delimiter = "___UPDATE_JSON___";
         const parts = text.split(delimiter);
         let updatedData = undefined;

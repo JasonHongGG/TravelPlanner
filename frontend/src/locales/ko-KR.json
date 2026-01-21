@@ -129,7 +129,9 @@
         "travelers": "인원",
         "interests": "관심사",
         "navigate": "길찾기",
-        "alternatives": "대안"
+        "alternatives": "대안",
+        "ai_planning": "AI가 여행을 계획 중입니다...",
+        "plan_desc": "요청에 따라 경로와 명소를 조정하고 있습니다..."
     },
     "trip_detail": {
         "tabs": {

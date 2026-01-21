@@ -48,7 +48,24 @@ async function ensureClient() {
 
 export async function processCopilot(req: Request, res: Response) {
     try {
-        const { action, tripInput, currentData, history, language, location, interests, category, excludeNames, modificationContext, dayIndex, newMustVisit, newAvoid, keepExisting, removeExisting } = req.body;
+        const {
+            action,
+            tripInput,
+            currentData,
+            history,
+            language,
+            tripLanguage, // New param
+            location,
+            interests,
+            category,
+            excludeNames,
+            modificationContext,
+            dayIndex,
+            newMustVisit,
+            newAvoid,
+            keepExisting,
+            removeExisting
+        } = req.body;
 
         console.log(`[Copilot Server] Processing Action: ${action}`);
         const activeClient = await ensureClient();
@@ -60,6 +77,10 @@ export async function processCopilot(req: Request, res: Response) {
         let prompt = "";
         let model = 'gpt-4o';
 
+        // effectiveTripLanguage defaults to language (UI) if not provided, to maintain backward compatibility
+        const effectiveTripLanguage = tripLanguage || language || "Traditional Chinese";
+        const effectiveChatLanguage = language || "Traditional Chinese";
+
         switch (action) {
             case 'GENERATE_TRIP':
                 console.log(`[Copilot Server] Generating Trip: ${tripInput.destination}`);
@@ -68,22 +89,23 @@ export async function processCopilot(req: Request, res: Response) {
                 break;
             case 'CHAT_UPDATE':
                 console.log(`[Copilot Server] Updating Trip: ${currentData.tripMeta.destination}`);
-                prompt = constructUpdatePrompt(currentData, history, language);
+                // Pass (Data, History, ChatLang, TripLang)
+                prompt = constructUpdatePrompt(currentData, history, effectiveChatLanguage, effectiveTripLanguage);
                 model = SERVICE_CONFIG.copilot.models.tripUpdater;
                 break;
             case 'GET_RECOMMENDATIONS':
                 console.log(`[Copilot Server] Getting Recommendations: ${location}`);
-                prompt = constructRecommendationPrompt(location, interests, category, excludeNames, language);
+                prompt = constructRecommendationPrompt(location, interests, category, excludeNames, effectiveChatLanguage);
                 model = SERVICE_CONFIG.copilot.models.recommender;
                 break;
             case 'CHECK_FEASIBILITY':
                 console.log(`[Copilot Server] Checking Feasibility: ${currentData.tripMeta.destination}`);
-                prompt = constructFeasibilityPrompt(currentData, modificationContext, language);
+                prompt = constructFeasibilityPrompt(currentData, modificationContext, effectiveChatLanguage);
                 model = SERVICE_CONFIG.copilot.models.recommender;
                 break;
             case 'EXPLORER_UPDATE':
                 console.log(`[Copilot Server] Updating Explorer: ${currentData.tripMeta.destination}`);
-                prompt = constructExplorerUpdatePrompt(dayIndex, newMustVisit, newAvoid, keepExisting, removeExisting);
+                prompt = constructExplorerUpdatePrompt(dayIndex, newMustVisit, newAvoid, keepExisting, removeExisting, effectiveChatLanguage, effectiveTripLanguage);
                 model = SERVICE_CONFIG.copilot.models.tripUpdater;
                 break;
             default:
