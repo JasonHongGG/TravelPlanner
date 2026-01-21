@@ -1,7 +1,7 @@
 import React from 'react';
 import { Trip } from '../../types';
 import { getTripCover } from '../../utils/tripUtils';
-import { Calendar, Check, Download, Loader2, MapPin, RefreshCw, Users } from 'lucide-react';
+import { Calendar, Check, Download, Languages, Loader2, MapPin, RefreshCw, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LiveTimer from './LiveTimer';
 import DeleteButton from './DeleteButton';
@@ -86,6 +86,12 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onSelect, onDelete, onExport,
             <Users className="w-3.5 h-3.5 text-gray-400 group-hover:text-brand-400" />
             {trip.input.travelers}
           </span>
+          {trip.input.language && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 text-xs font-medium text-gray-600 border border-gray-100 group-hover:bg-brand-50/50 group-hover:border-brand-100 transition-colors">
+              <Languages className="w-3.5 h-3.5 text-gray-400 group-hover:text-brand-400" />
+              {trip.input.language}
+            </span>
+          )}
         </div>
       </div>
 
