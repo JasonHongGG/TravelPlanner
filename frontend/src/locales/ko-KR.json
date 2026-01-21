@@ -10,6 +10,7 @@
         "pro_member": "PRO 멤버",
         "top_up": "충전하기",
         "history": "사용 내역",
+        "settings": "설정",
         "logout": "로그아웃",
         "language": "언어"
     },
@@ -290,5 +291,29 @@
         "locked_desc": "프리미엄으로 업그레이드하여 무제한 AI 일정 조정 및 즉시 상담을 즐기세요.",
         "upgrade_btn": "업그레이드 플랜 보기",
         "welcome_message": "안녕하세요! AI 여행 비서입니다. 여행 일정 조정, 맛집 찾기 등 여행에 대해 무엇이든 물어보세요!"
+    },
+    "settings": {
+        "title": "설정",
+        "subtitle": "여행 계획 경험을 개인화하세요",
+        "synced": "동기됨",
+        "syncing": "동기 중...",
+        "sync_failed": "동기 실패",
+        "ai_assistant": "AI 어시스턴트 설정",
+        "queue_size": "추천 프리로드 배치 수",
+        "queue_hint": "배치가 많을수록 대기 시간이 줄어들지만 더 많은 포인트를 소모합니다",
+        "batch_unit": "배치",
+        "language_pref": "언어 설정",
+        "title_language": "여행 제목 언어",
+        "local_lang": "현지 언어",
+        "local_lang_desc": "목적지 언어로 제목 표시",
+        "local_lang_example": "일본 여행 → 일본어 제목",
+        "specified_lang": "지정한 언어",
+        "specified_lang_desc": "생성 시 지정한 언어 사용",
+        "specified_lang_example": "일본 여행 → 한국어 제목",
+        "reset_defaults": "기본값으로 재설정",
+        "reset_confirm": "모든 설정을 재설정하시겠습니까?",
+        "reset_title": "설정 재설정",
+        "reset_desc": "모든 설정을 기본값으로 복원합니다. 이 작업은 취소할 수 없습니다.",
+        "reset_btn": "재설정"
     }
 }

@@ -6,6 +6,7 @@ import './src/i18n'; // Initialize i18n
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './context/AuthContext';
 import { PointsProvider } from './context/PointsContext';
+import { SettingsProvider } from './context/SettingsContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -24,7 +25,9 @@ root.render(
     <GoogleOAuthProvider clientId={clientId}>
       <AuthProvider>
         <PointsProvider>
-          <App />
+          <SettingsProvider>
+            <App />
+          </SettingsProvider>
         </PointsProvider>
       </AuthProvider>
     </GoogleOAuthProvider>

@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LogOut, User, Coins, History, ChevronDown, ChevronUp, CreditCard, Sparkles } from 'lucide-react';
+import { LogOut, User, Coins, History, ChevronDown, ChevronUp, CreditCard, Sparkles, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { usePoints } from '../context/PointsContext';
+import { useSettings } from '../context/SettingsContext';
 import TransactionHistoryModal from './TransactionHistoryModal';
+import SettingsModal from './SettingsModal';
 import { useTranslation } from 'react-i18next';
 
 export default function UserProfileMenu() {
@@ -23,6 +25,7 @@ export default function UserProfileMenu() {
     }, []);
 
     const { balance, openPurchaseModal, isSubscribed } = usePoints();
+    const { isSettingsModalOpen, openSettingsModal, closeSettingsModal } = useSettings();
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
     if (!user) return null;
@@ -144,6 +147,22 @@ export default function UserProfileMenu() {
                                 <ChevronDown className="w-4 h-4 text-gray-300 -rotate-90" />
                             </button>
 
+                            <button
+                                onClick={() => {
+                                    setIsOpen(false);
+                                    openSettingsModal();
+                                }}
+                                className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-purple-50 text-purple-600 rounded-lg group-hover:bg-purple-100 transition-colors">
+                                        <Settings className="w-4 h-4" />
+                                    </div>
+                                    <span className="text-sm font-medium text-gray-700">{t('profile.settings')}</span>
+                                </div>
+                                <ChevronDown className="w-4 h-4 text-gray-300 -rotate-90" />
+                            </button>
+
                             <div className="border-t border-gray-100 my-2"></div>
 
                             <button
@@ -163,6 +182,11 @@ export default function UserProfileMenu() {
             <TransactionHistoryModal
                 isOpen={isHistoryModalOpen}
                 onClose={() => setIsHistoryModalOpen(false)}
+            />
+
+            <SettingsModal
+                isOpen={isSettingsModalOpen}
+                onClose={closeSettingsModal}
             />
         </div>
     );

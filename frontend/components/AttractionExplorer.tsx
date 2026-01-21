@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Sparkles, Plus, Minus, X, Loader2, Check, MapPin, Clock, Map as MapIcon, Utensils, Mountain, Lock, Trash2, RotateCcw, List, Ban, Layers, ChevronDown, ArrowDownCircle, Coins, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +6,7 @@ import { aiService } from '../services';
 import { getStopIcon } from '../utils/icons';
 import { usePoints } from '../context/PointsContext';
 import { useAuth } from '../context/AuthContext';
+import { useSettings } from '../context/SettingsContext';
 
 
 interface Props {
@@ -43,7 +43,8 @@ export default function AttractionExplorer({
 
     const { balance, openPurchaseModal, isSubscribed, config } = usePoints();
     const { user } = useAuth();
-    const QUEUE_SIZE = 3; // Defined as per user request (3 batches/queues)
+    const { settings } = useSettings();
+    const QUEUE_SIZE = settings.explorerQueueSize; // Dynamic from user settings
 
     const [searchConfirmation, setSearchConfirmation] = useState<{
         query: string;

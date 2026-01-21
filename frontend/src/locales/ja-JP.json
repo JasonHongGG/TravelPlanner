@@ -10,6 +10,7 @@
         "pro_member": "PROメンバー",
         "top_up": "チャージ",
         "history": "履歴",
+        "settings": "設定",
         "logout": "ログアウト",
         "language": "言語"
     },
@@ -290,5 +291,29 @@
         "locked_desc": "プレミアムにアップグレードすると、AIによる旅程調整と即時相談が無制限になります。",
         "upgrade_btn": "アップグレードプランを見る",
         "welcome_message": "こんにちは！AIトラベルアシスタントです。旅程の調整、レストラン探し、旅行に関する質問なら何でも聞いてください！"
+    },
+    "settings": {
+        "title": "設定",
+        "subtitle": "旅行計画体験をパーソナライズ",
+        "synced": "同期済み",
+        "syncing": "同期中...",
+        "sync_failed": "同期に失敗",
+        "ai_assistant": "AI アシスタント設定",
+        "queue_size": "おすすめプリロードバッチ数",
+        "queue_hint": "バッチ数を増やすと待ち時間が減りますが、より多くのポイントを消費します",
+        "batch_unit": "バッチ",
+        "language_pref": "言語設定",
+        "title_language": "旅程タイトルの言語",
+        "local_lang": "現地語",
+        "local_lang_desc": "目的地の言語でタイトルを表示",
+        "local_lang_example": "日本旅行 → 日本語タイトル",
+        "specified_lang": "指定した言語",
+        "specified_lang_desc": "生成時に指定した言語を使用",
+        "specified_lang_example": "日本旅行 → 指定言語タイトル",
+        "reset_defaults": "デフォルトにリセット",
+        "reset_confirm": "すべての設定をリセットしますか？",
+        "reset_title": "設定をリセット",
+        "reset_desc": "すべての設定をデフォルト値に戻します。この操作は元に戻せません。",
+        "reset_btn": "リセット"
     }
 }

@@ -10,6 +10,7 @@
         "pro_member": "PRO 會員",
         "top_up": "儲值點數",
         "history": "消費紀錄",
+        "settings": "設定",
         "logout": "登出帳號",
         "language": "語言"
     },
@@ -290,5 +291,29 @@
         "locked_desc": "升級成為旅遊貼身助理會員，即可享有無限次 AI 行程調整與即時諮詢服務。",
         "upgrade_btn": "查看升級方案",
         "welcome_message": "嗨！我是您的 AI 旅遊助理。想要調整行程、尋找餐廳，或是有任何旅行問題，都可以問我喔！"
+    },
+    "settings": {
+        "title": "設定",
+        "subtitle": "個人化您的旅程規劃體驗",
+        "synced": "已同步",
+        "syncing": "同步中...",
+        "sync_failed": "同步失敗",
+        "ai_assistant": "AI 助手設定",
+        "queue_size": "推薦預載批次數",
+        "queue_hint": "較多批次可減少等待時間，但會消耗更多點數",
+        "batch_unit": "批次",
+        "language_pref": "語言偏好",
+        "title_language": "行程標題語言",
+        "local_lang": "當地語言",
+        "local_lang_desc": "使用目的地的當地語言顯示標題",
+        "local_lang_example": "日本行程 → 日文標題",
+        "specified_lang": "指定語言",
+        "specified_lang_desc": "使用您在生成時指定的語言",
+        "specified_lang_example": "日本行程 → 中文標題",
+        "reset_defaults": "重設為預設值",
+        "reset_confirm": "確定要重設所有設定嗎？",
+        "reset_title": "重設設定",
+        "reset_desc": "您即將將所有設定回復到預設值，此操作無法復原。",
+        "reset_btn": "重設"
     }
 }

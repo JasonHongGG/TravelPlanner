@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { verifyIdToken } from '../utils/auth';
-import { readUsers, toSafeUser, writeUsers } from '../services/data/userStore';
+import { readUsers, toSafeUser, writeUsers, DEFAULT_SETTINGS, UserSettings } from '../services/data/userStore';
 
 export async function login(req: Request, res: Response) {
     try {
@@ -169,6 +169,82 @@ export function addTransaction(req: Request, res: Response) {
 
     } catch (error: any) {
         console.error(`[DB Server] Error adding transaction for ${req.params.email}:`, error);
+        res.status(500).json({ error: error.message });
+    }
+}
+
+// ============================================================
+// Settings API
+// ============================================================
+
+export function getSettings(req: Request, res: Response) {
+    try {
+        const emailParam = req.params.email;
+        const email = Array.isArray(emailParam) ? emailParam[0] : emailParam;
+        const users = readUsers();
+        const authUser = (req as Request & { user?: { email?: string } }).user;
+
+        if (!authUser?.email || authUser.email !== email) {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        if (!users[email]) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Return user settings or defaults
+        const settings = users[email].settings || DEFAULT_SETTINGS;
+        console.log(`[DB Server] Retrieved settings for ${email}`);
+        res.json(settings);
+    } catch (error: any) {
+        console.error(`[DB Server] Error getting settings:`, error);
+        res.status(500).json({ error: error.message });
+    }
+}
+
+export function updateSettings(req: Request, res: Response) {
+    try {
+        const emailParam = req.params.email;
+        const email = Array.isArray(emailParam) ? emailParam[0] : emailParam;
+
+        const { settings } = req.body;
+        console.log(`[DB Debug] Received updateSettings:`, JSON.stringify(settings));
+
+        const authUser = (req as Request & { user?: { email?: string } }).user;
+
+        if (!authUser?.email || authUser.email !== email) {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        if (!settings) {
+            return res.status(400).json({ error: "Settings object is required" });
+        }
+
+        const users = readUsers();
+
+        if (!users[email]) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Validate and merge settings
+        const currentSettings = users[email].settings || DEFAULT_SETTINGS;
+        const updatedSettings: UserSettings = {
+            explorerQueueSize: typeof settings.explorerQueueSize === 'number'
+                ? Math.min(5, Math.max(0, settings.explorerQueueSize))  // Clamp 0-5
+                : currentSettings.explorerQueueSize,
+            titleLanguageMode: settings.titleLanguageMode === 'local' || settings.titleLanguageMode === 'specified'
+                ? settings.titleLanguageMode
+                : currentSettings.titleLanguageMode
+        };
+        console.log(`[DB Debug] Validated settings:`, JSON.stringify(updatedSettings));
+
+        users[email].settings = updatedSettings;
+        writeUsers(users);
+
+        console.log(`[DB Server] Updated settings for ${email}:`, updatedSettings);
+        res.json(updatedSettings);
+    } catch (error: any) {
+        console.error(`[DB Server] Error updating settings:`, error);
         res.status(500).json({ error: error.message });
     }
 }

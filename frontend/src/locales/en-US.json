@@ -10,6 +10,7 @@
         "pro_member": "PRO Member",
         "top_up": "Top Up",
         "history": "History",
+        "settings": "Settings",
         "logout": "Logout",
         "language": "Language"
     },
@@ -290,5 +291,29 @@
         "locked_desc": "Upgrade to Premium to enjoy unlimited AI trip adjustments and instant consultation.",
         "upgrade_btn": "View Upgrade Plans",
         "welcome_message": "Hi! I'm your AI Travel Assistant. Ask me anything about your trip, restaurants, or adjustments!"
+    },
+    "settings": {
+        "title": "Settings",
+        "subtitle": "Personalize your travel planning experience",
+        "synced": "Synced",
+        "syncing": "Syncing...",
+        "sync_failed": "Sync Failed",
+        "ai_assistant": "AI Assistant Settings",
+        "queue_size": "Recommendation Preload Batches",
+        "queue_hint": "More batches reduce wait time but consume more points",
+        "batch_unit": "batches",
+        "language_pref": "Language Preferences",
+        "title_language": "Trip Title Language",
+        "local_lang": "Local Language",
+        "local_lang_desc": "Display titles in the destination's local language",
+        "local_lang_example": "Japan trip → Japanese titles",
+        "specified_lang": "Specified Language",
+        "specified_lang_desc": "Use the language you specified when generating",
+        "specified_lang_example": "Japan trip → English titles",
+        "reset_defaults": "Reset to Defaults",
+        "reset_confirm": "Are you sure you want to reset all settings?",
+        "reset_title": "Reset Settings",
+        "reset_desc": "You are about to restore all settings to their default values. This action cannot be undone.",
+        "reset_btn": "Reset"
     }
 }
