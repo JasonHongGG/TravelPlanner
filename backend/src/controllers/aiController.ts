@@ -50,11 +50,11 @@ export async function generate(req: Request, res: Response) {
             result = { text: JSON.stringify(results) };
 
         } else if (action === 'CHECK_FEASIBILITY') {
-            const feasibility = await provider.checkFeasibility(tripData, modificationContext, userId, undefined, language);
+            const feasibility = await provider.checkFeasibility(tripData, modificationContext, userId, authToken, language);
             result = { text: JSON.stringify(feasibility) };
 
         } else if (action === 'GENERATE_TRIP') {
-            const trip = await provider.generateTrip(tripInput, userId, undefined);
+            const trip = await provider.generateTrip(tripInput, userId, authToken);
             result = { text: JSON.stringify(trip) };
         } else {
             return res.status(400).json({ error: `Action ${action} not supported on /generate` });
@@ -100,7 +100,7 @@ export async function streamUpdate(req: Request, res: Response) {
         };
 
         if (action === 'CHAT_UPDATE') {
-            await provider.updateTrip(currentData, history, onThought, userId, undefined, language, tripLanguage);
+            await provider.updateTrip(currentData, history, onThought, userId, authToken, language, tripLanguage);
             res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
             res.end();
 
@@ -114,7 +114,7 @@ export async function streamUpdate(req: Request, res: Response) {
                 removeExisting || [],
                 onThought,
                 userId,
-                undefined,
+                authToken,
                 language,
                 tripLanguage
             );
@@ -124,7 +124,7 @@ export async function streamUpdate(req: Request, res: Response) {
         } else if (action === 'GENERATE_TRIP') {
             const keepAlive = setInterval(() => res.write(`: keep-alive\n\n`), 5000);
             try {
-                const tripData = await provider.generateTrip(tripInput, userId, undefined);
+                const tripData = await provider.generateTrip(tripInput, userId, authToken);
                 clearInterval(keepAlive);
                 res.write(`data: ${JSON.stringify({ type: 'content', chunk: "```json\n" + JSON.stringify(tripData) + "\n```" })}\n\n`);
                 res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);

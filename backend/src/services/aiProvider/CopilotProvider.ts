@@ -7,11 +7,16 @@ export class CopilotProvider implements IAIProvider {
 
     constructor() { }
 
-    private async callCopilot(action: string, body: any, onChunk?: (text: string) => void): Promise<string> {
+    private async callCopilot(action: string, body: any, onChunk?: (text: string) => void, apiSecret?: string): Promise<string> {
         try {
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (apiSecret) {
+                headers['Authorization'] = `Bearer ${apiSecret}`;
+            }
+
             const response = await fetch(COPILOT_SERVER_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ action, ...body })
             });
 
@@ -83,12 +88,12 @@ export class CopilotProvider implements IAIProvider {
     }
 
     async generateTrip(input: TripInput, userId?: string, apiSecret?: string): Promise<TripData> {
-        const text = await this.callCopilot('GENERATE_TRIP', { tripInput: input });
+        const text = await this.callCopilot('GENERATE_TRIP', { tripInput: input }, undefined, apiSecret);
         return this.parseJson(text) as TripData;
     }
 
     async updateTrip(currentData: TripData, history: Message[], onThought?: ((text: string) => void) | undefined, userId?: string, apiSecret?: string, language?: string, tripLanguage?: string): Promise<UpdateResult> {
-        const text = await this.callCopilot('CHAT_UPDATE', { currentData, history, language, tripLanguage }, onThought);
+        const text = await this.callCopilot('CHAT_UPDATE', { currentData, history, language, tripLanguage }, onThought, apiSecret);
         const delimiter = "___UPDATE_JSON___";
         const parts = text.split(delimiter);
         let updatedData = undefined;
@@ -100,7 +105,7 @@ export class CopilotProvider implements IAIProvider {
     }
 
     async getRecommendations(location: string, interests: string, category: "attraction" | "food", excludeNames?: string[], userId?: string, apiSecret?: string, language?: string, titleLanguage?: string): Promise<AttractionRecommendation[]> {
-        const text = await this.callCopilot('GET_RECOMMENDATIONS', { location, interests, category, excludeNames, language, tripLanguage: titleLanguage });
+        const text = await this.callCopilot('GET_RECOMMENDATIONS', { location, interests, category, excludeNames, language, tripLanguage: titleLanguage }, undefined, apiSecret);
         const json = this.parseJson(text);
         return Array.isArray(json) ? json : [];
     }
@@ -268,12 +273,12 @@ export class CopilotProvider implements IAIProvider {
     }
 
     async checkFeasibility(currentData: TripData, modificationContext: string, userId?: string, apiSecret?: string, language?: string): Promise<FeasibilityResult> {
-        const text = await this.callCopilot('CHECK_FEASIBILITY', { currentData, modificationContext, language });
+        const text = await this.callCopilot('CHECK_FEASIBILITY', { currentData, modificationContext, language }, undefined, apiSecret);
         return this.parseJson(text) as FeasibilityResult;
     }
 
     async updateTripWithExplorer(currentData: TripData, dayIndex: number, newMustVisit: string[], newAvoid: string[], keepExisting: string[], removeExisting: string[], onThought?: ((text: string) => void) | undefined, userId?: string, apiSecret?: string, language?: string, tripLanguage?: string): Promise<UpdateResult> {
-        const text = await this.callCopilot('EXPLORER_UPDATE', { currentData, dayIndex, newMustVisit, newAvoid, keepExisting, removeExisting, language, tripLanguage }, onThought);
+        const text = await this.callCopilot('EXPLORER_UPDATE', { currentData, dayIndex, newMustVisit, newAvoid, keepExisting, removeExisting, language, tripLanguage }, onThought, apiSecret);
         const delimiter = "___UPDATE_JSON___";
         const parts = text.split(delimiter);
         let updatedData = undefined;
