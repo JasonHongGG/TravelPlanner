@@ -128,8 +128,7 @@ export class CopilotProvider implements IAIProvider {
                     category,
                     excludeNames,
                     language,
-                    tripLanguage: titleLanguage,
-                    count // Pass count to server
+                    tripLanguage: titleLanguage
                 })
             });
 

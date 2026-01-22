@@ -3,6 +3,7 @@ import { Globe, Shuffle, Loader2, ArrowLeft, TrendingUp, Sparkles } from 'lucide
 import { useTranslation } from 'react-i18next';
 import type { SharedTripMeta, GalleryResponse } from '../types';
 import { tripShareService } from '../services/TripShareService';
+import { usePoints } from '../context/PointsContext';
 import TripPreviewCard from './TripPreviewCard';
 
 interface GalleryPageProps {
@@ -12,6 +13,7 @@ interface GalleryPageProps {
 
 export default function GalleryPage({ onBack, onSelectTrip }: GalleryPageProps) {
     const { t } = useTranslation();
+    const { config } = usePoints();
     const [trips, setTrips] = useState<SharedTripMeta[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -20,7 +22,7 @@ export default function GalleryPage({ onBack, onSelectTrip }: GalleryPageProps) 
     const [total, setTotal] = useState(0);
     const [error, setError] = useState<string | null>(null);
 
-    const pageSize = 12;
+    const pageSize = config.GALLERY_PAGE_SIZE_DEFAULT;
     const hasMore = trips.length < total;
 
     // Load initial data
@@ -64,7 +66,7 @@ export default function GalleryPage({ onBack, onSelectTrip }: GalleryPageProps) 
         setLoading(true);
         setError(null);
         try {
-            const randomTrips = await tripShareService.getRandomTrips(12);
+            const randomTrips = await tripShareService.getRandomTrips(config.RANDOM_TRIPS_DEFAULT);
             setTrips(randomTrips);
             setTotal(randomTrips.length);
             setIsRandomMode(true);

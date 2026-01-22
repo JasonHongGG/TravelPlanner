@@ -47,7 +47,7 @@ export default function AttractionExplorer({
     const { user } = useAuth();
     const { settings } = useSettings();
     const QUEUE_SIZE = settings.explorerQueueSize; // Dynamic from user settings
-    const BATCH_SIZE = 6; // User requested parameterization for testing. Default 12.
+    const BATCH_SIZE = config.RECOMMENDATION_COUNT; // Server-defined recommendation batch size.
 
     const [searchConfirmation, setSearchConfirmation] = useState<{
         query: string;
@@ -238,8 +238,7 @@ export default function AttractionExplorer({
                 onItemReceived,
                 user?.email,
                 lang,
-                titleLanguage,
-                BATCH_SIZE
+                titleLanguage
             );
 
         } catch (e) {
@@ -425,8 +424,7 @@ export default function AttractionExplorer({
                 },
                 userId,
                 lang,
-                titleLanguage,
-                BATCH_SIZE
+                titleLanguage
             );
 
         } catch (e) {
@@ -474,9 +472,9 @@ export default function AttractionExplorer({
     const currentCount = currentStops.length;
 
     // Calculate batch status for UI
-    // Dynamic based on buffer size (12 items per batch)
+    // Dynamic based on buffer size
     const bufferCount = buffer[activeTab].length;
-    const preloadingBatchNumber = Math.min(QUEUE_SIZE, Math.floor(bufferCount / 12) + 1);
+    const preloadingBatchNumber = Math.min(QUEUE_SIZE, Math.floor(bufferCount / BATCH_SIZE) + 1);
 
     if (!isOpen) return null;
 

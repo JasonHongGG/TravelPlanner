@@ -3,6 +3,7 @@ import { BackendAIService } from '../services/BackendAIService';
 import { deductPoints } from '../services/business/pointsService';
 import { pricingService } from '../services/business/pricingService';
 import { packageService } from '../services/business/packageService';
+import { RECOMMENDATION_COUNT } from '../config/apiLimits';
 
 export function getConfig(req: Request, res: Response) {
     res.json(pricingService.getConfig());
@@ -145,7 +146,7 @@ export async function streamUpdate(req: Request, res: Response) {
 
 export async function streamRecommendations(req: Request, res: Response) {
     try {
-        const { userId: requestedUserId, location, interests, category, excludeNames, language, titleLanguage, count } = req.body;
+        const { userId: requestedUserId, location, interests, category, excludeNames, language, titleLanguage } = req.body;
         const authToken = (req.headers.authorization || '').replace('Bearer ', '');
         const authUser = (req as Request & { user?: { email?: string } }).user;
         const userId = authUser?.email as string;
@@ -184,7 +185,7 @@ export async function streamRecommendations(req: Request, res: Response) {
                 undefined,
                 language,
                 titleLanguage,
-                count || 12
+                RECOMMENDATION_COUNT
             );
         } else {
             // Fallback to non-streaming

@@ -1,5 +1,7 @@
 import type { Request, Response } from 'express';
 import * as tripShareService from '../services/data/tripShareService';
+import { parseBoundedInt } from '../utils/params';
+import { GALLERY_PAGE_MAX, GALLERY_PAGE_SIZE_DEFAULT, GALLERY_PAGE_SIZE_MAX, RANDOM_TRIPS_DEFAULT, RANDOM_TRIPS_MAX } from '../config/apiLimits';
 
 // Local type definition (shared types not directly importable in backend)
 type TripVisibility = 'private' | 'public';
@@ -200,8 +202,8 @@ export function likeTrip(req: Request, res: Response) {
 
 export function getGallery(req: Request, res: Response) {
     try {
-        const page = parseInt(req.query.page as string) || 1;
-        const pageSize = parseInt(req.query.pageSize as string) || 12;
+        const page = parseBoundedInt(req.query.page, 1, { min: 1, max: GALLERY_PAGE_MAX });
+        const pageSize = parseBoundedInt(req.query.pageSize, GALLERY_PAGE_SIZE_DEFAULT, { min: 1, max: GALLERY_PAGE_SIZE_MAX });
 
         const result = tripShareService.getPublicTrips(page, pageSize);
         res.json(result);
@@ -213,7 +215,7 @@ export function getGallery(req: Request, res: Response) {
 
 export function getRandomTrips(req: Request, res: Response) {
     try {
-        const count = parseInt(req.query.count as string) || 6;
+        const count = parseBoundedInt(req.query.count, RANDOM_TRIPS_DEFAULT, { min: 1, max: RANDOM_TRIPS_MAX });
 
         const trips = tripShareService.getRandomTrips(count);
         res.json({ trips });

@@ -10,6 +10,7 @@ import {
     SYSTEM_INSTRUCTION
 } from "../config/aiConfig";
 import { SERVICE_CONFIG } from "../config/serviceConfig";
+import { RECOMMENDATION_COUNT } from "../config/apiLimits";
 
 // Copilot Client Setup
 const binPath = path.join(process.cwd(), 'node_modules', '.bin');
@@ -64,8 +65,7 @@ export async function processCopilot(req: Request, res: Response) {
             newMustVisit,
             newAvoid,
             keepExisting,
-            removeExisting,
-            count // New param
+            removeExisting
         } = req.body;
 
         console.log(`[Copilot Server] Processing Action: ${action}`);
@@ -95,8 +95,8 @@ export async function processCopilot(req: Request, res: Response) {
                 model = SERVICE_CONFIG.copilot.models.tripUpdater;
                 break;
             case 'GET_RECOMMENDATIONS':
-                console.log(`[Copilot Server] Getting Recommendations: ${location} (Count: ${count || 12})`);
-                prompt = constructRecommendationPrompt(location, interests, category, excludeNames, effectiveChatLanguage, effectiveTripLanguage, count || 12);
+                console.log(`[Copilot Server] Getting Recommendations: ${location} (Count: ${RECOMMENDATION_COUNT})`);
+                prompt = constructRecommendationPrompt(location, interests, category, excludeNames, effectiveChatLanguage, effectiveTripLanguage, RECOMMENDATION_COUNT);
                 model = SERVICE_CONFIG.copilot.models.recommender;
                 break;
             case 'CHECK_FEASIBILITY':

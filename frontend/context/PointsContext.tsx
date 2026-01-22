@@ -18,6 +18,12 @@ export interface PointConfig {
     TRIP_DAILY_COST: number;
     NEW_USER_BONUS: number;
     ATTRACTION_SEARCH_COST: number;
+    RECOMMENDATION_COUNT: number;
+    GALLERY_PAGE_SIZE_DEFAULT: number;
+    GALLERY_PAGE_SIZE_MAX: number;
+    GALLERY_PAGE_MAX: number;
+    RANDOM_TRIPS_DEFAULT: number;
+    RANDOM_TRIPS_MAX: number;
 }
 
 interface PointsContextType {
@@ -100,7 +106,13 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         TRIP_BASE_COST: 50,
         TRIP_DAILY_COST: 10,
         NEW_USER_BONUS: 500,
-        ATTRACTION_SEARCH_COST: 10
+        ATTRACTION_SEARCH_COST: 10,
+        RECOMMENDATION_COUNT: 12,
+        GALLERY_PAGE_SIZE_DEFAULT: 12,
+        GALLERY_PAGE_SIZE_MAX: 24,
+        GALLERY_PAGE_MAX: 1000,
+        RANDOM_TRIPS_DEFAULT: 6,
+        RANDOM_TRIPS_MAX: 12
     });
 
     useEffect(() => {

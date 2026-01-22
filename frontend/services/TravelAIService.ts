@@ -383,11 +383,9 @@ export class TravelAIService {
         onItem: (item: AttractionRecommendation) => void,
         userId?: string,
         language: string = "Traditional Chinese",
-        titleLanguage?: string,
-        batchSize: number = 12 // Default 12 if not specified
+        titleLanguage?: string
     ): Promise<void> {
         const headers = this.getAuthHeaders();
-
         const response = await fetch(`${SERVER_URL}/stream-recommendations`, {
             method: 'POST',
             headers,
@@ -397,8 +395,7 @@ export class TravelAIService {
                 category,
                 excludeNames,
                 language,
-                titleLanguage,
-                count: batchSize // Pass as 'count' to backend
+                titleLanguage
             })
         });
 
