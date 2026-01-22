@@ -63,7 +63,7 @@ export default function AttractionExplorer({
 
     // Loading States
     const [initialLoading, setInitialLoading] = useState(false); // Blocking UI (First load)
-    const [isPreloading, setIsPreloading] = useState(false);     // Background loading
+    const [preloadingTab, setPreloadingTab] = useState<TabType | null>(null); // Track WHICH tab is preloading
     const [isLoadingMore, setIsLoadingMore] = useState(false);   // Manual load more
     const [isWaitingForBuffer, setIsWaitingForBuffer] = useState(false); // User clicked load more but buffer empty
     const [targetCount, setTargetCount] = useState(12);          // Expected total count for progress indicator
@@ -137,22 +137,24 @@ export default function AttractionExplorer({
         // Buffer Target: We want to keep QUEUE_SIZE batches (approx BATCH_SIZE * QUEUE_SIZE items) in reserve
         const bufferLen = buffer[activeTab].length;
         const BUFFER_TARGET = BATCH_SIZE * QUEUE_SIZE;
+        const isCurrentTabPreloading = preloadingTab === activeTab;
 
         // If buffer is low and we aren't currently fetching, fetch more in background
         // Only if QUEUE_SIZE > 0
-        if (QUEUE_SIZE > 0 && bufferLen < BUFFER_TARGET && !isPreloading && !initialLoading) {
+        if (QUEUE_SIZE > 0 && bufferLen < BUFFER_TARGET && !isCurrentTabPreloading && !initialLoading) {
             fetchNextBatchBackground();
         }
-    }, [results, buffer, activeTab, isPreloading, initialLoading, QUEUE_SIZE, isLoadingMore]);
+    }, [results, buffer, activeTab, preloadingTab, initialLoading, QUEUE_SIZE, isLoadingMore]);
 
     // Sync isLoadingMore with isPreloading completion
     // If we hijacked a stream, we need to turn off Loading More when that stream finishes
     useEffect(() => {
-        if (!isPreloading && isLoadingMore) {
+        const isCurrentTabPreloading = preloadingTab === activeTab;
+        if (!isCurrentTabPreloading && isLoadingMore) {
             setIsLoadingMore(false);
             isLoadingMoreRef.current = false;
         }
-    }, [isPreloading, isLoadingMore]);
+    }, [preloadingTab, isLoadingMore, activeTab]);
 
     // Buffer Drain Effect:
     // If we are "Loading More", NO items should stay in buffer.
@@ -179,8 +181,13 @@ export default function AttractionExplorer({
 
     const fetchNextBatchBackground = async () => {
         if (!isMounted.current) return;
-        setIsPreloading(true);
+
         const currentTab = activeTab;
+
+        // Prevent duplicate loads for SAME tab
+        if (preloadingTab === currentTab) return;
+
+        setPreloadingTab(currentTab);
 
         // Smart Callback: Routes item to Buffer (default) or Results (if user clicked Load More)
         const onItemReceived = (item: AttractionRecommendation) => {
@@ -238,7 +245,10 @@ export default function AttractionExplorer({
         } catch (e) {
             console.error("Background fetch failed", e);
         } finally {
-            if (isMounted.current) setIsPreloading(false);
+            if (isMounted.current) {
+                // Only clear if WE were the one preloading this tab
+                setPreloadingTab(prev => (prev === currentTab ? null : prev));
+            }
         }
     };
 
@@ -291,15 +301,15 @@ export default function AttractionExplorer({
             return;
         }
 
-        // 3. If Preloading is Active:
+        // 3. If Preloading is Active FOR THIS TAB:
         // We did NOTHING else here. The active stream callback will see `isLoadingMoreRef.current = true`
         // and automatically start pushing the REST of the items to `results`.
-        // The useEffect will handle turning off isLoadingMore when isPreloading becomes false.
-        if (isPreloading) {
+        // The useEffect will handle turning off isLoadingMore when preloadingTab becomes null.
+        if (preloadingTab === currentTab) {
             return;
         }
 
-        // 4. If NO Preloading Active:
+        // 4. If NO Preloading Active (or preloading wrong tab):
         // Start a new fetch. Since `isLoadingMore` is true, `fetchNextBatchBackground`
         // will stream items directly to `results`.
         await fetchNextBatchBackground();
@@ -663,7 +673,7 @@ export default function AttractionExplorer({
                         )}
 
                         {initialLoading && currentList.length === 0 ? (
-                            <div className="h-full flex flex-col items-center justify-center text-gray-400 space-y-4">
+                            <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 space-y-4">
                                 <div className="relative">
                                     <div className="w-16 h-16 rounded-full border-4 border-brand-100 border-t-brand-500 animate-spin" />
                                     <Sparkles className="w-6 h-6 text-brand-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
@@ -791,10 +801,10 @@ export default function AttractionExplorer({
 
                                         {/* Pre-loading Status Text */}
                                         <div className="h-5 text-[10px] text-gray-400 font-medium flex items-center gap-1.5">
-                                            {QUEUE_SIZE > 0 && isPreloading && !isWaitingForBuffer && (
+                                            {QUEUE_SIZE > 0 && preloadingTab === activeTab && !isWaitingForBuffer && (
                                                 <>
                                                     <Loader2 className="w-3 h-3 animate-spin" />
-                                                    <span>{t('explorer.preloading', { current: preloadingBatchNumber, total: QUEUE_SIZE })}</span>
+                                                    <span>{t('explorer.preloading', { current: 1, total: QUEUE_SIZE })}</span>
                                                 </>
                                             )}
                                         </div>
