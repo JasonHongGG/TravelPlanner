@@ -101,6 +101,26 @@ export default function GalleryPage({ onBack, onSelectTrip }: GalleryPageProps) 
                             </div>
                         </div>
 
+                        {/* Right: View Toggle */}
+                        <div className="flex items-center">
+                            <div className="flex bg-gray-100/50 p-1 rounded-full border border-gray-200">
+                                <button
+                                    onClick={handleBackToTrending}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${!isRandomMode ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                                >
+                                    <Flame className={`w-3.5 h-3.5 ${!isRandomMode ? 'fill-current' : ''}`} />
+                                    熱門
+                                </button>
+                                <button
+                                    onClick={handleRandomize}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${isRandomMode ? 'bg-white text-violet-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                                >
+                                    <Shuffle className="w-3.5 h-3.5" />
+                                    隨機
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </nav>
@@ -109,23 +129,7 @@ export default function GalleryPage({ onBack, onSelectTrip }: GalleryPageProps) 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
                 {/* Hero Section */}
                 <div className="mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col items-center text-center">
-                    {/* Segmented Control */}
-                    <div className="inline-flex p-1 mb-6 bg-gray-100/80 backdrop-blur-sm rounded-full border border-gray-200 shadow-inner">
-                        <button
-                            onClick={handleBackToTrending}
-                            className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${!isRandomMode ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
-                        >
-                            <Flame className={`w-4 h-4 ${!isRandomMode ? 'fill-current' : ''}`} />
-                            熱門推薦
-                        </button>
-                        <button
-                            onClick={handleRandomize}
-                            className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${isRandomMode ? 'bg-white text-violet-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
-                        >
-                            <Shuffle className="w-4 h-4" />
-                            隨機探索
-                        </button>
-                    </div>
+
 
                     <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
                         {isRandomMode ? '探索未知的旅程' : '探索熱門旅程'}
