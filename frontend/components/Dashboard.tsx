@@ -3,7 +3,7 @@ import React, { useRef } from 'react';
 import { Trip } from '../types';
 import UserProfileMenu from './UserProfileMenu';
 import LanguageSwitcher from './LanguageSwitcher';
-import { Plus, Map, Upload, ArrowRight, MoreHorizontal, Clock, Sparkles, Globe } from 'lucide-react';
+import { Plus, Map, Upload, ArrowRight, MoreHorizontal, Clock, Sparkles, Globe, Compass } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import TripCard from './dashboard/TripCard';
 import { usePoints } from '../context/PointsContext';
@@ -119,7 +119,7 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
                   onClick={onOpenGallery}
                   className="inline-flex items-center px-3 py-2 text-sm font-bold text-gray-600 hover:text-brand-600 bg-transparent hover:bg-brand-50 rounded-lg transition-all"
                 >
-                  <Globe className="w-4 h-4 mr-2" />
+                  <Compass className="w-4 h-4 mr-2" />
                   <span className="hidden sm:inline">探索</span>
                 </button>
               )}

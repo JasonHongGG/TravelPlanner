@@ -53,9 +53,9 @@ export default function TripPreviewCard({ trip, onSelect }: TripPreviewCardProps
 
                 {/* Hover Overlay with View Button */}
                 <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                    <span className="px-4 py-2 bg-white/90 backdrop-blur-sm text-gray-900 rounded-full text-sm font-bold shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                        👁 查看詳情
-                    </span>
+                    <div className="p-3 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg transition-opacity duration-200">
+                        <Eye className="w-6 h-6" strokeWidth={2} />
+                    </div>
                 </div>
 
                 {/* Stats Badge */}
