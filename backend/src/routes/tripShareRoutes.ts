@@ -8,7 +8,8 @@ import {
     updatePermissions,
     likeTrip,
     getGallery,
-    getRandomTrips
+    getRandomTrips,
+    getMyTrips
 } from '../controllers/tripShareController';
 
 const router = Router();
@@ -23,6 +24,9 @@ router.get('/gallery/random', getRandomTrips);
 // ==========================================
 // Trip Routes
 // ==========================================
+
+// Get user's own shared trips (for sync cleanup) - MUST be before :tripId routes
+router.get('/trips/my', requireAuth, getMyTrips);
 
 // Get trip (optional auth for permission check)
 router.get('/trips/:tripId', optionalAuth, getTrip);

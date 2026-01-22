@@ -222,3 +222,25 @@ export function getRandomTrips(req: Request, res: Response) {
         res.status(500).json({ error: error.message });
     }
 }
+
+// ==========================================
+// Get My Trips (for sync cleanup)
+// ==========================================
+
+export function getMyTrips(req: Request, res: Response) {
+    try {
+        const authUser = (req as Request & { user?: { email?: string } }).user;
+
+        if (!authUser?.email) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        const trips = tripShareService.getUserTrips(authUser.email);
+        const tripIds = trips.map(t => t.tripId);
+
+        res.json({ tripIds });
+    } catch (error: any) {
+        console.error('[TripShareController] Error getting my trips:', error);
+        res.status(500).json({ error: error.message });
+    }
+}

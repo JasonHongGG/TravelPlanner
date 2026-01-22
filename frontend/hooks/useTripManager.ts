@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Trip, TripInput, TripData } from '../types';
 import { aiService } from '../services';
+import { tripShareService } from '../services/TripShareService';
 import { usePoints } from '../context/PointsContext';
 import { useAuth } from '../context/AuthContext';
 import { calculateTripCost } from '../utils/tripUtils';
@@ -124,7 +125,20 @@ export const useTripManager = () => {
   };
 
   const deleteTrip = (tripId: string) => {
+    // Find the trip before deleting to check if it has server data
+    const trip = trips.find(t => t.id === tripId);
+
+    // Delete from local state first
     setTrips(prev => prev.filter(t => t.id !== tripId));
+
+    // If the trip was shared (has serverTripId or visibility), also delete from server
+    if (trip && (trip.serverTripId || trip.visibility)) {
+      const serverTripId = trip.serverTripId || trip.id;
+      tripShareService.deleteServerTrip(serverTripId).catch(err => {
+        console.error('Failed to delete trip from server:', err);
+        // We don't throw because local deletion already succeeded
+      });
+    }
   };
 
   const importTrip = (tripData: Trip) => {
@@ -138,6 +152,43 @@ export const useTripManager = () => {
     return newTrip;
   };
 
+  // Sync cleanup: Delete orphaned trips from server that no longer exist locally
+  const syncWithServer = async () => {
+    if (!user?.email) return;
+
+    try {
+      // Get list of trip IDs the user has shared on the server
+      const serverTripIds = await tripShareService.getMySharedTripIds();
+
+      if (serverTripIds.length === 0) return;
+
+      // Get local trip IDs (both id and serverTripId)
+      const localTripIds = new Set<string>();
+      trips.forEach(trip => {
+        localTripIds.add(trip.id);
+        if (trip.serverTripId) {
+          localTripIds.add(trip.serverTripId);
+        }
+      });
+
+      // Find orphaned trips (on server but not locally)
+      const orphanedTripIds = serverTripIds.filter(id => !localTripIds.has(id));
+
+      // Delete orphaned trips from server
+      for (const tripId of orphanedTripIds) {
+        console.log(`[TripManager] Cleaning up orphaned trip from server: ${tripId}`);
+        await tripShareService.deleteServerTrip(tripId);
+      }
+
+      if (orphanedTripIds.length > 0) {
+        console.log(`[TripManager] Cleaned up ${orphanedTripIds.length} orphaned trip(s) from server`);
+      }
+    } catch (error) {
+      console.error('[TripManager] Error syncing with server:', error);
+      // Don't throw - this is a background cleanup task
+    }
+  };
+
   return {
     trips,
     createTrip,
@@ -145,6 +196,7 @@ export const useTripManager = () => {
     updateTrip,
     deleteTrip,
     importTrip,
-    retryTrip
+    retryTrip,
+    syncWithServer
   };
 };

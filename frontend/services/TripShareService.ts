@@ -71,6 +71,21 @@ class TripShareService {
         }
     }
 
+    async getMySharedTripIds(): Promise<string[]> {
+        const response = await fetch(`${API_BASE_URL}/api/trips/my`, {
+            method: 'GET',
+            headers: this.getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            // If unauthorized or error, return empty array
+            return [];
+        }
+
+        const result = await response.json();
+        return result.tripIds || [];
+    }
+
     // ==========================================
     // Visibility & Permissions
     // ==========================================
