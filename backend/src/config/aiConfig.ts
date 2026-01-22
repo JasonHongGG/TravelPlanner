@@ -259,7 +259,8 @@ export const constructRecommendationPrompt = (
   category: 'attraction' | 'food',
   excludeNames: string[],
   targetLanguage: string = "Traditional Chinese",
-  titleLanguage: string = "Local Language"
+  titleLanguage: string = "Local Language",
+  count: number = 12
 ): string => {
   const categoryPrompt = category === 'food'
     ? "當地必吃美食、餐廳、咖啡廳、甜點店、街頭小吃 (請專注於餐飲)"
@@ -273,8 +274,9 @@ export const constructRecommendationPrompt = (
     ? "(請使用當地語言，如日文、韓文)"
     : `(請使用 ${titleLanguage})`;
 
-  return `請針對目的地「${location}」推薦 12 個${categoryPrompt}。
+  return `請針對目的地「${location}」推薦 ${count} 個${categoryPrompt}。
   考慮使用者的興趣：「${interests}」。
+  請嚴格控制數量為 ${count} 個，不多也不少。
   ${excludePrompt}
   
   回傳格式必須是 JSON 陣列，每個物件包含：

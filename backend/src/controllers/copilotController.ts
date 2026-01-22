@@ -64,12 +64,9 @@ export async function processCopilot(req: Request, res: Response) {
             newMustVisit,
             newAvoid,
             keepExisting,
-            removeExisting
+            removeExisting,
+            count // New param
         } = req.body;
-
-        if (action === 'GENERATE_TRIP') {
-            console.log(`[Copilot Server] Received Trip Input:`, JSON.stringify(tripInput, null, 2));
-        }
 
         console.log(`[Copilot Server] Processing Action: ${action}`);
         const activeClient = await ensureClient();
@@ -98,8 +95,8 @@ export async function processCopilot(req: Request, res: Response) {
                 model = SERVICE_CONFIG.copilot.models.tripUpdater;
                 break;
             case 'GET_RECOMMENDATIONS':
-                console.log(`[Copilot Server] Getting Recommendations: ${location}`);
-                prompt = constructRecommendationPrompt(location, interests, category, excludeNames, effectiveChatLanguage, effectiveTripLanguage);
+                console.log(`[Copilot Server] Getting Recommendations: ${location} (Count: ${count || 12})`);
+                prompt = constructRecommendationPrompt(location, interests, category, excludeNames, effectiveChatLanguage, effectiveTripLanguage, count || 12);
                 model = SERVICE_CONFIG.copilot.models.recommender;
                 break;
             case 'CHECK_FEASIBILITY':
@@ -116,6 +113,7 @@ export async function processCopilot(req: Request, res: Response) {
                 return res.status(400).json({ error: "Unknown Action" });
         }
 
+        console.log(`[Copilot Server] Using Model: ${model}`);
         const session = await activeClient.createSession({
             model,
             streaming: true,

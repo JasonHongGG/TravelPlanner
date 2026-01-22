@@ -47,6 +47,7 @@ export default function AttractionExplorer({
     const { user } = useAuth();
     const { settings } = useSettings();
     const QUEUE_SIZE = settings.explorerQueueSize; // Dynamic from user settings
+    const BATCH_SIZE = 6; // User requested parameterization for testing. Default 12.
 
     const [searchConfirmation, setSearchConfirmation] = useState<{
         query: string;
@@ -63,7 +64,9 @@ export default function AttractionExplorer({
     // Loading States
     const [initialLoading, setInitialLoading] = useState(false); // Blocking UI (First load)
     const [isPreloading, setIsPreloading] = useState(false);     // Background loading
+    const [isLoadingMore, setIsLoadingMore] = useState(false);   // Manual load more
     const [isWaitingForBuffer, setIsWaitingForBuffer] = useState(false); // User clicked load more but buffer empty
+    const [targetCount, setTargetCount] = useState(12);          // Expected total count for progress indicator
 
     // Data States
     const [results, setResults] = useState<{ attraction: AttractionRecommendation[], food: AttractionRecommendation[] }>({
@@ -85,6 +88,12 @@ export default function AttractionExplorer({
 
     // Ref to track mounted state for async ops
     const isMounted = useRef(true);
+    // Ref to track loading state synchronously for callbacks
+    const isLoadingMoreRef = useRef(false);
+
+    useEffect(() => {
+        isLoadingMoreRef.current = isLoadingMore;
+    }, [isLoadingMore]);
 
     useEffect(() => {
         isMounted.current = true;
@@ -120,16 +129,44 @@ export default function AttractionExplorer({
         const currentLen = results[activeTab].length;
         if (currentLen === 0) return;
 
-        // Buffer Target: We want to keep QUEUE_SIZE batches (approx 12 * QUEUE_SIZE items) in reserve
+        // Don't auto-fetch if we are in the middle of a manual "Load More" action
+        // This prevents the empty buffer (caused by flushing) from triggering a new fetch 
+        // that gets hijacked into results, causing double items.
+        if (isLoadingMore) return;
+
+        // Buffer Target: We want to keep QUEUE_SIZE batches (approx BATCH_SIZE * QUEUE_SIZE items) in reserve
         const bufferLen = buffer[activeTab].length;
-        const BUFFER_TARGET = 12 * QUEUE_SIZE;
+        const BUFFER_TARGET = BATCH_SIZE * QUEUE_SIZE;
 
         // If buffer is low and we aren't currently fetching, fetch more in background
         // Only if QUEUE_SIZE > 0
         if (QUEUE_SIZE > 0 && bufferLen < BUFFER_TARGET && !isPreloading && !initialLoading) {
             fetchNextBatchBackground();
         }
-    }, [results, buffer, activeTab, isPreloading, initialLoading, QUEUE_SIZE]);
+    }, [results, buffer, activeTab, isPreloading, initialLoading, QUEUE_SIZE, isLoadingMore]);
+
+    // Sync isLoadingMore with isPreloading completion
+    // If we hijacked a stream, we need to turn off Loading More when that stream finishes
+    useEffect(() => {
+        if (!isPreloading && isLoadingMore) {
+            setIsLoadingMore(false);
+            isLoadingMoreRef.current = false;
+        }
+    }, [isPreloading, isLoadingMore]);
+
+    // Buffer Drain Effect:
+    // If we are "Loading More", NO items should stay in buffer.
+    // This catches "stragglers" that might land in buffer due to race conditions
+    // between the click event (Flush) and pending stream microtasks (setBuffer).
+    useEffect(() => {
+        if (isLoadingMore && buffer[activeTab].length > 0) {
+            setResults(prev => ({
+                ...prev,
+                [activeTab]: [...prev[activeTab], ...buffer[activeTab]]
+            }));
+            setBuffer(prev => ({ ...prev, [activeTab]: [] }));
+        }
+    }, [isLoadingMore, buffer, activeTab]);
 
     // Watch for buffer updates to fulfill waiting requests
     useEffect(() => {
@@ -143,31 +180,61 @@ export default function AttractionExplorer({
     const fetchNextBatchBackground = async () => {
         if (!isMounted.current) return;
         setIsPreloading(true);
+        const currentTab = activeTab;
+
+        // Smart Callback: Routes item to Buffer (default) or Results (if user clicked Load More)
+        const onItemReceived = (item: AttractionRecommendation) => {
+            if (!isMounted.current) return;
+
+            // If user clicked Load More, redirect stream directly to Results!
+            if (isLoadingMoreRef.current) {
+                setResults(prev => ({
+                    ...prev,
+                    [currentTab]: [...prev[currentTab], item]
+                }));
+            } else {
+                setBuffer(prev => ({
+                    ...prev,
+                    [currentTab]: [...prev[currentTab], item]
+                }));
+            }
+        };
 
         try {
-            const currentTab = activeTab;
-
-            // Exclude everything we know about: Current stops + Visible Results + Buffered Results
+            // Exclude everything we know about
             const existingNames = [
                 ...currentStops.map(s => s.name),
                 ...results[currentTab].map(i => i.name),
                 ...buffer[currentTab].map(i => i.name)
             ];
 
-            const newItems = await aiService.getRecommendations(
+            const getPromptLanguage = (lng: string) => {
+                switch (lng) {
+                    case 'en-US': return 'English';
+                    case 'ja-JP': return 'Japanese';
+                    case 'ko-KR': return 'Korean';
+                    default: return 'Traditional Chinese';
+                }
+            };
+            const lang = getPromptLanguage(i18n.language);
+            const titleLanguage = settings.titleLanguageMode === 'local'
+                ? "Local Language"
+                : (referenceLanguage || lang);
+
+            // Use Streaming API for background fetch
+            // This allows us to "tap in" mid-stream if user clicks Load More
+            await aiService.getRecommendationsStream(
                 lastSearchLocation,
                 initialInterests,
                 currentTab,
                 existingNames,
-                user?.email
+                onItemReceived,
+                user?.email,
+                lang,
+                titleLanguage,
+                BATCH_SIZE
             );
 
-            if (isMounted.current && newItems.length > 0) {
-                setBuffer(prev => ({
-                    ...prev,
-                    [currentTab]: [...prev[currentTab], ...newItems]
-                }));
-            }
         } catch (e) {
             console.error("Background fetch failed", e);
         } finally {
@@ -177,9 +244,8 @@ export default function AttractionExplorer({
 
     const consumeBuffer = () => {
         const currentBuffer = buffer[activeTab];
-        const batchSize = 12;
-        const itemsToMove = currentBuffer.slice(0, batchSize);
-        const remainingBuffer = currentBuffer.slice(batchSize);
+        const itemsToMove = currentBuffer.slice(0, BATCH_SIZE);
+        const remainingBuffer = currentBuffer.slice(BATCH_SIZE);
 
         setResults(prev => ({
             ...prev,
@@ -192,20 +258,54 @@ export default function AttractionExplorer({
         }));
     };
 
-    const handleLoadMore = () => {
-        const currentBuffer = buffer[activeTab];
+    const handleLoadMore = async () => {
+        if (isLoadingMore) return; // Prevent multiple concurrent loads
 
-        if (currentBuffer.length > 0) {
-            // Immediate load if buffer has data
-            consumeBuffer();
-        } else {
-            // Buffer empty, wait for it
-            setIsWaitingForBuffer(true);
-            // If not preloading (rare case where buffer is 0 and we stopped preloading?), force fetch
-            if (!isPreloading) {
-                fetchNextBatchBackground();
-            }
+        setIsLoadingMore(true);
+        // Sync ref immediately for the active stream callback to see
+        isLoadingMoreRef.current = true;
+
+        const currentTab = activeTab;
+        const currentBuffer = buffer[currentTab];
+        const flushedCount = currentBuffer.length;
+
+        // 1. Flush Buffer to Results Immediately
+        // Whether full batch or partial, show them NOW.
+        if (flushedCount > 0) {
+            setResults(prev => ({
+                ...prev,
+                [currentTab]: [...prev[currentTab], ...currentBuffer]
+            }));
+            setBuffer(prev => ({ ...prev, [currentTab]: [] }));
         }
+
+        // Update Target Count
+        const nextTarget = results[currentTab].length + BATCH_SIZE;
+        setTargetCount(nextTarget);
+
+        // 2. Check if satisfied
+        // If we flushed a full batch (or more), we are done. Be happy.
+        if (flushedCount >= BATCH_SIZE) {
+            setIsLoadingMore(false);
+            isLoadingMoreRef.current = false;
+            return;
+        }
+
+        // 3. If Preloading is Active:
+        // We did NOTHING else here. The active stream callback will see `isLoadingMoreRef.current = true`
+        // and automatically start pushing the REST of the items to `results`.
+        // The useEffect will handle turning off isLoadingMore when isPreloading becomes false.
+        if (isPreloading) {
+            return;
+        }
+
+        // 4. If NO Preloading Active:
+        // Start a new fetch. Since `isLoadingMore` is true, `fetchNextBatchBackground`
+        // will stream items directly to `results`.
+        await fetchNextBatchBackground();
+
+        setIsLoadingMore(false);
+        isLoadingMoreRef.current = false;
     };
 
     // =================================================================
@@ -290,15 +390,35 @@ export default function AttractionExplorer({
                 ? "Local Language"
                 : (referenceLanguage || lang);
 
-            // Pass userId and language
-            const newItems = await aiService.getRecommendations(query, initialInterests, targetTab, excludeNames, userId, lang, titleLanguage);
-
-            if (isMounted.current) {
+            // Clear results for new search
+            if (isNewSearch) {
                 setResults(prev => ({
                     ...prev,
-                    [targetTab]: isNewSearch ? newItems : [...prev[targetTab], ...newItems]
+                    [targetTab]: []
                 }));
+                setTargetCount(BATCH_SIZE);
             }
+
+            // Use streaming API - each item updates UI immediately
+            await aiService.getRecommendationsStream(
+                query,
+                initialInterests,
+                targetTab,
+                excludeNames,
+                (item) => {
+                    if (isMounted.current) {
+                        setResults(prev => ({
+                            ...prev,
+                            [targetTab]: [...prev[targetTab], item]
+                        }));
+                    }
+                },
+                userId,
+                lang,
+                titleLanguage,
+                BATCH_SIZE
+            );
+
         } catch (e) {
             console.error(e);
         } finally {
@@ -524,11 +644,34 @@ export default function AttractionExplorer({
                 <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
 
                     {/* Left: Search Results */}
-                    <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50/50 scrollbar-hide">
+                    <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50/50 scrollbar-hide relative">
+                        {/* Sticky Streaming Progress Indicator */}
+                        {(initialLoading || isLoadingMore) && (
+                            <div className="sticky top-0 left-0 right-0 z-10 mb-4 flex items-center gap-3 bg-white/90 backdrop-blur-md p-3 rounded-xl border border-brand-100 shadow-sm animate-in fade-in slide-in-from-top-2">
+                                <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center shadow-sm shadow-brand-200">
+                                    <Sparkles className="w-4 h-4 text-white animate-pulse" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm font-bold text-brand-700">AI 正在發掘更多景點...</p>
+                                    <p className="text-xs text-brand-500 font-medium">已找到 {currentList.length} / {Math.max(currentList.length, targetCount)} 個推薦</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-brand-400">{Math.min(100, Math.round((currentList.length / Math.max(currentList.length, targetCount)) * 100))}%</span>
+                                    <Loader2 className="w-5 h-5 text-brand-500 animate-spin" />
+                                </div>
+                            </div>
+                        )}
+
                         {initialLoading && currentList.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-gray-400 space-y-4">
-                                <Loader2 className="w-10 h-10 animate-spin text-brand-500" />
-                                <p className="font-bold text-sm text-gray-600">{t('explorer.loading_recommendations')}</p>
+                                <div className="relative">
+                                    <div className="w-16 h-16 rounded-full border-4 border-brand-100 border-t-brand-500 animate-spin" />
+                                    <Sparkles className="w-6 h-6 text-brand-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                                </div>
+                                <div className="text-center">
+                                    <p className="font-bold text-sm text-gray-600">{t('explorer.loading_recommendations')}</p>
+                                    <p className="text-xs text-gray-400 mt-1">AI 正在為您精選推薦...</p>
+                                </div>
                             </div>
                         ) : currentList.length > 0 ? (
                             <>
@@ -541,9 +684,13 @@ export default function AttractionExplorer({
                                         return (
                                             <div
                                                 key={`${item.name}-${idx}`}
-                                                className={`group bg-white rounded-xl overflow-hidden border transition-all duration-300 shadow-sm hover:shadow-md flex flex-col ${selections[item.name] === 'must' ? 'ring-2 ring-brand-500 border-brand-200' :
+                                                className={`group bg-white rounded-xl overflow-hidden border transition-all duration-300 shadow-sm hover:shadow-lg hover:-translate-y-1 flex flex-col animate-in fade-in slide-in-from-bottom-4 ${selections[item.name] === 'must' ? 'ring-2 ring-brand-500 border-brand-200' :
                                                     selections[item.name] === 'avoid' ? 'opacity-60 grayscale' : 'border-gray-100'
                                                     }`}
+                                                style={{
+                                                    animationDelay: `${(idx % 12) * 80}ms`,
+                                                    animationFillMode: 'backwards'
+                                                }}
                                             >
                                                 <div className="h-40 bg-gray-200 relative overflow-hidden flex-none">
                                                     <img
@@ -611,7 +758,7 @@ export default function AttractionExplorer({
                                     <div className="flex flex-col items-center justify-center gap-2">
                                         <button
                                             onClick={handleLoadMore}
-                                            disabled={isWaitingForBuffer} // Disable click if already waiting
+                                            disabled={isLoadingMore || initialLoading} // Disable if loading (initial or more)
                                             className={`
                              group relative overflow-hidden
                              bg-white border hover:border-brand-300 hover:shadow-lg shadow-sm
@@ -622,14 +769,14 @@ export default function AttractionExplorer({
                              disabled:opacity-80 disabled:cursor-not-allowed
                            `}
                                         >
-                                            {/* Background animation for waiting state */}
-                                            {isWaitingForBuffer && (
+                                            {/* Background animation for loading state */}
+                                            {(isLoadingMore || initialLoading) && (
                                                 <div className="absolute inset-0 bg-gray-50/50 flex items-center justify-center">
                                                     <div className="h-full w-full bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
                                                 </div>
                                             )}
 
-                                            {isWaitingForBuffer ? (
+                                            {(isLoadingMore || initialLoading) ? (
                                                 <>
                                                     <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
                                                     <span>{t('explorer.loading')}</span>

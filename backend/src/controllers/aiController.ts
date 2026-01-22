@@ -142,3 +142,84 @@ export async function streamUpdate(req: Request, res: Response) {
         if (!res.headersSent) res.status(500).json({ error: error.message });
     }
 }
+
+export async function streamRecommendations(req: Request, res: Response) {
+    try {
+        const { userId: requestedUserId, location, interests, category, excludeNames, language, titleLanguage, count } = req.body;
+        const authToken = (req.headers.authorization || '').replace('Bearer ', '');
+        const authUser = (req as Request & { user?: { email?: string } }).user;
+        const userId = authUser?.email as string;
+        if (requestedUserId && requestedUserId !== userId) {
+            return res.status(403).json({ error: "User mismatch." });
+        }
+        const provider = BackendAIService.getProvider();
+
+        // 1. Transaction Logic
+        const cost = pricingService.calculate('GET_RECOMMENDATIONS');
+        if (userId) {
+            if (!authToken) return res.status(401).json({ error: "Missing auth token." });
+            const success = await deductPoints(userId, cost, `Recommendations: ${location} (${category})`, authToken);
+            if (!success) return res.status(403).json({ error: "Insufficient points" });
+        }
+
+        // 2. Set Headers for SSE
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+
+        // 3. Stream Recommendations
+        if (provider.getRecommendationsStream) {
+            // Use streaming if available
+            await provider.getRecommendationsStream(
+                location,
+                interests,
+                category || 'attraction',
+                excludeNames || [],
+                (item) => {
+                    res.write(`data: ${JSON.stringify({ type: 'item', item })}
+
+`);
+                },
+                userId,
+                undefined,
+                language,
+                titleLanguage,
+                count || 12
+            );
+        } else {
+            // Fallback to non-streaming
+            const items = await provider.getRecommendations(
+                location,
+                interests,
+                category || 'attraction',
+                excludeNames || [],
+                userId,
+                undefined,
+                language,
+                titleLanguage
+            );
+            for (const item of items) {
+                res.write(`data: ${JSON.stringify({ type: 'item', item })}
+
+`);
+            }
+        }
+
+        res.write(`data: ${JSON.stringify({ type: 'done' })}
+
+`);
+        res.end();
+
+    } catch (error: any) {
+        console.error("Error in /stream-recommendations:", error);
+        if (!res.headersSent) {
+            res.status(500).json({ error: error.message });
+        } else {
+            res.write(`data: ${JSON.stringify({ type: 'error', message: error.message })}
+
+`);
+            res.end();
+        }
+    }
+}
+

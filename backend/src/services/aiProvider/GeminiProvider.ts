@@ -140,10 +140,11 @@ export class GeminiProvider implements IAIProvider {
         excludeNames: string[] = [],
         userId?: string,
         apiSecret?: string,
-        language: string = "Traditional Chinese"
+        language: string = "Traditional Chinese",
+        titleLanguage?: string
     ): Promise<AttractionRecommendation[]> {
         const ai = this.getClient();
-        const prompt = constructRecommendationPrompt(location, interests, category, excludeNames, language);
+        const prompt = constructRecommendationPrompt(location, interests, category, excludeNames, language, titleLanguage);
 
         const response = await ai.models.generateContent({
             model: SERVICE_CONFIG.gemini.models.recommender,
@@ -172,6 +173,81 @@ export class GeminiProvider implements IAIProvider {
         } catch (e) {
             console.error("Failed to parse recommendations", e);
             return [];
+        }
+    }
+
+    async getRecommendationsStream(
+        location: string,
+        interests: string,
+        category: 'attraction' | 'food' = 'attraction',
+        excludeNames: string[] = [],
+        onItem: (item: AttractionRecommendation) => void,
+        userId?: string,
+        apiSecret?: string,
+        language: string = "Traditional Chinese",
+        titleLanguage?: string,
+        count?: number
+    ): Promise<void> {
+        const ai = this.getClient();
+        const prompt = constructRecommendationPrompt(location, interests, category, excludeNames, language, titleLanguage, count || 12);
+
+        const responseStream = await ai.models.generateContentStream({
+            model: SERVICE_CONFIG.gemini.models.recommender,
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            name: { type: Type.STRING },
+                            description: { type: Type.STRING },
+                            category: { type: Type.STRING },
+                            reason: { type: Type.STRING },
+                            openHours: { type: Type.STRING },
+                        },
+                        required: ['name', 'description', 'category', 'reason', 'openHours'],
+                    }
+                }
+            },
+        });
+
+        let buffer = "";
+        let bracketCount = 0;
+        let inObject = false;
+        let objectStart = -1;
+
+        for await (const chunk of responseStream) {
+            const text = chunk.text || "";
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                buffer += char;
+
+                if (char === '{') {
+                    if (!inObject) {
+                        inObject = true;
+                        objectStart = buffer.length - 1;
+                    }
+                    bracketCount++;
+                } else if (char === '}') {
+                    bracketCount--;
+
+                    if (inObject && bracketCount === 0) {
+                        // Complete object found
+                        const objectStr = buffer.substring(objectStart);
+                        try {
+                            const item = JSON.parse(objectStr) as AttractionRecommendation;
+                            onItem(item);
+                        } catch (e) {
+                            console.error("Failed to parse streamed recommendation object:", e);
+                        }
+                        inObject = false;
+                        objectStart = -1;
+                    }
+                }
+            }
         }
     }
 

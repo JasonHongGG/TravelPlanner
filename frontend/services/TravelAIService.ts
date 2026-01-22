@@ -375,6 +375,70 @@ export class TravelAIService {
         }
     }
 
+    async getRecommendationsStream(
+        location: string,
+        interests: string,
+        category: "attraction" | "food" = 'attraction',
+        excludeNames: string[] = [],
+        onItem: (item: AttractionRecommendation) => void,
+        userId?: string,
+        language: string = "Traditional Chinese",
+        titleLanguage?: string,
+        batchSize: number = 12 // Default 12 if not specified
+    ): Promise<void> {
+        const headers = this.getAuthHeaders();
+
+        const response = await fetch(`${SERVER_URL}/stream-recommendations`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                location,
+                interests,
+                category,
+                excludeNames,
+                language,
+                titleLanguage,
+                count: batchSize // Pass as 'count' to backend
+            })
+        });
+
+        if (!response.ok) {
+            throw await parseErrorResponse(response, 'Server error');
+        }
+
+        if (!response.body) {
+            throw new Error("Failed to connect to streaming endpoint");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunkStr = decoder.decode(value);
+            const lines = chunkStr.split('\n\n');
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const dataStr = line.substring(6);
+                    try {
+                        const data = JSON.parse(dataStr);
+                        if (data.type === 'item' && data.item) {
+                            onItem(data.item);
+                        } else if (data.type === 'error') {
+                            throw new Error(data.message);
+                        }
+                        // 'done' type is handled by loop ending
+                    } catch (e) {
+                        // ignore parse errors for incomplete chunks
+                    }
+                }
+            }
+        }
+    }
+
     async checkFeasibility(
         currentData: TripData,
         modificationContext: string,
