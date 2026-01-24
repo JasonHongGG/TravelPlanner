@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 interface Props {
    dayData: TripDay | undefined;
    onFocusStop: (stop: TripStop) => void;
-   onExplore: () => void;
+   onExplore?: () => void;
 }
 
 // Sub-component for interactive checklist items with local state
@@ -70,13 +70,15 @@ export default function ItineraryTimeline({ dayData, onFocusStop, onExplore }: P
                </h2>
             </div>
 
-            <button
-               onClick={onExplore}
-               className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-brand-500 to-sky-500 text-white rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all font-bold text-sm"
-            >
-               <Sparkles className="w-4 h-4 text-yellow-200 fill-yellow-200" />
-               <span>{t('timeline.explore')}</span>
-            </button>
+            {onExplore && (
+               <button
+                  onClick={onExplore}
+                  className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-brand-500 to-sky-500 text-white rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all font-bold text-sm"
+               >
+                  <Sparkles className="w-4 h-4 text-yellow-200 fill-yellow-200" />
+                  <span>{t('timeline.explore')}</span>
+               </button>
+            )}
          </div>
 
          {/* TOP: Redesigned Collapsible Checklist */}

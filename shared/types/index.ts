@@ -138,11 +138,20 @@ export interface SharedTripMeta {
   recentEngagements: Engagement[];
 }
 
+// ... (previous types omitted)
+
+export type TripPermission = 'read' | 'write';
+
 export interface SharedTrip {
   tripId: string;
   ownerId: string;
   visibility: TripVisibility;
-  allowedUsers: string[];
+  // Legacy support
+  allowedUsers?: string[];
+  // New permissions
+  permissions?: Record<string, TripPermission>;
+  // Computed permission for current viewer
+  userPermission?: TripPermission;
   createdAt: number;
   lastModified: number;
   tripData: Trip;

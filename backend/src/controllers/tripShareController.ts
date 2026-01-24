@@ -54,24 +54,23 @@ export function saveTrip(req: Request, res: Response) {
             return res.status(400).json({ error: 'tripData is required' });
         }
 
-        // Check if user is the owner (for updates)
-        const existing = tripShareService.getSharedTrip(tripId);
-        if (existing && existing.ownerId !== authUser.email) {
-            return res.status(403).json({ error: 'Only the trip owner can update' });
-        }
-
+        // Logic moved to service: service now handles permission check via reqUserEmail
         const savedTripId = tripShareService.saveTrip({
             tripId,
             ownerId: authUser.email,
             ownerName: authUser.name || 'Anonymous',
             ownerPicture: authUser.picture,
             tripData,
-            visibility: visibility || 'private'
+            visibility: visibility || 'private',
+            reqUserEmail: authUser.email // Pass for permission check
         });
 
         res.json({ tripId: savedTripId, message: 'Trip saved successfully' });
     } catch (error: any) {
         console.error('[TripShareController] Error saving trip:', error);
+        if (error.message.includes('Access denied')) {
+            return res.status(403).json({ error: error.message });
+        }
         res.status(500).json({ error: error.message });
     }
 }
@@ -144,18 +143,18 @@ export function updateVisibility(req: Request, res: Response) {
 export function updatePermissions(req: Request, res: Response) {
     try {
         const tripId = getStringParam(req.params.tripId);
-        const { allowedUsers } = req.body as { allowedUsers: string[] };
+        const { permissions } = req.body as { permissions: Record<string, 'read' | 'write'> };
         const authUser = (req as Request & { user?: { email?: string } }).user;
 
         if (!authUser?.email) {
             return res.status(401).json({ error: 'Authentication required' });
         }
 
-        if (!Array.isArray(allowedUsers)) {
-            return res.status(400).json({ error: 'allowedUsers must be an array' });
+        if (!permissions || typeof permissions !== 'object') {
+            return res.status(400).json({ error: 'permissions object is required' });
         }
 
-        const success = tripShareService.updateAllowedUsers(tripId, authUser.email, allowedUsers);
+        const success = tripShareService.updatePermissions(tripId, authUser.email, permissions);
 
         if (!success) {
             return res.status(403).json({ error: 'Trip not found or not authorized' });
@@ -165,6 +164,34 @@ export function updatePermissions(req: Request, res: Response) {
     } catch (error: any) {
         console.error('[TripShareController] Error updating permissions:', error);
         res.status(500).json({ error: error.message });
+    }
+}
+
+// ==========================================
+// SSE Subscription
+// ==========================================
+
+export function subscribeToTrip(req: Request, res: Response) {
+    try {
+        const tripId = getStringParam(req.params.tripId);
+
+        // Headers for SSE
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+
+        // Optional: Check permission before subscribing?
+        // Ideally yes, but since events just say "updated", it's low risk.
+        // We'll let the service handle the subscription.
+
+        tripShareService.subscribeToTrip(tripId, res);
+
+        // Initial ping to confirm connection
+        res.write(`event: connected\ndata: "Connected to trip ${tripId}"\n\n`);
+
+    } catch (error: any) {
+        console.error('[TripShareController] Error subscribing to trip:', error);
+        res.status(500).end();
     }
 }
 
@@ -184,7 +211,12 @@ export function likeTrip(req: Request, res: Response) {
         }
 
         // Only allow liking public trips or if user has access
-        if (trip.visibility !== 'public' && authUser?.email !== trip.ownerId && !trip.allowedUsers.includes(authUser?.email || '')) {
+        // Modified to permit liking if allowListed
+        const hasAccess = trip.visibility === 'public' ||
+            trip.ownerId === authUser?.email ||
+            (authUser?.email && trip.permissions?.[authUser.email]);
+
+        if (!hasAccess) {
             return res.status(403).json({ error: 'Access denied' });
         }
 

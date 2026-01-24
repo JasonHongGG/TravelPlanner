@@ -103,17 +103,41 @@ class TripShareService {
         }
     }
 
-    async updatePermissions(tripId: string, allowedUsers: string[]): Promise<void> {
+    async updatePermissions(tripId: string, permissions: Record<string, 'read' | 'write'>): Promise<void> {
         const response = await fetch(`${API_BASE_URL}/api/trips/${tripId}/permissions`, {
             method: 'PATCH',
             headers: this.getAuthHeaders(),
-            body: JSON.stringify({ allowedUsers })
+            body: JSON.stringify({ permissions })
         });
 
         if (!response.ok) {
             const error = await response.json();
             throw new Error(error.error || 'Failed to update permissions');
         }
+    }
+
+    subscribeToTrip(tripId: string, onMessage: (type: string, data: any) => void): EventSource {
+        const url = `${API_BASE_URL}/api/trips/${tripId}/events`;
+        // Note: EventSource does not support custom headers. 
+        // If auth is needed, we must pass token in query param.
+        const eventSource = new EventSource(url);
+
+        const handler = (event: MessageEvent) => {
+            try {
+                const data = JSON.parse(event.data);
+                onMessage(event.type, data);
+            } catch (e) {
+                console.error('Failed to parse SSE message', e);
+            }
+        };
+
+        eventSource.addEventListener('trip_updated', handler);
+        eventSource.addEventListener('visibility_updated', handler);
+        eventSource.addEventListener('permissions_updated', handler);
+        eventSource.addEventListener('trip_deleted', handler);
+        eventSource.addEventListener('connected', (e) => console.log('SSE Connected', e.data));
+
+        return eventSource;
     }
 
     // ==========================================

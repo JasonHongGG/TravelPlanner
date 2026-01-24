@@ -1,17 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Loader2, Lock, Calendar, Clock, DollarSign, Eye, AlertTriangle, Globe, Map as MapIcon, PanelRightClose } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, Loader2, Lock, Calendar, Clock, DollarSign, Eye, AlertTriangle, Globe, Map as MapIcon, PanelRightClose, Edit3 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { SharedTrip, TripMeta, TripStop } from '../types';
+import type { SharedTrip, TripMeta, TripStop, TripData, Trip } from '../types';
 import { tripShareService } from '../services/TripShareService';
 import { getTripCover } from '../utils/tripUtils';
 import { safeRender } from '../utils/formatters';
 import { getDayMapConfig } from '../utils/mapHelpers';
+import { useAuth } from '../context/AuthContext';
 
 // Sub-components (reuse from TripDetail)
 import DaySelector from './trip/DaySelector';
 import ItineraryTimeline from './trip/ItineraryTimeline';
 import BudgetView from './trip/BudgetView';
 import TripMap from './trip/TripMap';
+import TripDetail from './TripDetail'; // Reuse full editor
 
 interface SharedTripViewProps {
     tripId: string;
@@ -22,11 +24,18 @@ type ViewState = 'loading' | 'success' | 'error' | 'no-permission';
 
 export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) {
     const { t } = useTranslation();
+    const { user } = useAuth();
     const [viewState, setViewState] = useState<ViewState>('loading');
     const [sharedTrip, setSharedTrip] = useState<SharedTrip | null>(null);
     const [errorMessage, setErrorMessage] = useState<string>('');
 
-    // UI State
+    // Store latest permission in ref for SSE to check against without re-subscribing
+    const currentPermissionRef = useRef<string | undefined>(undefined);
+
+    // Mode State
+    const [isEditMode, setIsEditMode] = useState(false);
+
+    // UI State for Read-Only View
     const [selectedDay, setSelectedDay] = useState(1);
     const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'risks'>('itinerary');
     const [isMapOpen, setIsMapOpen] = useState(true);
@@ -34,7 +43,57 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
 
     useEffect(() => {
         loadTrip();
+
+        // Setup SSE
+        const eventSource = tripShareService.subscribeToTrip(tripId, handleServerEvent);
+
+        return () => {
+            eventSource.close();
+        };
     }, [tripId]);
+
+    // Sync state to ref
+    useEffect(() => {
+        if (sharedTrip) {
+            currentPermissionRef.current = sharedTrip.userPermission;
+        }
+    }, [sharedTrip]);
+
+    // Handle incoming server events (Real-time updates)
+    const handleServerEvent = (type: string, data: any) => {
+        // console.log('[SharedTripView] Received event:', type, data);
+
+        if (type === 'trip_updated') {
+            // Check timestamp to avoid overwriting local optimistic updates if we were the one saving?
+            // For simplicity, we re-fetch to get latest state from server (Single Source of Truth)
+            // Or if data contains the full trip, update directly. The backend currently sends minimal data.
+            loadTrip();
+        } else if (type === 'visibility_updated') {
+            loadTrip();
+        } else if (type === 'permissions_updated') {
+            // Smart Update: Only refresh if MY permission actually changed
+            if (data.permissions && user?.email) {
+                const myEmail = user.email.toLowerCase();
+                // Look up using lowercased email since keys are normalized
+                const newPermission = data.permissions[myEmail] || undefined;
+                const oldPermission = currentPermissionRef.current;
+
+                // If permission is unchanged, skip reload
+                if (newPermission === oldPermission) {
+                    return;
+                }
+
+                // Alert if downgraded from write to read
+                if (oldPermission === 'write' && newPermission !== 'write') {
+                    alert('您的編輯權限已被更改為僅查看');
+                }
+            }
+            loadTrip();
+        } else if (type === 'trip_deleted') {
+            setViewState('error');
+            setErrorMessage('此行程已被擁有者刪除');
+        }
+    };
 
     // Update map when day changes
     useEffect(() => {
@@ -48,11 +107,17 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
     }, [selectedDay, sharedTrip]);
 
     const loadTrip = async () => {
-        setViewState('loading');
+        if (!sharedTrip) setViewState('loading'); // Only show loading on initial load
         try {
             const trip = await tripShareService.getTrip(tripId);
             setSharedTrip(trip);
             setViewState('success');
+
+            // If permission revoked while editing, exit edit mode
+            if (isEditMode && trip.userPermission !== 'write') {
+                setIsEditMode(false);
+                alert('您的編輯權限已被移除');
+            }
         } catch (error: any) {
             console.error('[SharedTripView] Failed to load trip:', error);
             if (error.message?.includes('access denied') || error.message?.includes('not found')) {
@@ -84,6 +149,40 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
         });
         if (!isMapOpen) {
             setIsMapOpen(true);
+        }
+    };
+
+    // Handler for saving changes in Edit Mode
+    const handleUpdateTrip = async (id: string, newData: TripData) => {
+        if (!sharedTrip) return;
+
+        // Optimistic update
+        const updatedTrip = { ...sharedTrip.tripData, data: newData };
+        const newSharedTrip = { ...sharedTrip, tripData: updatedTrip };
+        setSharedTrip(newSharedTrip as SharedTrip);
+
+        try {
+            await tripShareService.saveTrip(updatedTrip, sharedTrip.visibility);
+        } catch (e) {
+            console.error('Failed to save trip update:', e);
+            alert('儲存失敗，請檢查網路連線');
+            loadTrip(); // Revert
+        }
+    };
+
+    const handleUpdateTripMeta = async (updates: Partial<Trip>) => {
+        if (!sharedTrip) return;
+
+        // Optimistic update
+        const updatedTrip = { ...sharedTrip.tripData, ...updates };
+        const newSharedTrip = { ...sharedTrip, tripData: updatedTrip };
+        setSharedTrip(newSharedTrip as SharedTrip);
+
+        try {
+            await tripShareService.saveTrip(updatedTrip, sharedTrip.visibility);
+        } catch (e) {
+            console.error('Failed to save meta update:', e);
+            loadTrip();
         }
     };
 
@@ -163,6 +262,24 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
         return null;
     }
 
+    // Success State - Display Trip
+    if (!sharedTrip || !sharedTrip.tripData?.data) {
+        return null;
+    }
+
+    // Direct Edit Mode: If user has write permission, render editor immediately
+    if (sharedTrip.userPermission === 'write') {
+        return (
+            <TripDetail
+                trip={sharedTrip.tripData}
+                onBack={onBack}
+                onUpdateTrip={handleUpdateTrip}
+                onUpdateTripMeta={handleUpdateTripMeta}
+                isSharedView={true}
+            />
+        );
+    }
+
     const trip = sharedTrip.tripData;
     const tripData = trip.data!;
     const tripMeta = tripData.tripMeta || {} as TripMeta;
@@ -188,18 +305,15 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
                     </h1>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
+                    <div className="bg-gray-100 text-gray-500 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                         {sharedTrip.visibility === 'public' ? (
-                            <Globe className="w-4 h-4 text-green-500" />
+                            <Globe className="w-3 h-3" />
                         ) : (
-                            <Lock className="w-4 h-4 text-amber-500" />
+                            <Lock className="w-3 h-3" />
                         )}
-                        <span className="text-xs text-gray-500 hidden sm:inline">
+                        <span className="hidden sm:inline">
                             {sharedTrip.visibility === 'public' ? '公開' : '私人'}
                         </span>
-                    </div>
-                    <div className="bg-gray-100 text-gray-500 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                        <Eye className="w-3 h-3" /> 唯讀
                     </div>
                 </div>
             </header>
@@ -286,7 +400,6 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
                                     <ItineraryTimeline
                                         dayData={currentDayData}
                                         onFocusStop={handleFocusStop}
-                                        onExplore={() => { }}
                                     />
                                 </div>
                             </>

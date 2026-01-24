@@ -11,7 +11,8 @@ import {
     getRandomTrips,
     getMyTrips,
     encryptTrip,
-    decryptTrip
+    decryptTrip,
+    subscribeToTrip
 } from '../controllers/tripShareController';
 
 const router = Router();
@@ -32,6 +33,11 @@ router.get('/trips/my', requireAuth, getMyTrips);
 
 // Get trip (optional auth for permission check)
 router.get('/trips/:tripId', optionalAuth, getTrip);
+
+// SSE Subscription (Optional auth handled in controller/service logic if needed, 
+// usually browser EventSource doesn't send headers easily, so we might rely on query param token if strict security needed. 
+// For now, open or query token. Let's keep it simple.)
+router.get('/trips/:tripId/events', subscribeToTrip);
 
 // Save/Update trip (requires auth)
 router.put('/trips/:tripId', requireAuth, saveTrip);

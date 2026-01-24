@@ -27,12 +27,13 @@ interface Props {
   onBack: () => void;
   onUpdateTrip: (tripId: string, newData: TripData) => void;
   onUpdateTripMeta?: (updates: Partial<Trip>) => void; // Optional for backward compatibility, but passed from App
+  isSharedView?: boolean;
 }
 
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 
-export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMeta }: Props) {
+export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMeta, isSharedView = false }: Props) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { settings } = useSettings();
@@ -185,7 +186,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
         onThought,
         user?.email,
         chatLang, // Chat Language
-        settings.titleLanguageMode === 'local' ? 'Local Language of Destination' : tripLang, // Trip Title Language
+        tripLang, // Trip Title Language (Prioritize Trip's language over User Settings for updates)
         () => setAiProcessState('planning') // Trigger planning state only when JSON generation starts
       );
 
@@ -295,7 +296,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
           (thought) => console.log("AI Thinking:", thought),
           user?.email,
           currentLanguage, // Chat language
-          settings.titleLanguageMode === 'local' ? 'Local Language of Destination' : (trip.input.language || currentLanguage), // Trip Title Language
+          trip.input.language || currentLanguage, // Trip Title Language (Keep consistent with trip)
           () => setAiProcessState('planning')
         );
 
@@ -564,47 +565,49 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
             {trip.title || trip.input.destination}
           </h1>
         </div>
-        <div className="flex items-center gap-3">
-          {/* Visibility Toggle */}
-          <VisibilityToggle
-            visibility={trip.visibility || 'private'}
-            isShared={!!trip.serverTripId}
-            isSyncing={isSyncing}
-            onVisibilityChange={handleVisibilityChange}
-            onShareToggle={handleShareToggle}
-            disabled={!trip.data}
-          />
+        {!isSharedView && (
+          <div className="flex items-center gap-3">
+            {/* Visibility Toggle */}
+            <VisibilityToggle
+              visibility={trip.visibility || 'private'}
+              isShared={!!trip.serverTripId}
+              isSyncing={isSyncing}
+              onVisibilityChange={handleVisibilityChange}
+              onShareToggle={handleShareToggle}
+              disabled={!trip.data}
+            />
 
-          {/* Sync to Cloud Button - Only show when already shared */}
-          {trip.serverTripId && (
-            <button
-              onClick={handleSyncToCloud}
-              disabled={isSyncing}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-600 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
-              title="同步最新變更到雲端"
-            >
-              {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Cloud className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">同步</span>
-            </button>
-          )}
+            {/* Sync to Cloud Button - Only show when already shared */}
+            {trip.serverTripId && (
+              <button
+                onClick={handleSyncToCloud}
+                disabled={isSyncing}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-600 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                title="同步最新變更到雲端"
+              >
+                {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Cloud className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline">同步</span>
+              </button>
+            )}
 
-          {/* Share Link Button - Only show when shared */}
-          {trip.serverTripId && (
-            <button
-              onClick={() => setIsShareModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-colors"
-              title="取得分享連結"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">連結</span>
-            </button>
-          )}
+            {/* Share Link Button - Only show when shared */}
+            {trip.serverTripId && (
+              <button
+                onClick={() => setIsShareModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-colors"
+                title="取得分享連結"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">連結</span>
+              </button>
+            )}
 
-          {/* Ready Status */}
-          <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" /> {t('trip.ready') || "Ready"}
+            {/* Ready Status */}
+            <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" /> {t('trip.ready') || "Ready"}
+            </div>
           </div>
-        </div>
+        )}
       </header>
 
       {/* 2. Split Content Area */}
