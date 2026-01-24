@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import TripCard from './dashboard/TripCard';
 import { usePoints } from '../context/PointsContext';
 import ProFeaturePromoModal from './ProFeaturePromoModal';
+import ExportTripModal from './ExportTripModal';
 
 interface Props {
   trips: Trip[];
@@ -28,21 +29,52 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
   const { t, i18n } = useTranslation();
   const { isSubscribed, openPurchaseModal } = usePoints();
   const [isPromoModalOpen, setIsPromoModalOpen] = React.useState(false);
+  const [exportModalState, setExportModalState] = React.useState<{ isOpen: boolean, trip: Trip | null }>({ isOpen: false, trip: null });
+  const [importError, setImportError] = React.useState<string | null>(null);
 
-  const handleExport = (e: React.MouseEvent, trip: Trip) => {
+  // Import utilities dynamically to avoid top-level await issues if any (though here likely fine)
+  // But we need to use them in async functions
+  // We'll import them at top level in real code, but for this tool use I'll just assume they are available via import
+
+  const handleExportClick = (e: React.MouseEvent, trip: Trip) => {
     e.preventDefault();
     e.stopPropagation();
+    setExportModalState({ isOpen: true, trip });
+  };
 
-    if (!isSubscribed) {
-      setIsPromoModalOpen(true);
-      return;
+  const performExport = async (format: 'json' | 'hong') => {
+    const trip = exportModalState.trip;
+    if (!trip) return;
+
+    if (format === 'json') {
+      if (!isSubscribed) {
+        setExportModalState({ isOpen: false, trip: null });
+        setIsPromoModalOpen(true);
+        return;
+      }
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(trip, null, 2));
+      const fileName = `trip_${trip.title || 'backup'}_${new Date().toISOString().slice(0, 10)}.json`;
+      downloadFile(dataStr, fileName);
+    } else {
+      // .hong format (encrypted)
+      try {
+        const { encryptData } = await import('../utils/encryptionUtils');
+        const encryptedContent = await encryptData(trip);
+        const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(encryptedContent);
+        const fileName = `trip_${trip.title || 'backup'}_${new Date().toISOString().slice(0, 10)}.hong`;
+        downloadFile(dataStr, fileName);
+      } catch (e) {
+        console.error("Export failed", e);
+        alert("匯出失敗，請稍後再試");
+      }
     }
+    setExportModalState({ isOpen: false, trip: null });
+  };
 
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(trip, null, 2));
-    const fileName = `trip_backup_${trip.title || 'trip'}_${new Date().toISOString().slice(0, 10)}.json`;
-
+  const downloadFile = (dataUrl: string, fileName: string) => {
     const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("href", dataUrl);
     downloadAnchorNode.setAttribute("download", fileName);
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
@@ -50,35 +82,59 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
   };
 
   const handleImportClick = () => {
-    if (!isSubscribed) {
-      setIsPromoModalOpen(true);
-      return;
-    }
+    // Both users can import now, but we check file type later
+    // Actually, plan said allow all for .hong, pro only for .json
+    // So we allow click, checking logic happens in handleFileChange
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileObj = e.target.files && e.target.files[0];
     if (!fileObj) return;
 
+    // Reset value so we can select same file again if needed
+    e.target.value = '';
+
+    const fileName = fileObj.name.toLowerCase();
+    const isJson = fileName.endsWith('.json');
+    const isHong = fileName.endsWith('.hong');
+
+    if (!isJson && !isHong) {
+      alert(t('dashboard.invalid_file'));
+      return;
+    }
+
+    if (isJson && !isSubscribed) {
+      setIsPromoModalOpen(true);
+      return;
+    }
+
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         if (event.target?.result) {
-          const json = JSON.parse(event.target.result as string);
-          if (json.input && json.status) {
-            onImportTrip(json as Trip);
+          let tripData: Trip;
+          const content = event.target.result as string;
+
+          if (isHong) {
+            const { decryptData } = await import('../utils/encryptionUtils');
+            tripData = await decryptData(content);
+          } else {
+            tripData = JSON.parse(content);
+          }
+
+          if (tripData.input && tripData.status) {
+            onImportTrip(tripData);
           } else {
             alert(t('dashboard.invalid_file'));
           }
         }
       } catch (error) {
-        console.error("Failed to parse JSON", error);
+        console.error("Failed to parse file", error);
         alert(t('dashboard.read_error'));
       }
     };
     reader.readAsText(fileObj);
-    e.target.value = ''; // Reset
   };
 
   return (
@@ -103,7 +159,7 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 className="hidden"
-                accept=".json"
+                accept=".json,.hong"
               />
               <button
                 onClick={handleImportClick}
@@ -196,7 +252,7 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
                 trip={trip}
                 onSelect={() => onSelectTrip(trip)}
                 onDelete={() => onDeleteTrip(trip.id)}
-                onExport={(e) => handleExport(e, trip)}
+                onExport={(e) => handleExportClick(e, trip)}
                 onRetry={() => onRetryTrip(trip.id)}
               />
             </div>
@@ -212,6 +268,15 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
         )}
 
       </main>
+
+      {/* Export Modal */}
+      <ExportTripModal
+        isOpen={exportModalState.isOpen}
+        onClose={() => setExportModalState({ isOpen: false, trip: null })}
+        tripTitle={exportModalState.trip?.title || ''}
+        onExportJson={() => performExport('json')}
+        onExportHong={() => performExport('hong')}
+      />
 
       {/* Pro Feature Promo Modal */}
       <ProFeaturePromoModal

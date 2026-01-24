@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import * as tripShareService from '../services/data/tripShareService';
+import * as cryptoService from '../services/security/cryptoService';
 import { parseBoundedInt } from '../utils/params';
 import { GALLERY_PAGE_MAX, GALLERY_PAGE_SIZE_DEFAULT, GALLERY_PAGE_SIZE_MAX, RANDOM_TRIPS_DEFAULT, RANDOM_TRIPS_MAX } from '../config/apiLimits';
 
@@ -245,5 +246,42 @@ export function getMyTrips(req: Request, res: Response) {
     } catch (error: any) {
         console.error('[TripShareController] Error getting my trips:', error);
         res.status(500).json({ error: error.message });
+    }
+}
+
+// ==========================================
+// Encryption Endpoints
+// ==========================================
+
+export function encryptTrip(req: Request, res: Response) {
+    try {
+        const { tripData } = req.body;
+        if (!tripData) {
+            return res.status(400).json({ error: 'tripData is required' });
+        }
+
+        const encrypted = cryptoService.encryptTripData(tripData);
+        // We return plain text body so client can save directly as file content,
+        // or JSON object containing the string.
+        // Let's return JSON to be consistent.
+        res.json({ encryptedContent: encrypted });
+    } catch (error: any) {
+        console.error('[TripShareController] Encryption error:', error);
+        res.status(500).json({ error: 'Encryption failed' });
+    }
+}
+
+export function decryptTrip(req: Request, res: Response) {
+    try {
+        const { encryptedContent } = req.body;
+        if (!encryptedContent) {
+            return res.status(400).json({ error: 'encryptedContent is required' });
+        }
+
+        const tripData = cryptoService.decryptTripData(encryptedContent);
+        res.json({ tripData });
+    } catch (error: any) {
+        console.error('[TripShareController] Decryption error:', error);
+        res.status(400).json({ error: 'Invalid or corrupted file' });
     }
 }

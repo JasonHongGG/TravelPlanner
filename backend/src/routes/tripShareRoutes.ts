@@ -9,7 +9,9 @@ import {
     likeTrip,
     getGallery,
     getRandomTrips,
-    getMyTrips
+    getMyTrips,
+    encryptTrip,
+    decryptTrip
 } from '../controllers/tripShareController';
 
 const router = Router();
@@ -47,3 +49,10 @@ router.patch('/trips/:tripId/permissions', requireAuth, updatePermissions);
 router.post('/trips/:tripId/like', optionalAuth, likeTrip);
 
 export default router;
+
+// ==========================================
+// Encryption Routes (Public)
+// ==========================================
+
+router.post('/trips/encrypt', encryptTrip);
+router.post('/trips/decrypt', decryptTrip);
