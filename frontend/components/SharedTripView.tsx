@@ -31,6 +31,7 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
 
     // Store latest permission in ref for SSE to check against without re-subscribing
     const currentPermissionRef = useRef<string | undefined>(undefined);
+    const isLoadedRef = useRef(false);
 
     // Mode State
     const [isEditMode, setIsEditMode] = useState(false);
@@ -102,16 +103,20 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
             const day = days.find(d => d.day === selectedDay);
             const destination = sharedTrip.tripData.input?.destination || '';
             const config = getDayMapConfig(day, destination);
-            setMapState(config);
+            setMapState(prev => {
+                if (prev.url === config.url && prev.label === config.label) return prev;
+                return config;
+            });
         }
     }, [selectedDay, sharedTrip]);
 
     const loadTrip = async () => {
-        if (!sharedTrip) setViewState('loading'); // Only show loading on initial load
+        if (!isLoadedRef.current) setViewState('loading'); // Only show loading on initial load
         try {
             const trip = await tripShareService.getTrip(tripId);
             setSharedTrip(trip);
             setViewState('success');
+            isLoadedRef.current = true;
 
             // If permission revoked while editing, exit edit mode
             if (isEditMode && trip.userPermission !== 'write') {

@@ -76,7 +76,9 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
 
   // Listen for Server Updates (Bidirectional Sync)
   useEffect(() => {
-    if (!trip.serverTripId) return;
+    // If in SharedView, the parent (SharedTripView) handles the subscription to prevent race conditions
+    // We only need this self-subscription when acting as the Creator (Dashboard view)
+    if (!trip.serverTripId || isSharedView) return;
 
     const handleServerEvent = async (type: string, data: any) => {
       // console.log('[TripDetail] Received event:', type, data);
@@ -632,18 +634,21 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
             />
           )}
 
-          {/* Sync to Cloud Status Indicator - Always Show if Shared */}
+          {/* Sync to Cloud Status Indicator (Cleaned) */}
           {trip.serverTripId && (
             <div
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all select-none ${isSyncing
-                ? 'bg-brand-50 text-brand-600 border border-brand-100'
-                : 'bg-gray-50 text-gray-400 border border-transparent'
-                }`}
-              title={isSyncing ? "正在同步最新變更..." : "您的變更已自動同步"}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors select-none ${isSyncing
+                ? 'bg-brand-50 text-brand-600'
+                : 'bg-white border border-brand-100 text-brand-600'}`}
+              title={isSyncing ? (t('trip.syncing') || '同步中') : (t('trip.synced') || '同步')}
             >
-              {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Cloud className="w-3.5 h-3.5" />}
+              {isSyncing ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Cloud className="w-3.5 h-3.5" />
+              )}
               <span className="hidden sm:inline">
-                {isSyncing ? (t('trip.syncing') || '同步中') : (t('trip.synced') || '已同步')}
+                {isSyncing ? (t('trip.syncing') || '同步中') : (t('trip.synced') || '同步')}
               </span>
             </div>
           )}
@@ -873,15 +878,16 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
           />
         </div>
 
-      </div>
+      </div >
 
       {/* Assistant is fixed to bottom right, adjusted z-index to be above map */}
-      <Assistant onUpdate={handleAiUpdate} isGenerating={false} />
+      < Assistant onUpdate={handleAiUpdate} isGenerating={false} />
 
       {/* Attraction Explorer Modal */}
-      <AttractionExplorer
+      < AttractionExplorer
         isOpen={isExplorerOpen}
-        onClose={() => setIsExplorerOpen(false)}
+        onClose={() => setIsExplorerOpen(false)
+        }
         initialLocation={trip.input.destination}
         initialInterests={trip.input.interests}
         currentStops={currentDayData?.stops || []}
@@ -890,12 +896,12 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
       />
 
       {/* Share Trip Modal */}
-      <ShareTripModal
+      < ShareTripModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         trip={trip}
         onVisibilityChange={(v) => onUpdateTripMeta?.({ visibility: v })}
       />
-    </div>
+    </div >
   );
 }

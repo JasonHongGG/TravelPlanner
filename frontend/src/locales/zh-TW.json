@@ -132,7 +132,9 @@
         "navigate": "路線導航",
         "alternatives": "替代方案",
         "ai_planning": "AI 正在規劃行程...",
-        "plan_desc": "正在根據您的需求調整路線與景點..."
+        "plan_desc": "正在根據您的需求調整路線與景點...",
+        "synced": "同步",
+        "syncing": "同步中..."
     },
     "trip_detail": {
         "tabs": {

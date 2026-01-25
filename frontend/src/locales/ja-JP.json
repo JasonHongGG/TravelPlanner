@@ -132,7 +132,9 @@
         "navigate": "ナビゲーション",
         "alternatives": "代替案",
         "ai_planning": "AIが旅程を計画中...",
-        "plan_desc": "ご要望に基づいてルートやスポットを調整しています..."
+        "plan_desc": "ご要望に基づいてルートやスポットを調整しています...",
+        "synced": "同期済み",
+        "syncing": "同期中..."
     },
     "trip_detail": {
         "tabs": {

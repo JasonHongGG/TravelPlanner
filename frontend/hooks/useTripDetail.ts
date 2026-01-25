@@ -15,7 +15,10 @@ export const useTripDetail = (trip: Trip) => {
     const days = trip.data?.days || [];
     const day = days.find(d => d.day === selectedDay);
     const config = getDayMapConfig(day, trip.input.destination);
-    setMapState(config);
+    setMapState(prev => {
+      if (prev.url === config.url && prev.label === config.label) return prev;
+      return config;
+    });
   }, [selectedDay, trip.data, trip.input.destination]);
 
   const handleResetMap = () => {
