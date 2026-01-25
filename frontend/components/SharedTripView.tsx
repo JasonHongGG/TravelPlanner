@@ -161,13 +161,8 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
         const newSharedTrip = { ...sharedTrip, tripData: updatedTrip };
         setSharedTrip(newSharedTrip as SharedTrip);
 
-        try {
-            await tripShareService.saveTrip(updatedTrip, sharedTrip.visibility);
-        } catch (e) {
-            console.error('Failed to save trip update:', e);
-            alert('儲存失敗，請檢查網路連線');
-            loadTrip(); // Revert
-        }
+        // Note: We do NOT call saveTrip here because TripDetail handles auto-sync internally via saveTripToCloud.
+        // We only update the local state to keep the UI responsive.
     };
 
     const handleUpdateTripMeta = async (updates: Partial<Trip>) => {
@@ -178,12 +173,7 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
         const newSharedTrip = { ...sharedTrip, tripData: updatedTrip };
         setSharedTrip(newSharedTrip as SharedTrip);
 
-        try {
-            await tripShareService.saveTrip(updatedTrip, sharedTrip.visibility);
-        } catch (e) {
-            console.error('Failed to save meta update:', e);
-            loadTrip();
-        }
+        // Note: TripDetail handles the saving.
     };
 
     // Loading State

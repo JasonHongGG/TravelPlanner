@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Trip, TripData, TripMeta, TripStop, Message, TripVisibility } from '../types';
 import { CheckCircle2, AlertTriangle, Calendar, Clock, DollarSign, PanelRightClose, PanelRightOpen, Map as MapIcon, Loader2, Camera, ImagePlus, Shuffle, Share2, Cloud } from 'lucide-react';
 import Assistant from './Assistant';
@@ -74,6 +74,36 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
+  // Listen for Server Updates (Bidirectional Sync)
+  useEffect(() => {
+    if (!trip.serverTripId) return;
+
+    const handleServerEvent = async (type: string, data: any) => {
+      // console.log('[TripDetail] Received event:', type, data);
+
+      if (type === 'trip_updated' || type === 'visibility_updated') {
+        try {
+          // Fetch latest data to ensure consistency
+          const sharedTrip = await tripShareService.getTrip(trip.serverTripId!);
+          if (sharedTrip?.tripData?.data) {
+            // Update local state directly using prop (avoiding auto-save loop)
+            onUpdateTrip(trip.id, sharedTrip.tripData.data);
+
+            // Also update meta if needed (e.g. visibility changed remotely)
+            if (onUpdateTripMeta && sharedTrip.visibility !== trip.visibility) {
+              onUpdateTripMeta({ visibility: sharedTrip.visibility });
+            }
+          }
+        } catch (e) {
+          console.error('[TripDetail] Failed to sync remote changes', e);
+        }
+      }
+    };
+
+    const eventSource = tripShareService.subscribeToTrip(trip.serverTripId, handleServerEvent);
+    return () => eventSource.close();
+  }, [trip.serverTripId, onUpdateTrip, trip.id, trip.visibility]);
+
   // Handle visibility change (private <-> public)
   const handleVisibilityChange = async (newVisibility: TripVisibility) => {
     if (!trip.data) return;
@@ -128,19 +158,30 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
     }
   };
 
-  // Handle sync to cloud (update existing server copy)
-  const handleSyncToCloud = async () => {
-    if (!trip.data || !trip.serverTripId) return;
-
+  // Helper: Save trip to cloud (Auto-sync)
+  const saveTripToCloud = async (tripToSave: Trip | any) => {
     setIsSyncing(true);
     try {
-      await tripShareService.saveTrip(trip, trip.visibility || 'private');
+      // Ensure we have a valid visibility, default to current or private
+      const visibility = tripToSave.visibility || trip.visibility || 'private';
+      await tripShareService.saveTrip(tripToSave, visibility);
       onUpdateTripMeta?.({ lastSyncedAt: Date.now() });
     } catch (e) {
-      console.error('Failed to sync to cloud:', e);
-      alert('同步失敗，請稍後再試');
+      console.error('[TripDetail] Auto-sync failed:', e);
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  // Helper: Handle Trip Update with Auto-Sync
+  const handleTripUpdate = (tripId: string, newData: TripData) => {
+    // 1. Update Parent Local State
+    onUpdateTrip(tripId, newData);
+
+    // 2. Auto-Sync if Shared
+    if (trip.serverTripId) {
+      // Use the NEW data to save
+      saveTripToCloud({ ...trip, data: newData });
     }
   };
 
@@ -155,7 +196,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
     handleFeasibilityCancel
   } = useFeasibilityCheck({
     trip,
-    onUpdateTrip,
+    onUpdateTrip: handleTripUpdate,
     userEmail: user?.email,
     language: trip.input.language || getPromptLanguage(i18n.language),
     onCancelExplorer: () => setIsUpdatingFromExplorer(false)
@@ -234,7 +275,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
       setIsReshaping(true);
       try {
         await new Promise(r => setTimeout(r, 1500));
-        onUpdateTrip(trip.id, result.updatedData);
+        handleTripUpdate(trip.id, result.updatedData);
       } finally {
         setIsReshaping(false);
         setAiProcessState('idle'); // Done
@@ -301,7 +342,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
         );
 
         if (result.updatedData) {
-          onUpdateTrip(trip.id, result.updatedData);
+          handleTripUpdate(trip.id, result.updatedData);
         }
       } catch (e) {
         console.error("Failed to update trip from explorer", e);
@@ -338,7 +379,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
       days: newDays
     };
 
-    onUpdateTrip(trip.id, updatedTripData);
+    handleTripUpdate(trip.id, updatedTripData);
   };
 
   // Error State
@@ -446,19 +487,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
 
     // 2. Auto-Sync to Server if Shared
     if (trip.serverTripId) {
-      // Create a temporary trip object with the new image for syncing
-      // We need to cast or construct carefully to satisfy the type
-      const updatedTrip = { ...trip, customCoverImage: newUrl };
-
-      try {
-        // Run in background, don't block UI
-        // visibility is required, use current or default to private (though if serverTripId exists, it has a visibility)
-        await tripShareService.saveTrip(updatedTrip, trip.visibility || 'private');
-        console.log('[TripDetail] Auto-synced cover image to server');
-      } catch (e) {
-        console.error('[TripDetail] Failed to auto-sync cover image:', e);
-        // Optional: show toast
-      }
+      saveTripToCloud({ ...trip, customCoverImage: newUrl });
     }
   };
 
@@ -591,9 +620,8 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
             {trip.title || trip.input.destination}
           </h1>
         </div>
-        {!isSharedView && (
-          <div className="flex items-center gap-3">
-            {/* Visibility Toggle */}
+        <div className="flex items-center gap-3">
+          {!isSharedView && (
             <VisibilityToggle
               visibility={trip.visibility || 'private'}
               isShared={!!trip.serverTripId}
@@ -602,38 +630,41 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
               onShareToggle={handleShareToggle}
               disabled={!trip.data}
             />
+          )}
 
-            {/* Sync to Cloud Button - Only show when already shared */}
-            {trip.serverTripId && (
-              <button
-                onClick={handleSyncToCloud}
-                disabled={isSyncing}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-600 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
-                title="同步最新變更到雲端"
-              >
-                {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Cloud className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline">同步</span>
-              </button>
-            )}
+          {/* Sync to Cloud Status Indicator - Always Show if Shared */}
+          {trip.serverTripId && (
+            <div
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all select-none ${isSyncing
+                ? 'bg-brand-50 text-brand-600 border border-brand-100'
+                : 'bg-gray-50 text-gray-400 border border-transparent'
+                }`}
+              title={isSyncing ? "正在同步最新變更..." : "您的變更已自動同步"}
+            >
+              {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Cloud className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">
+                {isSyncing ? (t('trip.syncing') || '同步中') : (t('trip.synced') || '已同步')}
+              </span>
+            </div>
+          )}
 
-            {/* Share Link Button - Only show when shared */}
-            {trip.serverTripId && (
-              <button
-                onClick={() => setIsShareModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-colors"
-                title="取得分享連結"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">連結</span>
-              </button>
-            )}
+          {!isSharedView && trip.serverTripId && (
+            <button
+              onClick={() => setIsShareModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-colors"
+              title="取得分享連結"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">連結</span>
+            </button>
+          )}
 
-            {/* Ready Status */}
+          {!isSharedView && (
             <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3" /> {t('trip.ready') || "Ready"}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </header>
 
       {/* 2. Split Content Area */}
