@@ -105,7 +105,8 @@
         "member_free": "회원 무료",
         "confirmed_payment": "결제 확인",
         "remaining_points": "잔여 포인트",
-        "days_count": "(총 {{count}}일)"
+        "days_count": "(총 {{count}}일)",
+        "budget_amount_placeholder": "예산 입력 (항공권 제외)"
     },
     "trip": {
         "create_new": "새 여행 만들기",
@@ -390,5 +391,41 @@
             "pkg_500": "베스트",
             "pkg_1000": "프로"
         }
+    },
+    "budget_view": {
+        "title": "예산 견적",
+        "overview_title": "예산 개요",
+        "overview_desc": "여행 경비 및 예산 목표 추적",
+        "total_days": "총 {{count}}일",
+        "total_estimated_cost": "총 예상 비용",
+        "daily_average": "일일 평균",
+        "alert_title": "예산 알림",
+        "alert_over_budget": "예산 초과",
+        "alert_check_list": "조정을 위해 목록 확인 필요",
+        "status_title": "예산 상태",
+        "status_within_range": "예산 내",
+        "status_all_good": "모든 항목 양호",
+        "cost_breakdown_title": "비용 분석",
+        "average_per_day": "일 {{amount}} 평균",
+        "spending": "지출",
+        "daily_trend_title": "일일 지출 추세",
+        "daily_list_title": "일일 목록",
+        "total_items": "총 {{count}}개 항목",
+        "detail_list_title": "상세 목록",
+        "control_panel_title": "예산 제어판",
+        "control_panel_desc": "카테고리별 예산 한도를 설정하여 지출 초과를 모니터링하세요",
+        "set_limit": "설정",
+        "spent_label": "사용됨:",
+        "over_budget_label": "초과",
+        "remaining_label": "잔액",
+        "total_label": "합계"
+    },
+    "categories": {
+        "transport": "교통",
+        "dining": "식사",
+        "tickets": "티켓/활동",
+        "shopping": "쇼핑",
+        "accommodation": "숙박",
+        "other": "기타"
     }
 }

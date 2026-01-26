@@ -11,6 +11,7 @@ export interface TripInput {
   mustVisit: string;
   language: string;
   constraints: string;
+  currency?: string; // e.g. 'TWD', 'JPY', 'USD', 'KRW'
 }
 
 // JSON Schema from the prompt
@@ -44,6 +45,7 @@ export interface TripMeta {
   title?: string;
   dateRange: string;
   days: number;
+  currency?: string; // Add currency here too for the dashboard view
 
   transportStrategy: string;
   pace: string;

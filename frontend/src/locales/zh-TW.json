@@ -105,7 +105,8 @@
         "member_free": "會員免費",
         "confirmed_payment": "確認支付",
         "remaining_points": "剩餘點數",
-        "days_count": "(共 {{count}} 天)"
+        "days_count": "(共 {{count}} 天)",
+        "budget_amount_placeholder": "請輸入預算金額 (不含機票)"
     },
     "trip": {
         "create_new": "建立新行程",
@@ -390,5 +391,41 @@
             "pkg_500": "超值方案",
             "pkg_1000": "專業玩家"
         }
+    },
+    "budget_view": {
+        "title": "預算預估",
+        "overview_title": "預算概覽",
+        "overview_desc": "追蹤您的行程花費與預算目標",
+        "total_days": "共 {{count}} 天行程",
+        "total_estimated_cost": "總預估花費",
+        "daily_average": "平均每日支出",
+        "alert_title": "預算警示",
+        "alert_over_budget": "超出預算",
+        "alert_check_list": "請檢視右側清單調整",
+        "status_title": "預算狀態",
+        "status_within_range": "在範圍內",
+        "status_all_good": "所有項目符合預期",
+        "cost_breakdown_title": "支出佔比分析",
+        "average_per_day": "平均 {{amount}} / 天",
+        "spending": "支出",
+        "daily_trend_title": "每日花費趨勢",
+        "daily_list_title": "每日清單",
+        "total_items": "共 {{count}} 筆項目",
+        "detail_list_title": "細項清單",
+        "control_panel_title": "預算控制台",
+        "control_panel_desc": "設定各類別預算上限，即時監控超支狀況",
+        "set_limit": "設定",
+        "spent_label": "已花費:",
+        "over_budget_label": "超支",
+        "remaining_label": "剩餘",
+        "total_label": "總計"
+    },
+    "categories": {
+        "transport": "交通",
+        "dining": "餐飲",
+        "tickets": "活動/門票",
+        "shopping": "購物",
+        "accommodation": "住宿",
+        "other": "其他"
     }
 }

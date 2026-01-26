@@ -16,7 +16,22 @@ interface Props {
     tripMeta: TripMeta;
     days: TripDay[];
     onUpdateMeta?: (updates: Partial<TripMeta>) => void;
+    tripCurrency?: string; // New prop for currency code (JPY, TWD, etc)
 }
+
+import { useTranslation } from 'react-i18next'; // 1. Import hook
+
+const getCurrencySymbol = (code: string = 'JPY') => {
+    switch (code.toUpperCase()) {
+        case 'JPY': return '¥';
+        case 'USD': return '$';
+        case 'KRW': return '₩';
+        case 'TWD': return 'NT$';
+        case 'CNY': return '¥';
+        case 'EUR': return '€';
+        default: return code; // Fallback to code if symbol unknown or just use code
+    }
+};
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#6366F1', '#EC4899', '#8B5CF6'];
 
@@ -30,14 +45,7 @@ const CATEGORY_MAP: Record<string, string> = {
     other: '其他'
 };
 
-const REVERSE_CATEGORY_MAP: Record<string, string> = {
-    '交通': 'transport',
-    '餐飲': 'dining',
-    '活動/門票': 'tickets',
-    '購物': 'shopping',
-    '住宿': 'accommodation',
-    '其他': 'other'
-};
+
 
 const CATEGORY_ICONS: Record<string, any> = {
     transport: Train,
@@ -48,7 +56,8 @@ const CATEGORY_ICONS: Record<string, any> = {
     other: Wallet
 };
 
-export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
+export default function BudgetView({ tripMeta, days, onUpdateMeta, tripCurrency = 'JPY' }: Props) {
+    const { t } = useTranslation(); // 2. Use hook
     const [selectedBudgetCategory, setSelectedBudgetCategory] = useState<string | null>(null);
     const [selectedDetailDay, setSelectedDetailDay] = useState<number | null>(null);
 
@@ -143,16 +152,17 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
 
         // Format for Pie Chart and Legend
         // 1. Full data for Legend (all categories)
-        const allCategoriesData = Object.keys(CATEGORY_MAP).map(key => {
+        const allCategoriesData = Object.keys(totals).map(key => {
             const value = totals[key] || 0;
+            // Use translation for display name
+            const displayName = t(`categories.${key}`, key);
             return {
-                name: CATEGORY_MAP[key],
+                name: displayName,
                 key: key,
                 value: value,
-                icon: CATEGORY_ICONS[key]
+                icon: CATEGORY_ICONS[key] || Wallet
             };
-        }).sort((a, b) => b.value - a.value); // Optional: still sort by value, or keep fixed order? User probably prefers fixed or value. Let's keep value sort for now, but 0s will be at bottom. 
-        // Actually, fixed order might be better if 0s are involved so they don't jump around? 
+        }).sort((a, b) => b.value - a.value);
         // Let's stick to the previous sorting behavior (descending value) for now as it highlights big spenders, but 0s will be present.
 
         // 2. Filtered data for Pie Chart (only > 0)
@@ -183,7 +193,7 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
     }, [days]);
 
     const selectedItems = selectedBudgetCategory
-        ? categoryDetails[REVERSE_CATEGORY_MAP[selectedBudgetCategory]] || []
+        ? categoryDetails[selectedBudgetCategory] || []
         : [];
 
     const dayItems = useMemo(() => {
@@ -194,7 +204,7 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
     const handlePieClick = (data: any) => {
         if (!data) return;
         setSelectedDetailDay(null); // Clear day selection
-        setSelectedBudgetCategory(selectedBudgetCategory === data.name ? null : data.name);
+        setSelectedBudgetCategory(selectedBudgetCategory === data.key ? null : data.key);
     };
 
     const handleTrendClick = (data: any) => {
@@ -246,13 +256,13 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">預算概覽</h2>
-                        <p className="text-gray-500 text-sm mt-1">追蹤您的行程花費與預算目標</p>
+                        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">{t('budget_view.overview_title')}</h2>
+                        <p className="text-gray-500 text-sm mt-1">{t('budget_view.overview_desc')}</p>
                     </div>
 
                     <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200">
                         <Calendar className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm font-medium text-gray-700">共 {days.length} 天行程</span>
+                        <span className="text-sm font-medium text-gray-700">{t('budget_view.total_days', { count: days.length })}</span>
                     </div>
                 </div>
 
@@ -261,9 +271,9 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                     {/* Card 1: Total */}
                     <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center justify-between group hover:border-blue-500 transition-all">
                         <div>
-                            <p className="text-sm font-medium text-gray-500 mb-1">總預估花費</p>
+                            <p className="text-sm font-medium text-gray-500 mb-1">{t('budget_view.total_estimated_cost')}</p>
                             <h3 className="text-3xl font-extrabold text-gray-900 tracking-tight group-hover:text-blue-600 transition-colors">
-                                <span className="text-lg align-top mr-1 font-bold text-gray-400">¥</span>
+                                <span className="text-lg align-top mr-1 font-bold text-gray-400">{getCurrencySymbol(tripCurrency)}</span>
                                 {safeRender(totalBudget.toLocaleString())}
                             </h3>
                         </div>
@@ -275,9 +285,9 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                     {/* Card 2: Daily Avg */}
                     <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center justify-between group hover:border-green-500 transition-all">
                         <div>
-                            <p className="text-sm font-medium text-gray-500 mb-1">平均每日支出</p>
+                            <p className="text-sm font-medium text-gray-500 mb-1">{t('budget_view.daily_average')}</p>
                             <h3 className="text-2xl font-bold text-gray-900 group-hover:text-green-600 transition-colors">
-                                <span className="text-sm align-top mr-1 text-gray-400">¥</span>
+                                <span className="text-sm align-top mr-1 text-gray-400">{getCurrencySymbol(tripCurrency)}</span>
                                 {safeRender(averageDailySpend.toLocaleString())}
                             </h3>
                         </div>
@@ -293,11 +303,11 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                         {hasBudgetAlert ? (
                             <>
                                 <div>
-                                    <p className="text-sm font-medium text-red-500 mb-1">預算警示</p>
+                                    <p className="text-sm font-medium text-red-500 mb-1">{t('budget_view.alert_title')}</p>
                                     <h3 className="text-xl font-bold text-gray-900 truncate">
-                                        超出預算
+                                        {t('budget_view.alert_over_budget')}
                                     </h3>
-                                    <p className="text-xs text-gray-400 mt-1">請檢視右側清單調整</p>
+                                    <p className="text-xs text-gray-400 mt-1">{t('budget_view.alert_check_list')}</p>
                                 </div>
                                 <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center animate-pulse">
                                     <AlertCircle className="w-6 h-6 text-red-600" />
@@ -306,12 +316,12 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                         ) : (
                             <>
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500 mb-1">預算狀態</p>
+                                    <p className="text-sm font-medium text-gray-500 mb-1">{t('budget_view.status_title')}</p>
                                     <h3 className="text-xl font-bold text-gray-900 truncate">
-                                        在範圍內
+                                        {t('budget_view.status_within_range')}
                                     </h3>
                                     <p className="text-xs text-green-500 font-medium mt-1">
-                                        所有項目符合預期
+                                        {t('budget_view.status_all_good')}
                                     </p>
                                 </div>
                                 <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
@@ -331,7 +341,7 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                         {/* Chart Container */}
                         <div className="bg-white rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 p-6 md:p-8">
                             <div className="flex items-center justify-between mb-8">
-                                <h3 className="font-bold text-lg text-gray-900">支出佔比分析</h3>
+                                <h3 className="font-bold text-lg text-gray-900">{t('budget_view.cost_breakdown_title')}</h3>
                             </div>
 
                             <div className="flex flex-col items-center gap-8">
@@ -360,10 +370,10 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                                                 outerRadius={100}
                                                 paddingAngle={5}
                                                 onClick={(prevData) => {
-                                                    // Robust check for name: data.name or data.payload.name
-                                                    const name = prevData.name || (prevData.payload && prevData.payload.name);
-                                                    if (name) {
-                                                        setSelectedBudgetCategory(selectedBudgetCategory === name ? null : name);
+                                                    // Robust check for key: data.key or data.payload.key
+                                                    const key = prevData.key || (prevData.payload && prevData.payload.key);
+                                                    if (key) {
+                                                        setSelectedBudgetCategory(selectedBudgetCategory === key ? null : key);
                                                     }
                                                 }}
                                                 cornerRadius={6}
@@ -374,12 +384,12 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                                                     <Cell
                                                         key={`cell-${index}`}
                                                         fill={COLORS[index % COLORS.length]}
-                                                        opacity={selectedBudgetCategory && selectedBudgetCategory !== entry.name ? 0.3 : 1}
+                                                        opacity={selectedBudgetCategory && selectedBudgetCategory !== entry.key ? 0.3 : 1}
                                                         className="transition-all duration-300 hover:filter hover:brightness-110 focus:outline-none cursor-pointer"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            const name = entry.name;
-                                                            setSelectedBudgetCategory(selectedBudgetCategory === name ? null : name);
+                                                            const key = entry.key;
+                                                            setSelectedBudgetCategory(selectedBudgetCategory === key ? null : key);
                                                         }}
                                                     />
                                                 ))}
@@ -394,7 +404,7 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
 
                                     {/* Centered Total */}
                                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                        <span className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">Total</span>
+                                        <span className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">{t('budget_view.total_label')}</span>
                                         <span className="text-2xl font-black text-gray-800">
                                             {totalBudget > 1000000 ? `${(totalBudget / 10000).toFixed(1)}萬` : totalBudget.toLocaleString()}
                                         </span>
@@ -404,7 +414,7 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                                 {/* Legend Positioned Below Chart - Shows ALL Categories */}
                                 <div className="w-full grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
                                     {budgetData.map((item, idx) => {
-                                        const isSelected = selectedBudgetCategory === item.name;
+                                        const isSelected = selectedBudgetCategory === item.key;
                                         const status = getBudgetStatus(item.key, item.value);
                                         const color = COLORS[idx % COLORS.length];
 
@@ -414,7 +424,7 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setSelectedDetailDay(null);
-                                                    setSelectedBudgetCategory(isSelected ? null : item.name);
+                                                    setSelectedBudgetCategory(isSelected ? null : item.key);
                                                 }}
                                                 className={`flex flex-col justify-between p-4 rounded-xl cursor-pointer border transition-all duration-200 group relative ${isSelected
                                                     ? 'bg-gray-900 border-gray-900 text-white shadow-lg shadow-gray-200 scale-[1.02]'
@@ -462,11 +472,11 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                         <div className="bg-white rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 p-6 md:p-8">
                             <div className="flex items-center justify-between mb-8">
                                 <div>
-                                    <h3 className="font-bold text-lg text-gray-900">每日花費趨勢</h3>
+                                    <h3 className="font-bold text-lg text-gray-900">{t('budget_view.daily_trend_title')}</h3>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
                                     <TrendingUp className="w-4 h-4 text-brand-500" />
-                                    <span className="font-medium">平均 ¥{averageDailySpend.toLocaleString()} / 天</span>
+                                    <span className="font-medium">{t('budget_view.average_per_day', { amount: `${getCurrencySymbol(tripCurrency)}${averageDailySpend.toLocaleString()}` })}</span>
                                 </div>
                             </div>
                             <style>{`
@@ -521,8 +531,8 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                                                 padding: '12px 16px',
                                             }}
                                             formatter={(value: number) => [
-                                                <span className="text-gray-900 font-bold text-base">¥{value.toLocaleString()}</span>,
-                                                <span className="text-gray-500 text-xs uppercase tracking-wider">支出</span>
+                                                <span className="text-gray-900 font-bold text-base">{getCurrencySymbol(tripCurrency)}{value.toLocaleString()}</span>,
+                                                <span className="text-gray-500 text-xs uppercase tracking-wider">{t('budget_view.spending')}</span>
                                             ]}
                                             labelStyle={{ color: '#6B7280', fontSize: '12px', marginBottom: '4px' }}
                                         />
@@ -555,10 +565,11 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                                         <div>
                                             <h4 className="font-bold text-gray-900 flex items-center gap-2">
                                                 <Calendar className="w-5 h-5 text-brand-600" />
-                                                Day {selectedDetailDay}
-                                                <span className="text-gray-400 font-normal">每日清單</span>
+                                                <Calendar className="w-5 h-5 text-brand-600" />
+                                                {t('timeline.day_label', { day: selectedDetailDay })}
+                                                <span className="text-gray-400 font-normal">{t('budget_view.daily_list_title')}</span>
                                             </h4>
-                                            <p className="text-xs text-gray-500 mt-0.5 ml-7">共 {dayItems.length} 筆項目</p>
+                                            <p className="text-xs text-gray-500 mt-0.5 ml-7">{t('budget_view.total_items', { count: dayItems.length })}</p>
                                         </div>
                                         <button
                                             onClick={() => setSelectedDetailDay(null)}
@@ -650,7 +661,7 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                                         {/* Find Color for the selected category */}
                                         {(() => {
                                             // Fix: Find index in budgetData to match the button color logic exactly
-                                            const foundIndex = budgetData.findIndex(b => b.name === selectedBudgetCategory);
+                                            const foundIndex = budgetData.findIndex(b => b.key === selectedBudgetCategory);
                                             const themeColor = foundIndex !== -1 ? COLORS[foundIndex % COLORS.length] : '#3B82F6';
 
                                             return (
@@ -658,10 +669,11 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                                                     <div>
                                                         <h4 className="font-bold text-gray-900 flex items-center gap-2">
                                                             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColor }} />
-                                                            {selectedBudgetCategory}
-                                                            <span className="text-gray-400 font-normal">細項清單</span>
+                                                            {/* Localize Category Name if it matches a key */}
+                                                            {t(`categories.${selectedBudgetCategory}`, selectedBudgetCategory || '')}
+                                                            <span className="text-gray-400 font-normal">{t('budget_view.detail_list_title')}</span>
                                                         </h4>
-                                                        <p className="text-xs text-gray-500 mt-0.5 ml-5">共 {selectedItems.length} 筆項目</p>
+                                                        <p className="text-xs text-gray-500 mt-0.5 ml-5">{t('budget_view.total_items', { count: selectedItems.length })}</p>
                                                     </div>
                                                     <button
                                                         onClick={() => setSelectedBudgetCategory(null)}
@@ -677,10 +689,10 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                                     <div className="overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-gray-200 flex-1 bg-gray-50/30">
                                         <div className="space-y-3">
                                             {selectedItems.map((stop, i) => {
-                                                const catKey = REVERSE_CATEGORY_MAP[selectedBudgetCategory || ''] || 'other';
+                                                const catKey = selectedBudgetCategory || 'other';
 
                                                 // Fix: Find index in budgetData to match the button color logic exactly
-                                                const foundIndex = budgetData.findIndex(b => b.name === selectedBudgetCategory);
+                                                const foundIndex = budgetData.findIndex(b => b.key === selectedBudgetCategory);
                                                 const themeColor = foundIndex !== -1 ? COLORS[foundIndex % COLORS.length] : '#3B82F6';
 
                                                 return (
@@ -743,10 +755,10 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                                     <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
                                         <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
                                             <Edit2 className="w-4 h-4 text-brand-600" />
-                                            預算控制台
+                                            {t('budget_view.control_panel_title')}
                                         </h3>
                                         <p className="text-xs text-gray-500 mt-1">
-                                            設定各類別預算上限，即時監控超支狀況
+                                            {t('budget_view.control_panel_desc')}
                                         </p>
                                     </div>
 
@@ -766,7 +778,7 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                                                     <div className="flex justify-between items-center mb-3">
                                                         <div className="flex items-center gap-2">
                                                             <div className={`w-2 h-2 rounded-full ${status === 'danger' ? 'bg-red-500' : status === 'warning' ? 'bg-orange-400' : 'bg-green-500'}`} />
-                                                            <span className="font-bold text-gray-700">{DisplayName}</span>
+                                                            <span className="font-bold text-gray-700">{t(`categories.${key}`, DisplayName)}</span>
                                                         </div>
 
                                                         {/* Edit Mode vs View Mode */}
@@ -799,9 +811,10 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                                                                     setEditingCategory(key);
                                                                     setEditingValue(target === 0 ? '' : target.toString());
                                                                 }}
+
                                                             >
                                                                 <span className={`text-sm font-bold ${actual > target && target > 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                                                                    {target === 0 ? '設定' : `¥${target.toLocaleString()}`}
+                                                                    {target === 0 ? t('budget_view.set_limit') : `${getCurrencySymbol(tripCurrency)}${target.toLocaleString()}`}
                                                                 </span>
                                                                 <Edit2 className="w-3 h-3 text-gray-300 group-hover:text-gray-500" />
                                                             </div>
@@ -821,10 +834,10 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
 
                                                     {/* Footer Stats */}
                                                     <div className="flex justify-between items-center mt-2 text-xs">
-                                                        <span className="text-gray-500">已花費: <span className="font-medium text-gray-900">¥{actual.toLocaleString()}</span></span>
+                                                        <span className="text-gray-500">{t('budget_view.spent_label')} <span className="font-medium text-gray-900">{getCurrencySymbol(tripCurrency)}{actual.toLocaleString()}</span></span>
                                                         {target > 0 && (
                                                             <span className={status === 'danger' ? 'text-red-600 font-bold' : 'text-gray-400'}>
-                                                                {status === 'danger' ? `超支 ¥${Math.abs(remaining).toLocaleString()}` : `剩餘 ¥${remaining.toLocaleString()}`}
+                                                                {status === 'danger' ? `${t('budget_view.over_budget_label')} ${getCurrencySymbol(tripCurrency)}${Math.abs(remaining).toLocaleString()}` : `${t('budget_view.remaining_label')} ${getCurrencySymbol(tripCurrency)}${remaining.toLocaleString()}`}
                                                             </span>
                                                         )}
                                                     </div>
@@ -838,6 +851,6 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta }: Props) {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

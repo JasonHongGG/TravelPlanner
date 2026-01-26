@@ -105,7 +105,8 @@
         "member_free": "会員無料",
         "confirmed_payment": "支払いを確認",
         "remaining_points": "残りのポイント",
-        "days_count": "(合計 {{count}} 日間)"
+        "days_count": "(合計 {{count}} 日間)",
+        "budget_amount_placeholder": "予算を入力 (航空券除く)"
     },
     "trip": {
         "create_new": "新しい旅程を作成",
@@ -390,5 +391,41 @@
             "pkg_500": "バリュー",
             "pkg_1000": "プロ"
         }
+    },
+    "budget_view": {
+        "title": "予算見積もり",
+        "overview_title": "予算概要",
+        "overview_desc": "行程の費用と予算目標を追跡",
+        "total_days": "合計 {{count}} 日間",
+        "total_estimated_cost": "推定総費用",
+        "daily_average": "1日平均",
+        "alert_title": "予算アラート",
+        "alert_over_budget": "予算超過",
+        "alert_check_list": "リストを確認して調整してください",
+        "status_title": "予算ステータス",
+        "status_within_range": "予算内",
+        "status_all_good": "すべて順調です",
+        "cost_breakdown_title": "費用内訳",
+        "average_per_day": "平均 {{amount}} / 日",
+        "spending": "支出",
+        "daily_trend_title": "日次支出推移",
+        "daily_list_title": "日次リスト",
+        "total_items": "合計 {{count}} 項目",
+        "detail_list_title": "詳細リスト",
+        "control_panel_title": "予算管理パネル",
+        "control_panel_desc": "カテゴリごとの予算上限を設定し、超過を監視します",
+        "set_limit": "設定",
+        "spent_label": "使用済み:",
+        "over_budget_label": "超過",
+        "remaining_label": "残り",
+        "total_label": "合計"
+    },
+    "categories": {
+        "transport": "交通費",
+        "dining": "飲食",
+        "tickets": "チケット/体験",
+        "shopping": "買い物",
+        "accommodation": "宿泊",
+        "other": "その他"
     }
 }

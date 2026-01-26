@@ -106,12 +106,24 @@ export const useTripManager = () => {
   }, [user?.email, isSubscribed]);
 
   const createTrip = async (input: TripInput) => {
+    // 1. Generate High-Res Cover Image IMMEDIATELY (Fail-Safe)
+    const city = input.destination.split(',')[0].trim();
+    const keywords = ["landmark", "landscape", "street view", "aerial view", "architecture", "night view", "nature", "tourism", "skyline", "scenery", "historic", "culture", "daytime", "vacation", "panoramic", "travel", "sightseeing"];
+    const randomKeyword = keywords[Math.floor(Math.random() * keywords.length)];
+    const randomPage = Math.floor(Math.random() * 10);
+    const timestamp = Date.now();
+    const query = `${city} ${randomKeyword}`;
+
+    // This URL is guaranteed to be High-Res (1920x1080) and uses the diverse keywords
+    const initialHdCoverUrl = `https://th.bing.com/th?q=${encodeURIComponent(query)}&w=1920&h=1080&c=7&rs=1&p=${randomPage}&t=${timestamp}`;
+
     const newTrip: Trip = {
       id: crypto.randomUUID(),
       title: input.destination,
       createdAt: Date.now(),
       status: 'generating',
       input,
+      customCoverImage: initialHdCoverUrl // Set immediately so it shows during generation
     };
 
     // Calculate Cost
@@ -132,22 +144,21 @@ export const useTripManager = () => {
       .then(async (data) => {
         // Success implies deduction was successful on server side
 
-        // Enhance: Fetch High-Res Cover Image immediately (The "New Method")
-        let hdCoverUrl: string | undefined;
+        // Try to fetch a potentially better one from API, but we already have a good one
+        let finalCoverUrl = initialHdCoverUrl;
+
         try {
           const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
-          const city = input.destination.split(',')[0].trim();
-          // Use specific high-quality keywords
-          const query = `${city} landmark scenery high quality`;
-          const response = await fetch(`${apiBaseUrl}/cover?query=${encodeURIComponent(query)}`);
+          const response = await fetch(`${apiBaseUrl}/cover?query=${encodeURIComponent(query)}&t=${timestamp}&p=${randomPage}`);
+
           if (response.ok) {
             const coverData = await response.json();
             if (coverData?.url) {
-              hdCoverUrl = coverData.url;
+              finalCoverUrl = coverData.url;
             }
           }
         } catch (e) {
-          console.warn("Initial HD cover fetch failed, falling back to default", e);
+          // Ignore, we already have the fallback
         }
 
         setTrips(prev => prev.map(t =>
@@ -157,7 +168,7 @@ export const useTripManager = () => {
               status: 'complete',
               data,
               generationTimeMs: Date.now() - t.createdAt,
-              customCoverImage: hdCoverUrl // Set the HD cover immediately
+              customCoverImage: finalCoverUrl
             }
             : t
         ));

@@ -916,7 +916,11 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
             {/* 2. Budget View */}
             {activeTab === 'budget' && (
               <div className="w-full max-w-5xl mx-auto">
-                <BudgetView tripMeta={tripMeta} days={days} />
+                <BudgetView
+                  tripMeta={tripMeta}
+                  days={days}
+                  tripCurrency={trip.input.currency || tripMeta.currency || 'TWD'}
+                />
               </div>
             )}
 

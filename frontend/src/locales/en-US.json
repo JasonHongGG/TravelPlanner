@@ -105,7 +105,8 @@
         "member_free": "Free for Members",
         "confirmed_payment": "Confirm Payment",
         "remaining_points": "Remaining Points",
-        "days_count": "({{count}} days total)"
+        "days_count": "({{count}} days total)",
+        "budget_amount_placeholder": "Enter budget amount (excl. flights)"
     },
     "trip": {
         "create_new": "Create New Trip",
@@ -390,5 +391,41 @@
             "pkg_500": "Value",
             "pkg_1000": "Pro"
         }
+    },
+    "budget_view": {
+        "title": "Budget Estimate",
+        "overview_title": "Budget Overview",
+        "overview_desc": "Track your trip expenses and budget targets",
+        "total_days": "{{count}} Days Total",
+        "total_estimated_cost": "Total Estimated Cost",
+        "daily_average": "Daily Average",
+        "alert_title": "Budget Alert",
+        "alert_over_budget": "Over Budget",
+        "alert_check_list": "Check list to adjust",
+        "status_title": "Budget Status",
+        "status_within_range": "Within Range",
+        "status_all_good": "All items look good",
+        "cost_breakdown_title": "Cost Breakdown",
+        "average_per_day": "Avg {{amount}} / Day",
+        "spending": "Spending",
+        "daily_trend_title": "Daily Spending Trend",
+        "daily_list_title": "Daily List",
+        "total_items": "{{count}} items total",
+        "detail_list_title": "Detailed List",
+        "control_panel_title": "Budget Control Panel",
+        "control_panel_desc": "Set budget limits for each category to monitor overspending",
+        "set_limit": "Set",
+        "spent_label": "Spent:",
+        "over_budget_label": "Over",
+        "remaining_label": "Remaining",
+        "total_label": "Total"
+    },
+    "categories": {
+        "transport": "Transport",
+        "dining": "Dining",
+        "tickets": "Tickets/Activities",
+        "shopping": "Shopping",
+        "accommodation": "Accommodation",
+        "other": "Other"
     }
 }

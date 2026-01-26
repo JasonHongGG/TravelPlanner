@@ -123,11 +123,26 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
     pace: '',
     mustVisit: '',
     language: getPromptLanguage(i18n.language),
-    constraints: ''
+    constraints: '',
+    currency: 'TWD' // Default currency
   });
+
+  // Separate state for numeric budget to handle input cleanly
+  const [budgetNum, setBudgetNum] = useState('');
 
   const handleChange = (key: keyof TripInput, value: string) => {
     setFormData(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Handle Budget Changes (Number or Currency)
+  const handleBudgetChange = (num: string, curr: string) => {
+    setBudgetNum(num);
+    const combined = num ? `${curr} ${num}` : '';
+    setFormData(prev => ({
+      ...prev,
+      budget: combined,
+      currency: curr
+    }));
   };
 
   // Calculate real-time cost
@@ -169,7 +184,17 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
       try {
         if (event.target?.result) {
           const json = JSON.parse(event.target.result as string);
+
+          // Restore form data
           setFormData(prev => ({ ...prev, ...json }));
+
+          // Restore local budget number state
+          if (json.budget) {
+            const match = json.budget.match(/(\d+)/);
+            if (match) {
+              setBudgetNum(match[0]);
+            }
+          }
         }
       } catch (error) {
         console.error("Failed to parse JSON", error);
@@ -337,14 +362,44 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
                 required
               />
 
-              <InputField
-                label={t('new_trip.budget')}
-                icon={DollarSign}
-                value={formData.budget}
-                onChange={(v: string) => handleChange('budget', v)}
-                placeholder={t('new_trip.budget_placeholder')}
-                required
-              />
+              {/* Compound Budget Input - Modern Unified Design */}
+              <div className="mb-5 group">
+                <label className="block text-sm font-bold text-gray-700 mb-1.5 flex items-center gap-2 transition-colors group-focus-within:text-brand-600">
+                  <div className="p-1 rounded-md bg-white border border-gray-200 text-gray-500 group-focus-within:bg-brand-50 group-focus-within:text-brand-600 group-focus-within:border-brand-200 transition-colors shadow-sm">
+                    <DollarSign className="w-3.5 h-3.5" />
+                  </div>
+                  {t('new_trip.budget')} <span className="text-red-500 text-xs font-bold">*</span>
+                </label>
+
+                <div className="w-full flex items-center bg-white border border-gray-300 rounded-xl shadow-sm focus-within:border-brand-500 focus-within:ring-4 focus-within:ring-brand-500/10 hover:border-gray-400 transition-all">
+                  <div className="relative shrink-0">
+                    <select
+                      value={formData.currency || 'TWD'}
+                      onChange={(e) => handleBudgetChange(budgetNum, e.target.value)}
+                      className="bg-transparent border-none text-sm font-bold text-gray-700 pl-4 pr-9 py-3 outline-none cursor-pointer hover:bg-gray-50 transition-colors appearance-none"
+                    >
+                      <option value="TWD">TWD</option>
+                      <option value="JPY">JPY</option>
+                      <option value="KRW">KRW</option>
+                      <option value="USD">USD</option>
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
+
+                  <div className="w-px h-6 bg-gray-200 mx-0"></div>
+
+                  <input
+                    type="number"
+                    className="flex-1 w-full border-none focus:ring-0 px-4 py-3 text-gray-900 placeholder:text-gray-400 font-medium outline-none bg-transparent"
+                    value={budgetNum}
+                    onChange={(e) => handleBudgetChange(e.target.value, formData.currency || 'TWD')}
+                    placeholder={t('new_trip.budget_amount_placeholder', '請輸入預算金額 (不含機票)')}
+                    required
+                  />
+                </div>
+              </div>
 
               <SectionHeader title={t('new_trip.style_preferences')} />
 
