@@ -56,6 +56,7 @@ Format:
   "tripMeta": {
     "dateRange": "YYYY-MM-DD to YYYY-MM-DD",
     "days": 0,
+    "travelers": "e.g., 2 adults",
     "transportStrategy": "e.g., JR Pass + Subway",
     "pace": "e.g., Moderate with early starts"
   },
@@ -132,7 +133,13 @@ export const constructTripPrompt = (input: TripInput): string => {
     4. **Be Logical**: Ensure travel times between stops are realistic. Group nearby attractions.
     5. **Be Fun**: Include "Pro Tips" or "Hidden Gems" in the notes.
     6. **Categorization**: Ensure the 'type' field is accurate.
-    7. **Costing**: Provide a numeric 'costAmount' (approximate single person cost in local currency, no symbols) and a valid 'costCategory' for EVERY stop.
+    7. **Costing**: Provide a numeric 'costAmount' and a valid 'costCategory' for EVERY stop. 
+       - **IMPORTANT: PER PERSON vs TOTAL**:
+         - **Dining / Tickets / Transport / Activities**: Output cost **PER PERSON**. (e.g. 1 Ramen bowl).
+         - **Accommodation / Shopping / Other**: Output **TOTAL COST** for the WHOLE GROUP. (e.g. 1 Hotel Room).
+       - **Currency**: The 'costAmount' MUST be approximated in **${input.currency || 'local currency'}**. 
+       - Example: If local cost is 2000 JPY and Target Currency is TWD, output approx 400. 
+       - Do NOT output JPY amount if Target Currency is different.
     
     Ensure the response is valid JSON matching the schema defined in the system instruction.
   `;

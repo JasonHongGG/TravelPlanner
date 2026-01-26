@@ -82,6 +82,13 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta, tripCurrency 
         }
     }, [tripMeta.budgetTargets]);
 
+    // Parse traveler count for Budget Multiplier
+    const travelerCount = useMemo(() => {
+        if (!tripMeta.travelers) return 1;
+        const match = tripMeta.travelers.match(/(\d+)/);
+        return match ? parseInt(match[1], 10) : 1;
+    }, [tripMeta.travelers]);
+
     // Dynamic Calculation of Budget
     const {
         budgetData,
@@ -133,11 +140,17 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta, tripCurrency 
 
             if (!totals.hasOwnProperty(category)) category = 'other';
 
-            // 2. Determine Amount
+            // 2. Determine Amount & Multiplier
             if (typeof stop.costAmount === 'number') {
                 amount = stop.costAmount;
             } else {
                 amount = parseCostToNumber(stop.costEstimate);
+            }
+
+            // Apply Multiplier for Per-Person Categories
+            const isPerPerson = ['dining', 'transport', 'tickets'].includes(category);
+            if (isPerPerson) {
+                amount = amount * travelerCount;
             }
 
             // 3. Find Day
@@ -397,7 +410,7 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta, tripCurrency 
                                             <ChartTooltip
                                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
                                                 itemStyle={{ color: '#374151', fontWeight: 600 }}
-                                                formatter={(value: number) => `¥${value.toLocaleString()}`}
+                                                formatter={(value: number) => `${getCurrencySymbol(tripCurrency)}${value.toLocaleString()}`}
                                             />
                                         </PieChart>
                                     </ResponsiveContainer>
@@ -458,7 +471,7 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta, tripCurrency 
                                                         {((item.value / totalBudget) * 100).toFixed(0)}%
                                                     </span>
                                                     <span className={`font-bold text-lg leading-none ${isSelected ? 'text-white' : 'text-gray-900'}`}>
-                                                        ¥{item.value.toLocaleString()}
+                                                        {item.value.toLocaleString()}
                                                     </span>
                                                 </div>
                                             </div>
@@ -736,8 +749,21 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta, tripCurrency 
                                                                         className="font-bold text-base block"
                                                                         style={{ color: themeColor }}
                                                                     >
-                                                                        ¥{(stop.costAmount || parseCostToNumber(stop.costEstimate)).toLocaleString()}
+                                                                        {getCurrencySymbol(tripCurrency)}{(stop.costAmount || parseCostToNumber(stop.costEstimate)).toLocaleString()}
                                                                     </span>
+                                                                    {/* Show Multiplier Badge if applicable */}
+                                                                    {(() => {
+                                                                        const catKey = stop.costCategory || (stop.type === 'dining' ? 'dining' : stop.type === 'transport' ? 'transport' : 'other');
+                                                                        const isPerPerson = ['dining', 'transport', 'tickets'].includes(catKey);
+                                                                        if (isPerPerson && travelerCount > 1) {
+                                                                            return (
+                                                                                <span className="text-xs text-gray-400 block mt-0.5">
+                                                                                    x{travelerCount} {t('budget_view.people_label', 'people')}
+                                                                                </span>
+                                                                            );
+                                                                        }
+                                                                        return null;
+                                                                    })()}
                                                                 </div>
                                                             </div>
                                                         </div>

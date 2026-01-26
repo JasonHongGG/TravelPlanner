@@ -157,9 +157,10 @@ export async function processCopilot(req: Request, res: Response) {
         console.log("[Copilot Server] Output Preview:", fullResponse.substring(0, 200).replace(/\n/g, ' '));
 
         if (!fullResponse) {
-            res.write(`data: ${JSON.stringify({ type: 'error', message: 'No content returned from Copilot.' })}\n\n`);
+            res.write(`data: ${JSON.stringify({ type: 'error', message: 'Trip Generation Failed: No content returned from AI' })}\n\n`);
+        } else {
+            res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
         }
-        res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
         res.end();
 
     } catch (e: any) {

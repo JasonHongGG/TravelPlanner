@@ -46,6 +46,7 @@ export interface TripMeta {
   dateRange: string;
   days: number;
   currency?: string; // Add currency here too for the dashboard view
+  travelers?: string; // e.g. "2 adults, 1 child" or "3"
 
   transportStrategy: string;
   pace: string;

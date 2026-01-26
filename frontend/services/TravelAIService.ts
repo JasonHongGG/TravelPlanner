@@ -98,7 +98,7 @@ export class TravelAIService {
                     const dataStr = line.substring(6);
                     try {
                         const data = JSON.parse(dataStr);
-                        if (data.type === 'content') {
+                        if (data.type === 'chunk' || data.type === 'content') {
                             const text = data.chunk;
                             fullText += text;
                             if (onChunk) onChunk(text);
@@ -108,9 +108,15 @@ export class TravelAIService {
                             }
                         } else if (data.type === 'error') {
                             throw new Error(data.message);
+                        } else if (data.type === 'done') {
+                            break;
                         }
                     } catch (e) {
-                        // ignore parse errors
+                        // Rethrow explicit errors from backend
+                        if (e instanceof Error && e.message && !e.message.includes("JSON")) {
+                            throw e;
+                        }
+                        // Ignore JSON parse errors for robustness
                     }
                 }
             }
