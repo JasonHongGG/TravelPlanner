@@ -428,5 +428,83 @@
         "shopping": "Shopping",
         "accommodation": "Accommodation",
         "other": "Other"
+    },
+    "advisory": {
+        "payment": {
+            "title": "Unlock AI Travel Advisory",
+            "subtitle": "AI will analyze destination weather, safety, and culture for you.",
+            "target_label": "Analyze Destination",
+            "cost_label": "Advisory Fee"
+        },
+        "no_info": "No information available",
+        "button": {
+            "updates_available": "UPDATES AVAILABLE",
+            "regenerate": "Regenerate Advisory"
+        },
+        "hero": {
+            "your": "Your",
+            "advisor": "Exclusive Advisor",
+            "desc": "Comprehensive analysis of weather, culture, and safety to create your perfect journey."
+        },
+        "sections": {
+            "itinerary": {
+                "title": "Itinerary Analysis",
+                "subtitle": "AI deeply reviews your route planning",
+                "view_full": "View Full Analysis",
+                "highlights": "Trip Highlights",
+                "suggestions": "Suggestions"
+            },
+            "weather": {
+                "title": "Weather & Outfit",
+                "forecast_label": "Forecast",
+                "view_forecast": "View Forecast",
+                "outfit_label": "Outfit",
+                "view_outfit": "View Outfit Guide",
+                "modal_forecast_title": "Weather Forecast Details",
+                "modal_clothing_title": "Outfit Suggestions"
+            },
+            "safety": {
+                "title": "Safety Guide",
+                "scams": "Common Scams",
+                "emergency": "Emergency Contacts",
+                "health": "Health & Medical",
+                "modal_scams_title": "Common Scams Details",
+                "modal_emergency_title": "Emergency Contact Info",
+                "modal_health_title": "Health & Medical Advice"
+            },
+            "logistics": {
+                "title": "Logistics & Utilities",
+                "transport": "Transport Guide",
+                "connectivity": "Internet & Voltage",
+                "currency": "Currency & Rate",
+                "refund": "Tax Refund",
+                "modal_transport_title": "Local Transport Guide",
+                "modal_connectivity_title": "Connectivity & Voltage",
+                "modal_currency_title": "Currency & Exchange Rate",
+                "modal_refund_title": "Tax Refund Info"
+            },
+            "culture": {
+                "title": "Culture & Etiquette",
+                "tipping": "Tipping",
+                "dining": "Dining Etiquette",
+                "dos": "Do's",
+                "donts": "Don'ts",
+                "modal_tipping_title": "Tipping Culture",
+                "modal_dining_title": "Dining Etiquette"
+            },
+            "lingo": {
+                "title": "Survival Lingo",
+                "pronunciation": "Pronunciation",
+                "overview": "Overview",
+                "detailed_insights": "Detailed Insights",
+                "no_details": "No additional details available."
+            }
+        },
+        "empty": {
+            "title": "Get Comprehensive Travel Advisory",
+            "desc": "Let AI analyze weather, transport, safety, and culture to generate your exclusive guide.",
+            "generating": "Generating guide...",
+            "generate_btn": "Generate Advisory Report"
+        }
     }
 }

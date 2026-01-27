@@ -428,5 +428,83 @@
         "shopping": "買い物",
         "accommodation": "宿泊",
         "other": "その他"
+    },
+    "advisory": {
+        "payment": {
+            "title": "AIトラベルアドバイザーを起動",
+            "subtitle": "目的地の天気、治安、文化情報をAIが分析します",
+            "target_label": "分析対象",
+            "cost_label": "生成費用"
+        },
+        "no_info": "情報なし",
+        "button": {
+            "updates_available": "UPDATES AVAILABLE",
+            "regenerate": "アドバイスを再生成"
+        },
+        "hero": {
+            "your": "あなたの",
+            "advisor": "専属アドバイザー",
+            "desc": "天気、文化、安全情報を総合的に分析し、完璧な旅をサポートします"
+        },
+        "sections": {
+            "itinerary": {
+                "title": "旅程分析概況",
+                "subtitle": "AIがルート計画を詳細にチェック",
+                "view_full": "View Full Analysis",
+                "highlights": "Trip Highlights",
+                "suggestions": "Suggestions"
+            },
+            "weather": {
+                "title": "天気と服装",
+                "forecast_label": "Forecast",
+                "view_forecast": "予報を見る",
+                "outfit_label": "Outfit",
+                "view_outfit": "服装ガイドを見る",
+                "modal_forecast_title": "天気予報詳細",
+                "modal_clothing_title": "服装アドバイス"
+            },
+            "safety": {
+                "title": "安全情報",
+                "scams": "よくある詐欺",
+                "emergency": "緊急連絡先",
+                "health": "医療・健康",
+                "modal_scams_title": "詐欺の手口詳細",
+                "modal_emergency_title": "緊急連絡先情報",
+                "modal_health_title": "医療・健康アドバイス"
+            },
+            "logistics": {
+                "title": "交通と実用情報",
+                "transport": "交通ガイド",
+                "connectivity": "ネット・電圧",
+                "currency": "通貨・レート",
+                "refund": "免税情報",
+                "modal_transport_title": "現地交通ガイド",
+                "modal_connectivity_title": "インターネットと電圧",
+                "modal_currency_title": "通貨と為替レート",
+                "modal_refund_title": "免税手続き情報"
+            },
+            "culture": {
+                "title": "文化とマナー",
+                "tipping": "チップ事情",
+                "dining": "食事マナー",
+                "dos": "Do's 推奨",
+                "donts": "Don'ts 禁止・タブー",
+                "modal_tipping_title": "チップ文化詳細",
+                "modal_dining_title": "食事マナー詳細"
+            },
+            "lingo": {
+                "title": "サバイバル言語パック",
+                "pronunciation": "Pronunciation",
+                "overview": "Overview",
+                "detailed_insights": "Detailed Insights",
+                "no_details": "No additional details available."
+            }
+        },
+        "empty": {
+            "title": "総合旅行アドバイスを取得",
+            "desc": "天気、交通、安全、文化的タブーをAIが分析し、あなた専用のガイドを生成します。",
+            "generating": "ガイドを生成中...",
+            "generate_btn": "アドバイザリーレポートを生成"
+        }
     }
 }

@@ -10,6 +10,7 @@ import {
 import { aiService } from '../../services';
 import { useAuth } from '../../context/AuthContext';
 import { usePoints } from '../../context/PointsContext';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
     trip: Trip;
@@ -32,6 +33,7 @@ interface ModalData {
 }
 
 export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdateTrip, isMapOpen = false }: Props) {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const { balance, isSubscribed } = usePoints(); // Points Hook
     const advisory = trip.data?.advisory;
@@ -62,11 +64,11 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
                 isOpen={paymentModalOpen}
                 onClose={() => setPaymentModalOpen(false)}
                 onConfirm={onGenerate}
-                title="開啟 AI 旅遊顧問"
-                subtitle="AI 將為您全方位分析目的地天氣、安全與文化資訊"
-                targetLabel="分析目的地"
+                title={t('advisory.payment.title')}
+                subtitle={t('advisory.payment.subtitle')}
+                targetLabel={t('advisory.payment.target_label')}
                 targetValue={trip.input.destination}
-                costLabel="顧問生成費用"
+                costLabel={t('advisory.payment.cost_label')}
                 cost={30}
                 balance={balance}
                 isSubscribed={isSubscribed}
@@ -91,10 +93,10 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
             <div className="text-center mb-16 relative pt-12 md:pt-20">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-brand-200/30 rounded-full blur-[100px] -z-10" />
                 <h2 className="text-4xl md:text-6xl font-black text-gray-900 mb-6 tracking-tight leading-tight">
-                    您的 <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-indigo-600">{trip.input.destination}</span> 專屬顧問
+                    {t('advisory.hero.your')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-indigo-600">{trip.input.destination}</span> {t('advisory.hero.advisor')}
                 </h2>
                 <p className="text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed font-light">
-                    全方位分析目的地天氣、文化與安全資訊，為您打造最完美的旅程體驗
+                    {t('advisory.hero.desc')}
                 </p>
             </div>
 
@@ -115,8 +117,8 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
                                         <FileSearch className="w-8 h-8 text-indigo-300" />
                                     </div>
                                     <div>
-                                        <h3 className="text-2xl font-bold tracking-tight text-white">行程分析概況</h3>
-                                        <p className="text-slate-400 text-sm">AI 深度檢視您的路線規劃</p>
+                                        <h3 className="text-2xl font-bold tracking-tight text-white">{t('advisory.sections.itinerary.title')}</h3>
+                                        <p className="text-slate-400 text-sm">{t('advisory.sections.itinerary.subtitle')}</p>
                                     </div>
                                 </div>
                                 <div className="text-slate-200 leading-loose text-lg font-light">
@@ -124,10 +126,10 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
                                 </div>
                                 {/* View Details Button for Itinerary */}
                                 <button
-                                    onClick={() => openModal('行程分析詳情', FileSearch, advisory.itineraryAnalysis?.pace, 'indigo')}
+                                    onClick={() => openModal(t('advisory.sections.itinerary.title'), FileSearch, advisory.itineraryAnalysis?.pace, 'indigo')}
                                     className="inline-flex items-center gap-2 text-indigo-300 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider group/btn"
                                 >
-                                    View Full Analysis <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                                    {t('advisory.sections.itinerary.view_full')} <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                                 </button>
                             </div>
 
@@ -138,7 +140,7 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
                                     <div className="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-6 border border-slate-700/50">
                                         <div className="flex items-center gap-2 mb-4 text-emerald-400">
                                             <Sparkles className="w-4 h-4" />
-                                            <span className="text-xs font-bold uppercase tracking-widest">Trip Highlights</span>
+                                            <span className="text-xs font-bold uppercase tracking-widest">{t('advisory.sections.itinerary.highlights')}</span>
                                         </div>
                                         <div className="space-y-3">
                                             {advisory.itineraryAnalysis.highlights.map((h, i) => (
@@ -156,7 +158,7 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
                                     <div className="bg-amber-900/10 backdrop-blur-sm rounded-3xl p-6 border border-amber-500/20">
                                         <div className="flex items-center gap-2 mb-4 text-amber-400">
                                             <AlertTriangle className="w-4 h-4" />
-                                            <span className="text-xs font-bold uppercase tracking-widest">Suggestions</span>
+                                            <span className="text-xs font-bold uppercase tracking-widest">{t('advisory.sections.itinerary.suggestions')}</span>
                                         </div>
                                         <ul className="space-y-3">
                                             {advisory.itineraryAnalysis.issues.map((item, i) => (
@@ -184,7 +186,7 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
                             <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
                                 <CloudSun className="w-6 h-6" />
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-800">天氣概況 & 穿搭</h3>
+                            <h3 className="text-2xl font-bold text-gray-800">{t('advisory.sections.weather.title')}</h3>
                         </div>
 
                         {/* Content Grid */}
@@ -192,7 +194,7 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
                             {/* Weather Block */}
                             <div
                                 className="group relative bg-blue-50/30 hover:bg-blue-50 rounded-2xl p-6 border border-blue-100/50 cursor-pointer transition-all duration-300 flex flex-col"
-                                onClick={() => openModal('天氣預報詳情', Wind, advisory.weather?.forecast, 'blue')}
+                                onClick={() => openModal(t('advisory.sections.weather.modal_forecast_title'), Wind, advisory.weather?.forecast, 'blue')}
                             >
                                 <div className="absolute top-4 right-4 text-blue-200 group-hover:text-blue-300 transition-colors">
                                     <Wind className="w-12 h-12 opacity-20 group-hover:scale-110 transition-transform duration-500" />
@@ -200,7 +202,7 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
 
                                 <div className="flex items-center gap-2 mb-3 text-blue-700">
                                     <ThermometerSun className="w-5 h-5" />
-                                    <span className="text-xs font-bold uppercase tracking-widest">Forecast</span>
+                                    <span className="text-xs font-bold uppercase tracking-widest">{t('advisory.sections.weather.forecast_label')}</span>
                                 </div>
 
                                 <div className="text-gray-600 leading-relaxed text-sm flex-1">
@@ -208,14 +210,14 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
                                 </div>
 
                                 <div className="mt-4 flex items-center text-blue-600 text-sm font-bold opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all">
-                                    查看完整預報 <ArrowRight className="w-4 h-4 ml-1" />
+                                    {t('advisory.sections.weather.view_forecast')} <ArrowRight className="w-4 h-4 ml-1" />
                                 </div>
                             </div>
 
                             {/* Clothing Block */}
                             <div
                                 className="group relative bg-indigo-50/30 hover:bg-indigo-50 rounded-2xl p-6 border border-indigo-100/50 cursor-pointer transition-all duration-300 flex flex-col"
-                                onClick={() => openModal('穿搭建議詳情', Shirt, advisory.weather?.clothing, 'indigo')}
+                                onClick={() => openModal(t('advisory.sections.weather.modal_clothing_title'), Shirt, advisory.weather?.clothing, 'indigo')}
                             >
                                 <div className="absolute top-4 right-4 text-indigo-200 group-hover:text-indigo-300 transition-colors">
                                     <Shirt className="w-12 h-12 opacity-20 group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-500" />
@@ -223,7 +225,7 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
 
                                 <div className="flex items-center gap-2 mb-3 text-indigo-700">
                                     <Shirt className="w-5 h-5" />
-                                    <span className="text-xs font-bold uppercase tracking-widest">Outfit</span>
+                                    <span className="text-xs font-bold uppercase tracking-widest">{t('advisory.sections.weather.outfit_label')}</span>
                                 </div>
 
                                 <div className="text-gray-600 leading-relaxed text-sm flex-1">
@@ -231,7 +233,7 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
                                 </div>
 
                                 <div className="mt-4 flex items-center text-indigo-600 text-sm font-bold opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all">
-                                    查看穿搭指南 <ArrowRight className="w-4 h-4 ml-1" />
+                                    {t('advisory.sections.weather.view_outfit')} <ArrowRight className="w-4 h-4 ml-1" />
                                 </div>
                             </div>
                         </div>
@@ -247,33 +249,33 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
                             <div className="p-2.5 bg-orange-50 text-orange-600 rounded-xl">
                                 <ShieldCheck className="w-6 h-6" />
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-800">安全須知</h3>
+                            <h3 className="text-2xl font-bold text-gray-800">{t('advisory.sections.safety.title')}</h3>
                         </div>
 
                         <div className="space-y-4 relative z-10 flex-1">
                             <SafetyItem
                                 icon={AlertTriangle}
-                                title="常見詐騙"
+                                title={t('advisory.sections.safety.scams')}
                                 content={advisory.safety?.scams}
                                 color="text-orange-600"
                                 bg="bg-orange-50"
-                                onClick={() => openModal('常見詐騙詳情', AlertTriangle, advisory.safety?.scams, 'orange')}
+                                onClick={() => openModal(t('advisory.sections.safety.modal_scams_title'), AlertTriangle, advisory.safety?.scams, 'orange')}
                             />
                             <SafetyItem
                                 icon={Phone}
-                                title="緊急聯絡"
+                                title={t('advisory.sections.safety.emergency')}
                                 content={advisory.safety?.emergency}
                                 color="text-red-600"
                                 bg="bg-red-50"
-                                onClick={() => openModal('緊急聯絡資訊', Phone, advisory.safety?.emergency, 'rose')}
+                                onClick={() => openModal(t('advisory.sections.safety.modal_emergency_title'), Phone, advisory.safety?.emergency, 'rose')}
                             />
                             <SafetyItem
                                 icon={Stethoscope}
-                                title="健康醫療"
+                                title={t('advisory.sections.safety.health')}
                                 content={advisory.safety?.health}
                                 color="text-emerald-600"
                                 bg="bg-emerald-50"
-                                onClick={() => openModal('健康醫療建議', Stethoscope, advisory.safety?.health, 'emerald')}
+                                onClick={() => openModal(t('advisory.sections.safety.modal_health_title'), Stethoscope, advisory.safety?.health, 'emerald')}
                             />
                         </div>
                     </div>
@@ -286,33 +288,33 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
                             <div className="p-2.5 bg-white text-indigo-600 rounded-xl shadow-sm">
                                 <Plane className="w-6 h-6" />
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-800">交通與實用資訊</h3>
+                            <h3 className="text-2xl font-bold text-gray-800">{t('advisory.sections.logistics.title')}</h3>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             <InfoCard
-                                icon={Map} title="交通攻略"
+                                icon={Map} title={t('advisory.sections.logistics.transport')}
                                 data={advisory.logistics?.transport}
                                 color="indigo"
-                                onClick={() => openModal('當地交通攻略', Map, advisory.logistics?.transport, 'indigo')}
+                                onClick={() => openModal(t('advisory.sections.logistics.modal_transport_title'), Map, advisory.logistics?.transport, 'indigo')}
                             />
                             <InfoCard
-                                icon={Zap} title="網路與電壓"
+                                icon={Zap} title={t('advisory.sections.logistics.connectivity')}
                                 data={advisory.logistics?.connectivity}
                                 color="blue"
-                                onClick={() => openModal('網路與電壓資訊', Zap, advisory.logistics?.connectivity, 'blue')}
+                                onClick={() => openModal(t('advisory.sections.logistics.modal_connectivity_title'), Zap, advisory.logistics?.connectivity, 'blue')}
                             />
                             <InfoCard
-                                icon={Wallet} title="貨幣匯率"
+                                icon={Wallet} title={t('advisory.sections.logistics.currency')}
                                 data={advisory.logistics?.currency}
                                 color="emerald"
-                                onClick={() => openModal('貨幣與匯率建議', Wallet, advisory.logistics?.currency, 'emerald')}
+                                onClick={() => openModal(t('advisory.sections.logistics.modal_currency_title'), Wallet, advisory.logistics?.currency, 'emerald')}
                             />
                             <InfoCard
-                                icon={Info} title="退稅須知"
+                                icon={Info} title={t('advisory.sections.logistics.refund')}
                                 data={advisory.logistics?.refund}
                                 color="violet"
-                                onClick={() => openModal('購物退稅須知', Info, advisory.logistics?.refund, 'violet')}
+                                onClick={() => openModal(t('advisory.sections.logistics.modal_refund_title'), Info, advisory.logistics?.refund, 'violet')}
                             />
                         </div>
                     </div>
@@ -326,28 +328,28 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
                             <div className="p-2.5 bg-pink-50 text-pink-600 rounded-xl">
                                 <HeartHandshake className="w-6 h-6" />
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-800">文化禮儀</h3>
+                            <h3 className="text-2xl font-bold text-gray-800">{t('advisory.sections.culture.title')}</h3>
                         </div>
 
                         <div className="space-y-6 flex-1">
                             <div
                                 className="bg-pink-50/50 rounded-2xl p-5 border border-pink-100/50 cursor-pointer hover:bg-pink-50 transition-colors group/tip"
-                                onClick={() => openModal('小費文化詳情', Coins, advisory.cultural?.tipping, 'pink')}
+                                onClick={() => openModal(t('advisory.sections.culture.modal_tipping_title'), Coins, advisory.cultural?.tipping, 'pink')}
                             >
                                 <div className="flex items-center gap-2 mb-2 text-pink-700 font-bold text-sm">
                                     <Coins className="w-4 h-4" />
-                                    消費者小費
+                                    {t('advisory.sections.culture.tipping')}
                                     <ArrowRight className="w-3 h-3 opacity-0 group-hover/tip:opacity-100 transition-opacity ml-auto" />
                                 </div>
                                 <StructuredTextContent data={advisory.cultural?.tipping} />
                             </div>
                             <div
                                 className="bg-pink-50/50 rounded-2xl p-5 border border-pink-100/50 cursor-pointer hover:bg-pink-50 transition-colors group/dining"
-                                onClick={() => openModal('用餐禮儀詳情', Utensils, advisory.cultural?.diningEtiquette, 'pink')}
+                                onClick={() => openModal(t('advisory.sections.culture.modal_dining_title'), Utensils, advisory.cultural?.diningEtiquette, 'pink')}
                             >
                                 <div className="flex items-center gap-2 mb-2 text-pink-700 font-bold text-sm">
                                     <Utensils className="w-4 h-4" />
-                                    用餐禮儀
+                                    {t('advisory.sections.culture.dining')}
                                     <ArrowRight className="w-3 h-3 opacity-0 group-hover/dining:opacity-100 transition-opacity ml-auto" />
                                 </div>
                                 <StructuredTextContent data={advisory.cultural?.diningEtiquette} />
@@ -362,7 +364,7 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
                             <div className="relative z-10">
                                 <div className="flex items-center gap-2 mb-4 text-emerald-800 font-bold text-lg">
                                     <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                                    Do's 建議做
+                                    {t('advisory.sections.culture.dos')}
                                 </div>
                                 <ul className="space-y-3">
                                     {advisory.cultural?.dos?.map((item: string, i: number) => (
@@ -380,7 +382,7 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
                             <div className="relative z-10">
                                 <div className="flex items-center gap-2 mb-4 text-rose-800 font-bold text-lg">
                                     <AlertTriangle className="w-5 h-5 text-rose-600" />
-                                    Don'ts 千萬別做
+                                    {t('advisory.sections.culture.donts')}
                                 </div>
                                 <ul className="space-y-3">
                                     {advisory.cultural?.donts?.map((item: string, i: number) => (
@@ -402,7 +404,7 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
                             <div className="p-2.5 bg-brand-50 text-brand-600 rounded-xl">
                                 <Globe className="w-6 h-6" />
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-800">生存語言包</h3>
+                            <h3 className="text-2xl font-bold text-gray-800">{t('advisory.sections.lingo.title')}</h3>
                         </div>
 
                         {/* Flashcards Deck (Horizontal Scrolling) */}
@@ -436,11 +438,12 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
 // ----------------------------------------------------------------------
 
 function LingoFlashcard({ item }: { item: any }) {
+    const { t } = useTranslation();
     return (
         <div className="relative group p-6 rounded-2xl bg-white border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-default flex flex-col justify-between h-full min-h-[160px] w-full">
             {/* Pronunciation (Top) */}
             <div className="text-sm font-medium text-gray-400 mb-2">
-                {item.pronunciation || "Pronunciation"}
+                {item.pronunciation || t('advisory.sections.lingo.pronunciation')}
             </div>
 
             {/* Main Term (Center Hero) */}
@@ -470,6 +473,7 @@ function LingoFlashcard({ item }: { item: any }) {
 
 // Premium Modal Component (Independent Scrolling, Redesigned Header, No Footer)
 const DetailModal = ({ isOpen, onClose, title, icon: Icon, data, colorTheme = 'indigo' }: any) => {
+    const { t } = useTranslation();
     if (!isOpen || !data) return null;
 
     // Theme Config (Simplified for clean look)
@@ -529,7 +533,7 @@ const DetailModal = ({ isOpen, onClose, title, icon: Icon, data, colorTheme = 'i
                         {/* Fixed Header */}
                         <div className="px-8 pt-8 pb-4 shrink-0">
                             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                <Info className="w-3 h-3" /> Overview
+                                <Info className="w-3 h-3" /> {t('advisory.sections.lingo.overview')}
                             </h4>
                         </div>
                         {/* Scrollable Content */}
@@ -547,7 +551,7 @@ const DetailModal = ({ isOpen, onClose, title, icon: Icon, data, colorTheme = 'i
                                 {/* Fixed Header */}
                                 <div className="px-8 pt-8 pb-4 shrink-0 bg-white z-10">
                                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                        <ArrowRight className="w-3 h-3" /> Detailed Insights
+                                        <ArrowRight className="w-3 h-3" /> {t('advisory.sections.lingo.detailed_insights')}
                                     </h4>
                                 </div>
                                 {/* Scrollable Content */}
@@ -565,7 +569,7 @@ const DetailModal = ({ isOpen, onClose, title, icon: Icon, data, colorTheme = 'i
                         ) : (
                             <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-50 p-8">
                                 <Sparkles className="w-12 h-12 mb-4" />
-                                <p>No additional details available.</p>
+                                <p>{t('advisory.sections.lingo.no_details')}</p>
                             </div>
                         )}
                     </div>
@@ -577,7 +581,8 @@ const DetailModal = ({ isOpen, onClose, title, icon: Icon, data, colorTheme = 'i
 
 
 const StructuredTextContent = ({ data, fallbackColor = "text-gray-600" }: { data: any, fallbackColor?: string }) => {
-    if (!data) return <span className="opacity-50 italic">尚無資訊</span>;
+    const { t } = useTranslation();
+    if (!data) return <span className="opacity-50 italic">{t('advisory.no_info')}</span>;
     if (typeof data === 'string') return <p className={fallbackColor}>{data}</p>;
     return <p className={`${fallbackColor} leading-relaxed`}>{data.summary}</p>;
 };
@@ -649,6 +654,7 @@ function LingoItem({ label, content }: { label: string, content: string }) {
 }
 
 function EmptyState({ loading, error, onGenerate }: { loading: boolean, error: string | null, onGenerate: () => void }) {
+    const { t } = useTranslation();
     return (
         <div className="flex flex-col items-center justify-center py-32 px-6 text-center animate-in fade-in zoom-in-95 duration-500">
             <div className="relative mb-10 group">
@@ -658,9 +664,9 @@ function EmptyState({ loading, error, onGenerate }: { loading: boolean, error: s
                 </div>
             </div>
 
-            <h2 className="text-4xl font-black text-gray-900 mb-6 tracking-tight">獲取全方位旅遊建議</h2>
+            <h2 className="text-4xl font-black text-gray-900 mb-6 tracking-tight">{t('advisory.empty.title')}</h2>
             <p className="text-gray-500 max-w-lg mb-12 leading-relaxed text-lg">
-                讓 AI 旅遊顧問為您分析目的地天氣、交通、安全與文化禁忌，生成您的專屬懶人包。
+                {t('advisory.empty.desc')}
             </p>
 
             {error && (
@@ -679,12 +685,12 @@ function EmptyState({ loading, error, onGenerate }: { loading: boolean, error: s
                 {loading ? (
                     <>
                         <Sparkles className="w-5 h-5 animate-spin text-brand-300" />
-                        <span>正在為您生成指南...</span>
+                        <span>{t('advisory.empty.generating')}</span>
                     </>
                 ) : (
                     <>
                         <Sparkles className="w-5 h-5 text-brand-300" />
-                        <span>立即生成旅遊顧問報告</span>
+                        <span>{t('advisory.empty.generate_btn')}</span>
                     </>
                 )}
             </button>
@@ -718,6 +724,7 @@ function Map(props: any) {
 import PaymentConfirmationModal from '../PaymentConfirmationModal';
 
 function FloatingRegenerateButton({ onClick }: { onClick: () => void }) {
+    const { t } = useTranslation();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -739,8 +746,8 @@ function FloatingRegenerateButton({ onClick }: { onClick: () => void }) {
                     <Sparkles className="w-5 h-5 text-brand-600" />
                 </div>
                 <div className="flex flex-col items-start mr-1">
-                    <span className="text-xs font-bold text-brand-400 uppercase tracking-wider">Updates Available</span>
-                    <span className="text-sm font-black text-gray-800">重新生成建議</span>
+                    <span className="text-xs font-bold text-brand-400 uppercase tracking-wider">{t('advisory.button.updates_available')}</span>
+                    <span className="text-sm font-black text-gray-800">{t('advisory.button.regenerate')}</span>
                 </div>
             </button>
         </div>,

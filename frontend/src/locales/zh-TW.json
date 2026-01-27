@@ -428,5 +428,83 @@
         "shopping": "購物",
         "accommodation": "住宿",
         "other": "其他"
+    },
+    "advisory": {
+        "payment": {
+            "title": "開啟 AI 旅遊顧問",
+            "subtitle": "AI 將為您全方位分析目的地天氣、安全與文化資訊",
+            "target_label": "分析目的地",
+            "cost_label": "顧問生成費用"
+        },
+        "no_info": "尚無資訊",
+        "button": {
+            "updates_available": "UPDATES AVAILABLE",
+            "regenerate": "重新生成建議"
+        },
+        "hero": {
+            "your": "您的",
+            "advisor": "專屬顧問",
+            "desc": "全方位分析目的地天氣、文化與安全資訊，為您打造最完美的旅程體驗"
+        },
+        "sections": {
+            "itinerary": {
+                "title": "行程分析概況",
+                "subtitle": "AI 深度檢視您的路線規劃",
+                "view_full": "View Full Analysis",
+                "highlights": "Trip Highlights",
+                "suggestions": "Suggestions"
+            },
+            "weather": {
+                "title": "天氣概況 & 穿搭",
+                "forecast_label": "Forecast",
+                "view_forecast": "查看完整預報",
+                "outfit_label": "Outfit",
+                "view_outfit": "查看穿搭指南",
+                "modal_forecast_title": "天氣預報詳情",
+                "modal_clothing_title": "穿搭建議詳情"
+            },
+            "safety": {
+                "title": "安全須知",
+                "scams": "常見詐騙",
+                "emergency": "緊急聯絡",
+                "health": "健康醫療",
+                "modal_scams_title": "常見詐騙詳情",
+                "modal_emergency_title": "緊急聯絡資訊",
+                "modal_health_title": "健康醫療建議"
+            },
+            "logistics": {
+                "title": "交通與實用資訊",
+                "transport": "交通攻略",
+                "connectivity": "網路與電壓",
+                "currency": "貨幣匯率",
+                "refund": "退稅須知",
+                "modal_transport_title": "當地交通攻略",
+                "modal_connectivity_title": "網路與電壓資訊",
+                "modal_currency_title": "貨幣與匯率建議",
+                "modal_refund_title": "購物退稅須知"
+            },
+            "culture": {
+                "title": "文化禮儀",
+                "tipping": "消費者小費",
+                "dining": "用餐禮儀",
+                "dos": "Do's 建議做",
+                "donts": "Don'ts 千萬別做",
+                "modal_tipping_title": "小費文化詳情",
+                "modal_dining_title": "用餐禮儀詳情"
+            },
+            "lingo": {
+                "title": "生存語言包",
+                "pronunciation": "Pronunciation",
+                "overview": "Overview",
+                "detailed_insights": "Detailed Insights",
+                "no_details": "No additional details available."
+            }
+        },
+        "empty": {
+            "title": "獲取全方位旅遊建議",
+            "desc": "讓 AI 旅遊顧問為您分析目的地天氣、交通、安全與文化禁忌，生成您的專屬懶人包。",
+            "generating": "正在為您生成指南...",
+            "generate_btn": "立即生成旅遊顧問報告"
+        }
     }
 }

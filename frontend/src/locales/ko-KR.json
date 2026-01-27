@@ -428,5 +428,83 @@
         "shopping": "쇼핑",
         "accommodation": "숙박",
         "other": "기타"
+    },
+    "advisory": {
+        "payment": {
+            "title": "AI 여행 어드바이저 시작",
+            "subtitle": "AI가 목적지의 날씨, 안전, 문화 정보를 분석해 드립니다",
+            "target_label": "분석 목적지",
+            "cost_label": "생성 비용"
+        },
+        "no_info": "정보 없음",
+        "button": {
+            "updates_available": "UPDATES AVAILABLE",
+            "regenerate": "조언 재생성"
+        },
+        "hero": {
+            "your": "당신의",
+            "advisor": "전담 어드바이저",
+            "desc": "날씨, 문화, 안전 정보를 종합 분석하여 완벽한 여행을 만들어 드립니다"
+        },
+        "sections": {
+            "itinerary": {
+                "title": "일정 분석 개요",
+                "subtitle": "AI가 당신의 경로를 심층 분석합니다",
+                "view_full": "View Full Analysis",
+                "highlights": "Trip Highlights",
+                "suggestions": "Suggestions"
+            },
+            "weather": {
+                "title": "날씨 및 복장",
+                "forecast_label": "Forecast",
+                "view_forecast": "전체 예보 보기",
+                "outfit_label": "Outfit",
+                "view_outfit": "복장 가이드 보기",
+                "modal_forecast_title": "날씨 예보 상세",
+                "modal_clothing_title": "복장 제안 상세"
+            },
+            "safety": {
+                "title": "안전 정보",
+                "scams": "흔한 사기",
+                "emergency": "비상 연락처",
+                "health": "건강 및 의료",
+                "modal_scams_title": "사기 수법 상세",
+                "modal_emergency_title": "비상 연락처 정보",
+                "modal_health_title": "건강 및 의료 조언"
+            },
+            "logistics": {
+                "title": "교통 및 실용 정보",
+                "transport": "교통 가이드",
+                "connectivity": "인터넷 및 전압",
+                "currency": "통화 및 환율",
+                "refund": "세금 환급",
+                "modal_transport_title": "현지 교통 가이드",
+                "modal_connectivity_title": "인터넷 및 전압 정보",
+                "modal_currency_title": "통화 및 환율 조언",
+                "modal_refund_title": "쇼핑 세금 환급 정보"
+            },
+            "culture": {
+                "title": "문화 및 에티켓",
+                "tipping": "팁 문화",
+                "dining": "식사 예절",
+                "dos": "Do's 권장 사항",
+                "donts": "Don'ts 금기 사항",
+                "modal_tipping_title": "팁 문화 상세",
+                "modal_dining_title": "식사 예절 상세"
+            },
+            "lingo": {
+                "title": "서바이벌 회화",
+                "pronunciation": "Pronunciation",
+                "overview": "Overview",
+                "detailed_insights": "Detailed Insights",
+                "no_details": "No additional details available."
+            }
+        },
+        "empty": {
+            "title": "종합 여행 조언 받기",
+            "desc": "AI 여행 어드바이저가 목적지의 날씨, 교통, 안전, 문화 금기 사항을 분석하여 맞춤형 가이드를 생성합니다.",
+            "generating": "가이드 생성 중...",
+            "generate_btn": "어드바이저 리포트 생성"
+        }
     }
 }
