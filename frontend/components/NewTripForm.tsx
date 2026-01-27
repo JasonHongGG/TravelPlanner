@@ -467,14 +467,30 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
               <SectionHeader title={t('new_trip.other_details')} />
 
               <div className="md:col-span-1">
-                <InputField
-                  label={t('new_trip.language')}
-                  icon={Languages}
-                  value={formData.language}
-                  onChange={(v: string) => handleChange('language', v)}
-                  placeholder={t('new_trip.language_placeholder')}
-                  required
-                />
+                <div className="mb-5 group">
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5 flex items-center gap-2 transition-colors group-focus-within:text-brand-600">
+                    <div className="p-1 rounded-md bg-white border border-gray-200 text-gray-500 group-focus-within:bg-brand-50 group-focus-within:text-brand-600 group-focus-within:border-brand-200 transition-colors shadow-sm">
+                      <Languages className="w-3.5 h-3.5" />
+                    </div>
+                    {t('new_trip.language')} <span className="text-red-500 text-xs font-bold">*</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-xl shadow-sm focus:outline-none focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-gray-400 transition-all font-medium appearance-none cursor-pointer"
+                      value={formData.language}
+                      onChange={(e) => handleChange('language', e.target.value)}
+                      required
+                    >
+                      <option value="Traditional Chinese">繁體中文</option>
+                      <option value="Japanese">日本語</option>
+                      <option value="English">English</option>
+                      <option value="Korean">한국어</option>
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="md:col-span-1">
