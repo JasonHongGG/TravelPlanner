@@ -783,187 +783,192 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
 
         {/* Left Column: Itinerary (Scrollable) */}
         {/* Adjusted width logic based on isMapOpen state */}
-        <div className={`flex flex-col scrollbar-hide bg-gray-50 overflow-y-auto ${isMapOpen ? 'w-full lg:w-7/12 xl:w-1/2' : 'w-full'}`}>
-          {/* Centered content class when map is closed */}
+        {/* Left Column: Itinerary (Scrollable) */}
+        {/* Adjusted width logic based on isMapOpen state */}
+        <div className={`flex flex-col relative overflow-hidden transition-all duration-300 ease-in-out ${isMapOpen ? 'w-full lg:w-7/12 xl:w-1/2' : 'w-full'}`}>
+          <div className="flex-1 flex flex-col scrollbar-hide bg-gray-50 overflow-y-auto">
+            {/* Centered content class when map is closed */}
 
-          {/* Header Image */}
-          <div className="h-64 md:h-80 w-full relative shrink-0 group">
-            <div className="absolute inset-0 bg-gray-900/30"></div>
-            <img
-              src={headerImageUrl}
-              alt={trip.input.destination}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.src = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1280&q=80';
-              }}
-            />
+            {/* Header Image */}
+            <div className="h-64 md:h-80 w-full relative shrink-0 group">
+              <div className="absolute inset-0 bg-gray-900/30"></div>
+              <img
+                src={headerImageUrl}
+                alt={trip.input.destination}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1280&q=80';
+                }}
+              />
 
-            {/* Navigation & Actions */}
-            <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start z-10">
-              {/* Back button is in the sticky header, but we can add one here for full screen feel if needed, or just keep actions */}
-              <div></div>
-              <div className="flex gap-2">
-                {/* Share button removed as it is now in the main header */}
-              </div>
-            </div>
-
-            {/* Edit Cover & Reset Button - Modern & Glassmorphism */}
-            <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
-              {/* Reset Button - Only show if custom image exists */}
-              {trip.customCoverImage && (
-                <button
-                  onClick={handleResetCover}
-                  className="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 bg-black/20 hover:bg-red-500/80 text-white/90 hover:text-white rounded-full backdrop-blur-md border border-white/10 transition-all duration-300 shadow-sm"
-                  title={t('trip_detail.cover.reset')}
-                >
-                  <span className="sr-only">重置</span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-              )}
-
-              {/* Randomize Button */}
-              <button
-                onClick={handleRandomizeCover}
-                className="group/random flex items-center justify-center w-8 h-8 md:w-9 md:h-9 bg-black/20 hover:bg-brand-500/80 text-white/90 hover:text-white rounded-full backdrop-blur-md border border-white/10 transition-all duration-300 shadow-sm"
-                title={t('trip_detail.cover.random')}
-              >
-                <Shuffle className="w-4 h-4 group-hover/random:rotate-180 transition-transform duration-500" />
-              </button>
-
-              {/* Edit Button */}
-              <button
-                onClick={handleEditCoverClick}
-                disabled={isUploading}
-                className="group/btn flex items-center h-9 md:h-9 rounded-full bg-black/20 hover:bg-black/40 text-white/90 hover:text-white backdrop-blur-md border border-white/10 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm overflow-hidden"
-              >
-                {/* Icon Container - Fixed Square for perfect circle */}
-                <div className="w-9 h-full flex items-center justify-center shrink-0">
-                  {isUploading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Camera className="w-4 h-4" />
-                  )}
+              {/* Navigation & Actions */}
+              <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start z-10">
+                {/* Back button is in the sticky header, but we can add one here for full screen feel if needed, or just keep actions */}
+                <div></div>
+                <div className="flex gap-2">
+                  {/* Share button removed as it is now in the main header */}
                 </div>
+              </div>
 
-                {/* Text reveals on hover - Pushes parent width smoothly */}
-                <span className={`text-xs font-medium whitespace-nowrap overflow-hidden transition-all duration-300 max-w-0 opacity-0
+              {/* Edit Cover & Reset Button - Modern & Glassmorphism */}
+              <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
+                {/* Reset Button - Only show if custom image exists */}
+                {trip.customCoverImage && (
+                  <button
+                    onClick={handleResetCover}
+                    className="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 bg-black/20 hover:bg-red-500/80 text-white/90 hover:text-white rounded-full backdrop-blur-md border border-white/10 transition-all duration-300 shadow-sm"
+                    title={t('trip_detail.cover.reset')}
+                  >
+                    <span className="sr-only">重置</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                  </button>
+                )}
+
+                {/* Randomize Button */}
+                <button
+                  onClick={handleRandomizeCover}
+                  className="group/random flex items-center justify-center w-8 h-8 md:w-9 md:h-9 bg-black/20 hover:bg-brand-500/80 text-white/90 hover:text-white rounded-full backdrop-blur-md border border-white/10 transition-all duration-300 shadow-sm"
+                  title={t('trip_detail.cover.random')}
+                >
+                  <Shuffle className="w-4 h-4 group-hover/random:rotate-180 transition-transform duration-500" />
+                </button>
+
+                {/* Edit Button */}
+                <button
+                  onClick={handleEditCoverClick}
+                  disabled={isUploading}
+                  className="group/btn flex items-center h-9 md:h-9 rounded-full bg-black/20 hover:bg-black/40 text-white/90 hover:text-white backdrop-blur-md border border-white/10 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm overflow-hidden"
+                >
+                  {/* Icon Container - Fixed Square for perfect circle */}
+                  <div className="w-9 h-full flex items-center justify-center shrink-0">
+                    {isUploading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Camera className="w-4 h-4" />
+                    )}
+                  </div>
+
+                  {/* Text reveals on hover - Pushes parent width smoothly */}
+                  <span className={`text-xs font-medium whitespace-nowrap overflow-hidden transition-all duration-300 max-w-0 opacity-0
                   ${!isUploading && 'group-hover/btn:max-w-xs group-hover/btn:opacity-100 group-hover/btn:pr-3'}
                   ${isUploading && 'max-w-xs opacity-100 pr-3'}
                 `}>
-                  {isUploading ? t('trip_detail.cover.uploading') : t('trip_detail.cover.change')}
-                </span>
-              </button>
-            </div>
-
-            <div className="absolute bottom-6 left-6 text-white z-10 drop-shadow-md">
-              <h1 className="text-4xl font-bold mb-1 tracking-tight">{tripMeta.title || trip.title || trip.input.destination}</h1>
-              <div className="flex items-center gap-3 text-sm font-medium text-white/90">
-                <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {tripMeta.dateRange || trip.input.dateRange}</span>
-                <span>•</span>
-                <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {tripMeta.days || days.length} {t('trip.days')}</span>
-                <span>•</span>
-                <span className="flex items-center gap-1"><DollarSign className="w-4 h-4" /> {trip.input.budget || '~'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Tab Navigation (Main Sections) & Map Toggle - Full Width Background, Centered Content */}
-          <div className="bg-white border-b border-gray-200 sticky top-0 z-40 flex-none shadow-sm">
-            <div className="px-6 flex justify-between items-end w-full max-w-5xl mx-auto">
-              <div className="flex space-x-6">
-                <button
-                  onClick={() => setActiveTab('itinerary')}
-                  className={`pt-4 pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'itinerary' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                >
-                  {t('trip_detail.tabs.itinerary')}
-                </button>
-                <button
-                  onClick={() => setActiveTab('budget')}
-                  className={`pt-4 pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'budget' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                >
-                  {t('trip_detail.tabs.budget')}
-                </button>
-                <button
-                  onClick={() => setActiveTab('advisory')}
-                  className={`pt-4 pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'advisory' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                >
-                  {t('trip_detail.tabs.advisory')}
+                    {isUploading ? t('trip_detail.cover.uploading') : t('trip_detail.cover.change')}
+                  </span>
                 </button>
               </div>
 
-              {/* Map Toggle Button - Placed here for better coordination */}
-              <div className="hidden lg:flex items-center h-full py-3">
-                <button
-                  onClick={() => setIsMapOpen(!isMapOpen)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${isMapOpen
-                    ? 'bg-brand-50 text-brand-600 border-brand-200 shadow-inner'
-                    : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-gray-700'
-                    }`}
-                  title={isMapOpen ? t('trip_detail.map.hide') : t('trip_detail.map.show')}
-                >
-                  {isMapOpen ? <PanelRightClose className="w-4 h-4" /> : <MapIcon className="w-4 h-4" />}
-                  {isMapOpen ? '隱藏地圖' : '顯示地圖'}
-                </button>
+              <div className="absolute bottom-6 left-6 text-white z-10 drop-shadow-md">
+                <h1 className="text-4xl font-bold mb-1 tracking-tight">{tripMeta.title || trip.title || trip.input.destination}</h1>
+                <div className="flex items-center gap-3 text-sm font-medium text-white/90">
+                  <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {tripMeta.dateRange || trip.input.dateRange}</span>
+                  <span>•</span>
+                  <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {tripMeta.days || days.length} {t('trip.days')}</span>
+                  <span>•</span>
+                  <span className="flex items-center gap-1"><DollarSign className="w-4 h-4" /> {trip.input.budget || '~'}</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Main Content Area */}
-          <div className="flex-1 bg-gray-50">
+            {/* Tab Navigation (Main Sections) & Map Toggle - Full Width Background, Centered Content */}
+            <div className="bg-white border-b border-gray-200 sticky top-0 z-40 flex-none shadow-sm">
+              <div className="px-6 flex justify-between items-end w-full max-w-5xl mx-auto">
+                <div className="flex space-x-6">
+                  <button
+                    onClick={() => setActiveTab('itinerary')}
+                    className={`pt-4 pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'itinerary' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                  >
+                    {t('trip_detail.tabs.itinerary')}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('budget')}
+                    className={`pt-4 pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'budget' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                  >
+                    {t('trip_detail.tabs.budget')}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('advisory')}
+                    className={`pt-4 pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'advisory' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                  >
+                    {t('trip_detail.tabs.advisory')}
+                  </button>
+                </div>
 
-            {/* 1. Itinerary View */}
-            {activeTab === 'itinerary' && (
-              <>
-                {/* DaySelector - Full Width Background, Centered Content, Sticky */}
-                <div className="bg-white border-b border-gray-100 sticky top-[48px] z-30">
-                  <div className="w-full max-w-5xl mx-auto">
-                    <DaySelector
-                      days={days}
-                      selectedDay={selectedDay}
-                      onSelectDay={setSelectedDay}
+                {/* Map Toggle Button - Placed here for better coordination */}
+                <div className="hidden lg:flex items-center h-full py-3">
+                  <button
+                    onClick={() => setIsMapOpen(!isMapOpen)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${isMapOpen
+                      ? 'bg-brand-50 text-brand-600 border-brand-200 shadow-inner'
+                      : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-gray-700'
+                      }`}
+                    title={isMapOpen ? t('trip_detail.map.hide') : t('trip_detail.map.show')}
+                  >
+                    {isMapOpen ? <PanelRightClose className="w-4 h-4" /> : <MapIcon className="w-4 h-4" />}
+                    {isMapOpen ? '隱藏地圖' : '顯示地圖'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content Area */}
+            <div className="flex-1 bg-gray-50">
+
+              {/* 1. Itinerary View */}
+              {activeTab === 'itinerary' && (
+                <>
+                  {/* DaySelector - Full Width Background, Centered Content, Sticky */}
+                  <div className="bg-white border-b border-gray-100 sticky top-[48px] z-30">
+                    <div className="w-full max-w-5xl mx-auto">
+                      <DaySelector
+                        days={days}
+                        selectedDay={selectedDay}
+                        onSelectDay={setSelectedDay}
+                      />
+                    </div>
+                  </div>
+
+                  {/* ItineraryTimeline - Centered Content */}
+                  <div className="p-6 pb-24 w-full max-w-5xl mx-auto">
+                    <ItineraryTimeline
+                      dayData={currentDayData}
+                      onFocusStop={handleFocusStop}
+                      onUpdateStop={(stopIdx, updates) => {
+                        const idx = days.findIndex(d => d.day === selectedDay);
+                        if (idx !== -1) handleUpdateStop(idx, stopIdx, updates);
+                      }}
+                      onExplore={() => setIsExplorerOpen(true)}
                     />
                   </div>
-                </div>
+                </>
+              )}
 
-                {/* ItineraryTimeline - Centered Content */}
-                <div className="p-6 pb-24 w-full max-w-5xl mx-auto">
-                  <ItineraryTimeline
-                    dayData={currentDayData}
-                    onFocusStop={handleFocusStop}
-                    onUpdateStop={(stopIdx, updates) => {
-                      const idx = days.findIndex(d => d.day === selectedDay);
-                      if (idx !== -1) handleUpdateStop(idx, stopIdx, updates);
-                    }}
-                    onExplore={() => setIsExplorerOpen(true)}
+              {/* 2. Budget View */}
+              {activeTab === 'budget' && (
+                <div className="w-full max-w-5xl mx-auto">
+                  <BudgetView
+                    tripMeta={tripMeta}
+                    days={days}
+                    tripCurrency={trip.input.currency || tripMeta.currency || 'TWD'}
                   />
                 </div>
-              </>
-            )}
+              )}
 
-            {/* 2. Budget View */}
-            {activeTab === 'budget' && (
-              <div className="w-full max-w-5xl mx-auto">
-                <BudgetView
-                  tripMeta={tripMeta}
-                  days={days}
-                  tripCurrency={trip.input.currency || tripMeta.currency || 'TWD'}
+              {/* 3. Advisory View */}
+              {activeTab === 'advisory' && (
+                <AdvisoryView
+                  trip={trip}
+                  onUpdateTrip={onUpdateTrip}
+                  loading={isGeneratingAdvisory}
+                  error={advisoryError}
+                  onGenerate={handleGenerateAdvisory}
+                  isMapOpen={isMapOpen}
                 />
-              </div>
-            )}
+              )}
 
-            {/* 3. Advisory View */}
-            {activeTab === 'advisory' && (
-              <AdvisoryView
-                trip={trip}
-                onUpdateTrip={onUpdateTrip}
-                loading={isGeneratingAdvisory}
-                error={advisoryError}
-                onGenerate={handleGenerateAdvisory}
-                isMapOpen={isMapOpen}
-              />
-            )}
-
+            </div>
           </div>
+          <div id="trip-detail-floating-action" className="absolute bottom-0 left-0 w-full pointer-events-none flex justify-center pb-8 z-50"></div>
         </div>
 
         {/* Right Column: Sticky Map (Hidden on mobile) */}

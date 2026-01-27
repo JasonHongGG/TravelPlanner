@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Trip, TripData } from '../../types';
 import {
     BookOpen, Sparkles, Shirt, Plane, ShieldCheck,
@@ -716,11 +717,20 @@ function Map(props: any) {
 // Local components moved to shared
 import PaymentConfirmationModal from '../PaymentConfirmationModal';
 
-function FloatingRegenerateButton({ onClick, isMapOpen = false }: { onClick: () => void, isMapOpen?: boolean }) {
-    return (
-        <div className={`fixed bottom-8 z-40 animate-in slide-in-from-bottom-10 fade-in duration-700 delay-500 transition-all duration-300 -translate-x-1/2
-            ${isMapOpen ? 'left-1/2 lg:left-[29.17%] xl:left-[25%]' : 'left-1/2'}
-        `}>
+function FloatingRegenerateButton({ onClick }: { onClick: () => void }) {
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) return null;
+
+    const portalTarget = document.getElementById('trip-detail-floating-action');
+    if (!portalTarget) return null;
+
+    return createPortal(
+        <div className="z-40 animate-in slide-in-from-bottom-10 fade-in duration-700 delay-500 pointer-events-auto">
             <button
                 onClick={onClick}
                 className="group flex items-center gap-3 px-6 py-3 bg-white/90 backdrop-blur-md border border-brand-100 text-brand-700 rounded-full shadow-2xl hover:bg-brand-50 hover:scale-105 transition-all duration-300 ring-4 ring-black/5"
@@ -733,6 +743,7 @@ function FloatingRegenerateButton({ onClick, isMapOpen = false }: { onClick: () 
                     <span className="text-sm font-black text-gray-800">重新生成建議</span>
                 </div>
             </button>
-        </div>
+        </div>,
+        portalTarget
     );
 }
