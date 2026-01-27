@@ -106,24 +106,12 @@ export const useTripManager = () => {
   }, [user?.email, isSubscribed]);
 
   const createTrip = async (input: TripInput) => {
-    // 1. Generate High-Res Cover Image IMMEDIATELY (Fail-Safe)
-    const city = input.destination.split(',')[0].trim();
-    const keywords = ["landmark", "landscape", "street view", "aerial view", "architecture", "night view", "nature", "tourism", "skyline", "scenery", "historic", "culture", "daytime", "vacation", "panoramic", "travel", "sightseeing"];
-    const randomKeyword = keywords[Math.floor(Math.random() * keywords.length)];
-    const randomPage = Math.floor(Math.random() * 10);
-    const timestamp = Date.now();
-    const query = `${city} ${randomKeyword}`;
-
-    // This URL is guaranteed to be High-Res (1920x1080) and uses the diverse keywords
-    const initialHdCoverUrl = `https://th.bing.com/th?q=${encodeURIComponent(query)}&w=1920&h=1080&c=7&rs=1&p=${randomPage}&t=${timestamp}`;
-
     const newTrip: Trip = {
       id: crypto.randomUUID(),
       title: input.destination,
       createdAt: Date.now(),
       status: 'generating',
       input,
-      customCoverImage: initialHdCoverUrl // Set immediately so it shows during generation
     };
 
     // Calculate Cost
