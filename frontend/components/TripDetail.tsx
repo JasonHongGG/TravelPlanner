@@ -17,6 +17,7 @@ import ItineraryTimeline from './trip/ItineraryTimeline';
 import BudgetView from './trip/BudgetView';
 import RiskAssessmentView from './trip/RiskAssessmentView';
 import TripMap from './trip/TripMap';
+import AdvisoryView from './trip/AdvisoryView';
 import AttractionExplorer from './AttractionExplorer';
 import FeasibilityModal from './FeasibilityModal';
 import ShareTripModal from './ShareTripModal';
@@ -426,6 +427,30 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
     performFeasibilityCheck(context, executeExplorerUpdate);
   };
 
+
+
+  // Advisory Generation State (Lifted up for persistence)
+  const [isGeneratingAdvisory, setIsGeneratingAdvisory] = useState(false);
+  const [advisoryError, setAdvisoryError] = useState<string | null>(null);
+
+  const handleGenerateAdvisory = async () => {
+    if (!trip.data) return;
+    setIsGeneratingAdvisory(true);
+    setAdvisoryError(null);
+    try {
+      const result = await aiService.generateAdvisory(trip.data, user?.email);
+      handleTripUpdate(trip.id, {
+        ...trip.data,
+        advisory: result
+      });
+    } catch (e) {
+      console.error(e);
+      setAdvisoryError("生成失敗，請稍後再試");
+    } finally {
+      setIsGeneratingAdvisory(false);
+    }
+  };
+
   const handleUpdateStop = (dayIdx: number, stopIdx: number, updates: Partial<TripStop>) => {
     if (!trip.data) return;
 
@@ -542,7 +567,8 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
 
   const tripMeta = trip.data.tripMeta || ({} as TripMeta);
   const days = trip.data.days || [];
-  const risks = trip.data.risks || [];
+  // const risks = trip.data.risks || []; // Deprecated
+  const advisory = trip.data.advisory;
   const currentDayData = days.find(d => d.day === selectedDay);
 
   // Construct a relevant image URL using Pollinations AI (Switched to Bing for variety)
@@ -858,10 +884,10 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
                   {t('trip_detail.tabs.budget')}
                 </button>
                 <button
-                  onClick={() => setActiveTab('risks')}
-                  className={`pt-4 pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'risks' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                  onClick={() => setActiveTab('advisory')}
+                  className={`pt-4 pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'advisory' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                 >
-                  {t('trip_detail.tabs.risks')}
+                  {t('trip_detail.tabs.advisory')}
                 </button>
               </div>
 
@@ -925,11 +951,14 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
               </div>
             )}
 
-            {/* 3. Risks View */}
-            {activeTab === 'risks' && (
-              <RiskAssessmentView
-                risks={risks}
-                tripMeta={tripMeta}
+            {/* 3. Advisory View */}
+            {activeTab === 'advisory' && (
+              <AdvisoryView
+                trip={trip}
+                onUpdateTrip={onUpdateTrip}
+                loading={isGeneratingAdvisory}
+                error={advisoryError}
+                onGenerate={handleGenerateAdvisory}
               />
             )}
 

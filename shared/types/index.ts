@@ -57,7 +57,52 @@ export interface TripData {
   tripMeta: TripMeta;
   days: TripDay[];
   totals: Record<string, any>;
-  risks: string[];
+  advisory?: TripAdvisory;
+}
+
+export interface StructuredAdvice {
+  summary: string;
+  details: string[];
+}
+
+export interface TripAdvisory {
+  weather: {
+    forecast: StructuredAdvice;
+    clothing: StructuredAdvice;
+  };
+  logistics: {
+    transport: StructuredAdvice;
+    connectivity: StructuredAdvice;
+    currency: StructuredAdvice;
+    refund: StructuredAdvice;
+  };
+  safety: {
+    emergency: StructuredAdvice;
+    scams: StructuredAdvice;
+    health: StructuredAdvice;
+  };
+  cultural: {
+    dos: string[];
+    donts: string[];
+    tipping: StructuredAdvice; // Changed to structured
+    diningEtiquette?: StructuredAdvice; // Changed to structured
+  };
+  itineraryAnalysis: {
+    pace: StructuredAdvice; // Changed to structured
+    issues: string[]; // Keep as simple list for now, or could be structured. riskLevel covers summary? Let's keep issues as list. 
+    highlights?: string[];
+  };
+  packing?: {
+    essentials: string[];
+    weatherSpecific: string[];
+  };
+  localLingo?: {
+    hello: string;
+    thankYou: string;
+    excuseMe: string;
+    delicious: string;
+  };
+
 }
 
 export type TripStatus = 'generating' | 'complete' | 'error';

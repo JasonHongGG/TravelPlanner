@@ -85,8 +85,7 @@ Format:
       "dailyChecklist": ["Checklist Item 1 in Target Language"]
     }
   ],
-  "totals": {},
-  "risks": ["Risk warning in Target Language"]
+  "totals": {}
 }
 
 You must strictly follow this JSON structure. Do not wrap in markdown code blocks if possible, just return the JSON or wrap in \`\`\`json.
@@ -339,5 +338,71 @@ export const constructFeasibilityPrompt = (
     **Example Suggestions:**
     - "建議將大阪行程獨立安排在另一天。"
     - "建議移除 Day 1 的兩個次要購物點。"
+  `;
+};
+
+export const constructAdvisoryPrompt = (
+  tripData: TripData,
+  targetLanguage: string = "Traditional Chinese"
+): string => {
+  return `
+    You are a comprehensive travel consultant.
+    Your task is to generate a DETAILED Travel Advisory Report for the following itinerary:
+    
+    Trip Title: ${tripData.tripMeta.title || "Travel Plan"}
+    Days: ${tripData.tripMeta.days}
+    
+    Itinerary Data:
+    ${JSON.stringify(tripData)}
+
+    Please generate a JSON object matching the following structure exactly.
+    Do NOT include markdown. Just the JSON.
+
+    **IMPORTANT FORMATTING RULE**:
+    Many fields require a "StructuredAdvice" object which looks like this:
+    {
+      "summary": "A concise, high-level summary (1-2 sentences) in ${targetLanguage}.",
+      "details": ["Point 1", "Point 2", "Point 3"] // A list of specific actionable advice or details in ${targetLanguage}.
+    }
+
+    JSON Structure:
+    {
+      "weather": {
+        "forecast": { "summary": "...", "details": ["..."] }, // Season/dates forecast
+        "clothing": { "summary": "...", "details": ["..."] }  // Layering/Outfit advice
+      },
+      "logistics": {
+        "transport": { "summary": "...", "details": ["..."] }, // Local transport strategy
+        "connectivity": { "summary": "...", "details": ["..."] }, // SIM/WiFi/Voltage
+        "currency": { "summary": "...", "details": ["..."] }, // Exchange/Card usage
+        "refund": { "summary": "...", "details": ["..."] } // Tax refund rules
+      },
+      "safety": {
+        "emergency": { "summary": "...", "details": ["..."] }, // Emergency numbers
+        "scams": { "summary": "...", "details": ["..."] }, // Common scams
+        "health": { "summary": "...", "details": ["..."] } // Pharmacy/Water/Health
+      },
+      "cultural": {
+        "dos": ["List of behaviors TO DO (e.g. Bowing) in ${targetLanguage}"],
+        "donts": ["List of behaviors TO AVOID (e.g. Tipping in Japan) in ${targetLanguage}"],
+        "tipping": { "summary": "...", "details": ["..."] }, // Tipping culture
+        "diningEtiquette": { "summary": "...", "details": ["..."] } // Dining rules
+      },
+      "itineraryAnalysis": {
+        "pace": { "summary": "...", "details": ["..."] }, // Analysis of logic/pace
+        "issues": ["List of potential issues/risks in the itinerary in ${targetLanguage}"],
+        "highlights": ["List of trip highlights in ${targetLanguage}"]
+      },
+      "packing": {
+        "essentials": ["List of essential items to pack in ${targetLanguage}"],
+        "weatherSpecific": ["Items specific to weather in ${targetLanguage}"]
+      },
+      "localLingo": {
+        "hello": "Local translation for Hello",
+        "thankYou": "Local translation for Thank You",
+        "excuseMe": "Local translation for Excuse Me",
+        "delicious": "Local translation for Delicious"
+      }
+    }
   `;
 };

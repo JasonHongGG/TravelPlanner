@@ -143,7 +143,8 @@
         "tabs": {
             "itinerary": "行程表",
             "budget": "預算預估",
-            "risks": "風險提示"
+            "risks": "風險提示",
+            "advisory": "旅遊顧問"
         },
         "map": {
             "mode": "地圖模式",

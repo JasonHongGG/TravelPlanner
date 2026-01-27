@@ -56,6 +56,11 @@ export async function generate(req: Request, res: Response) {
         } else if (action === 'GENERATE_TRIP') {
             const trip = await provider.generateTrip(tripInput, userId, authToken);
             result = { text: JSON.stringify(trip) };
+
+        } else if (action === 'GENERATE_ADVISORY') {
+            const advisory = await provider.generateAdvisory!(tripData, userId, authToken, language);
+            result = { text: JSON.stringify(advisory) };
+
         } else {
             return res.status(400).json({ error: `Action ${action} not supported on /generate` });
         }

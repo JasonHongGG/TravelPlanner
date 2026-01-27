@@ -7,6 +7,7 @@ import {
     constructRecommendationPrompt,
     constructFeasibilityPrompt,
     constructExplorerUpdatePrompt,
+    constructAdvisoryPrompt,
     SYSTEM_INSTRUCTION
 } from "../config/aiConfig";
 import { SERVICE_CONFIG } from "../config/serviceConfig";
@@ -108,6 +109,11 @@ export async function processCopilot(req: Request, res: Response) {
                 console.log(`[Copilot Server] Updating Explorer: ${currentData.tripMeta.destination}`);
                 prompt = constructExplorerUpdatePrompt(dayIndex, newMustVisit, newAvoid, keepExisting, removeExisting, effectiveChatLanguage, effectiveTripLanguage);
                 model = SERVICE_CONFIG.copilot.models.tripUpdater;
+                break;
+            case 'GENERATE_ADVISORY':
+                console.log(`[Copilot Server] Generating Advisory: ${currentData.tripMeta.title}`);
+                prompt = constructAdvisoryPrompt(currentData, effectiveChatLanguage);
+                model = SERVICE_CONFIG.copilot.models.tripGenerator; // Use strong model
                 break;
             default:
                 return res.status(400).json({ error: "Unknown Action" });

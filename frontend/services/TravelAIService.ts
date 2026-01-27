@@ -55,7 +55,8 @@ export class TravelAIService {
         }
 
         if (updates.totals) newData.totals = updates.totals;
-        if (updates.risks) newData.risks = updates.risks;
+        if (updates.advisory) newData.advisory = updates.advisory;
+
 
         return newData;
     }
@@ -460,6 +461,25 @@ export class TravelAIService {
                     }
                 }
             }
+        }
+    }
+
+    async generateAdvisory(
+        tripData: TripData,
+        userId?: string,
+        language: string = "Traditional Chinese"
+    ): Promise<any> {
+        const responseText = await this.postGenerate(
+            'GENERATE_ADVISORY',
+            `Generate Advisory for ${tripData.tripMeta.title || "Trip"}`,
+            { tripData, language }
+        );
+
+        try {
+            return JSON.parse(responseText);
+        } catch (e) {
+            console.error("Failed to parse advisory", e);
+            throw new Error("Failed to parse advisory data.");
         }
     }
 

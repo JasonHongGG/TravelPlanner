@@ -6,7 +6,8 @@ import {
     constructUpdatePrompt,
     constructRecommendationPrompt,
     constructFeasibilityPrompt,
-    constructExplorerUpdatePrompt
+    constructExplorerUpdatePrompt,
+    constructAdvisoryPrompt
 } from "../../config/aiConfig";
 import { SERVICE_CONFIG } from "../../config/serviceConfig";
 
@@ -58,7 +59,7 @@ export class GeminiProvider implements IAIProvider {
         }
 
         if (updates.totals) newData.totals = updates.totals;
-        if (updates.risks) newData.risks = updates.risks;
+        if (updates.advisory) newData.advisory = updates.advisory;
 
         return newData;
     }
@@ -249,6 +250,26 @@ export class GeminiProvider implements IAIProvider {
                 }
             }
         }
+    }
+
+    async generateAdvisory(
+        tripData: TripData,
+        userId?: string,
+        apiSecret?: string,
+        language?: string
+    ): Promise<any> {
+        const ai = this.getClient();
+        const prompt = constructAdvisoryPrompt(tripData, language);
+
+        const response = await ai.models.generateContent({
+            model: SERVICE_CONFIG.gemini.models.tripGenerator,
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json'
+            }
+        });
+
+        return this.parseJsonFromResponse(response.text || "{}", false);
     }
 
     async checkFeasibility(

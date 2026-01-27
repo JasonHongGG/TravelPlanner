@@ -40,6 +40,15 @@ export class LocalApiProvider implements IAIProvider {
         return result as TripData;
     }
 
+    async generateAdvisory(tripData: TripData, userId?: string, apiSecret?: string, language?: string): Promise<any> {
+        const result = await this.callApi('/advisory', {
+            tripData,
+            model: SERVICE_CONFIG.local_api.models.tripGenerator,
+            language
+        });
+        return result;
+    }
+
     async updateTrip(
         currentData: TripData,
         history: Message[],

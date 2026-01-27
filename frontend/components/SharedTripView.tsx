@@ -14,6 +14,7 @@ import ItineraryTimeline from './trip/ItineraryTimeline';
 import BudgetView from './trip/BudgetView';
 import TripMap from './trip/TripMap';
 import TripDetail from './TripDetail'; // Reuse full editor
+import AdvisoryView from './trip/AdvisoryView';
 
 interface SharedTripViewProps {
     tripId: string;
@@ -38,7 +39,7 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
 
     // UI State for Read-Only View
     const [selectedDay, setSelectedDay] = useState(1);
-    const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'risks'>('itinerary');
+    const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'advisory'>('itinerary');
     const [isMapOpen, setIsMapOpen] = useState(true);
     const [mapState, setMapState] = useState<{ url: string; label: string }>({ url: '', label: '' });
 
@@ -279,7 +280,7 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
     const tripData = trip.data!;
     const tripMeta = tripData.tripMeta || {} as TripMeta;
     const days = tripData.days || [];
-    const risks = tripData.risks || [];
+    // const risks = tripData.risks || [];
     const currentDayData = days.find(d => d.day === selectedDay);
     const headerImageUrl = getTripCover(trip);
 
@@ -348,19 +349,19 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
                                     onClick={() => setActiveTab('itinerary')}
                                     className={`pt-4 pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'itinerary' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                                 >
-                                    行程
+                                    {t('trip_detail.tabs.itinerary')}
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('budget')}
                                     className={`pt-4 pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'budget' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                                 >
-                                    預算
+                                    {t('trip_detail.tabs.budget')}
                                 </button>
                                 <button
-                                    onClick={() => setActiveTab('risks')}
-                                    className={`pt-4 pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'risks' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                                    onClick={() => setActiveTab('advisory')}
+                                    className={`pt-4 pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'advisory' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                                 >
-                                    風險
+                                    {t('trip_detail.tabs.advisory')}
                                 </button>
                             </div>
 
@@ -406,25 +407,9 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
                             </div>
                         )}
 
-                        {activeTab === 'risks' && (
+                        {activeTab === 'advisory' && (
                             <div className={`p-6 ${centeredContentClass}`}>
-                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                        <AlertTriangle className="text-orange-500" /> 風險提醒
-                                    </h3>
-                                    {risks.length === 0 ? (
-                                        <p className="text-gray-500 text-sm">此行程沒有特別的風險提醒。</p>
-                                    ) : (
-                                        <ul className="space-y-3">
-                                            {risks.map((risk, idx) => (
-                                                <li key={idx} className="flex items-start gap-3 text-sm text-gray-700 bg-orange-50 p-4 rounded-lg border border-orange-100">
-                                                    <span className="w-2 h-2 bg-orange-400 rounded-full mt-1.5 flex-shrink-0" />
-                                                    <span className="leading-relaxed">{safeRender(risk)}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </div>
+                                <AdvisoryView trip={trip} />
                             </div>
                         )}
                     </div>

@@ -5,7 +5,8 @@ import {
     constructUpdatePrompt,
     constructRecommendationPrompt,
     constructFeasibilityPrompt,
-    constructExplorerUpdatePrompt
+    constructExplorerUpdatePrompt,
+    constructAdvisoryPrompt
 } from "../../config/aiConfig";
 import { SERVICE_CONFIG } from "../../config/serviceConfig";
 
@@ -82,7 +83,7 @@ export class OllamaProvider implements IAIProvider {
             newData.days = newDays;
         }
         if (updates.totals) newData.totals = updates.totals;
-        if (updates.risks) newData.risks = updates.risks;
+        if (updates.advisory) newData.advisory = updates.advisory;
         return newData;
     }
 
@@ -99,6 +100,22 @@ export class OllamaProvider implements IAIProvider {
             return this.parseJsonFromOllama(data.message.content) as TripData;
         } catch (error: any) {
             console.error("Ollama Generation Error:", error);
+            throw new Error(error.message);
+        }
+    }
+
+    async generateAdvisory(tripData: TripData, userId?: string, apiSecret?: string, language?: string): Promise<any> {
+        const prompt = constructAdvisoryPrompt(tripData, language);
+        const messages = [
+            { role: 'user', content: prompt }
+        ];
+
+        try {
+            const response = await this.callOllama(messages, SERVICE_CONFIG.ollama.models.tripGenerator, 'json', false);
+            const data = await response.json();
+            return this.parseJsonFromOllama(data.message.content, false);
+        } catch (error: any) {
+            console.error("Ollama Advisory Error:", error);
             throw new Error(error.message);
         }
     }

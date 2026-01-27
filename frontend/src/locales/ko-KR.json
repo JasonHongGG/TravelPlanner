@@ -143,7 +143,8 @@
         "tabs": {
             "itinerary": "일정표",
             "budget": "예산",
-            "risks": "위험 경고"
+            "risks": "위험 경고",
+            "advisory": "여행 어드바이저"
         },
         "map": {
             "mode": "지도 모드",

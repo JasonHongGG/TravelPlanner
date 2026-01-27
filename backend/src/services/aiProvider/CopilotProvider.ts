@@ -83,7 +83,7 @@ export class CopilotProvider implements IAIProvider {
             newData.days = newDays;
         }
         if (updates.totals) newData.totals = updates.totals;
-        if (updates.risks) newData.risks = updates.risks;
+        if (updates.advisory) newData.advisory = updates.advisory;
         return newData;
     }
 
@@ -270,6 +270,11 @@ export class CopilotProvider implements IAIProvider {
             console.error("Copilot Provider Streaming Error:", e);
             throw e;
         }
+    }
+
+    async generateAdvisory(tripData: TripData, userId?: string, apiSecret?: string, language?: string): Promise<any> {
+        const text = await this.callCopilot('GENERATE_ADVISORY', { currentData: tripData, language }, undefined, apiSecret);
+        return this.parseJson(text);
     }
 
     async checkFeasibility(currentData: TripData, modificationContext: string, userId?: string, apiSecret?: string, language?: string): Promise<FeasibilityResult> {

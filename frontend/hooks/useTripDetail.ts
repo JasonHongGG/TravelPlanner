@@ -4,7 +4,7 @@ import { getDayMapConfig } from '../utils/mapHelpers';
 
 export const useTripDetail = (trip: Trip) => {
   const [selectedDay, setSelectedDay] = useState<number>(1);
-  const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'risks'>('itinerary');
+  const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'advisory'>('itinerary');
   const [isMapOpen, setIsMapOpen] = useState(true);
   const [mapState, setMapState] = useState<{ url: string; label: string }>({
     url: '',
