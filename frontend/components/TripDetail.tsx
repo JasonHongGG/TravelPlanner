@@ -959,6 +959,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
                 loading={isGeneratingAdvisory}
                 error={advisoryError}
                 onGenerate={handleGenerateAdvisory}
+                isMapOpen={isMapOpen}
               />
             )}
 

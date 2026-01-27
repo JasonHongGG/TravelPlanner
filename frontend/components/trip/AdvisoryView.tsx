@@ -4,10 +4,11 @@ import {
     BookOpen, Sparkles, Shirt, Plane, ShieldCheck,
     HeartHandshake, FileSearch, CheckCircle2, AlertTriangle,
     CloudSun, Globe, Info, Zap, Wallet, Coins, Utensils, Phone, Stethoscope,
-    Wind, ThermometerSun, Umbrella, ChevronRight, X, ArrowRight
+    Wind, ThermometerSun, Umbrella, ChevronRight, X, ArrowRight, MapPin
 } from 'lucide-react';
 import { aiService } from '../../services';
 import { useAuth } from '../../context/AuthContext';
+import { usePoints } from '../../context/PointsContext';
 
 interface Props {
     trip: Trip;
@@ -15,9 +16,13 @@ interface Props {
     error: string | null;
     onGenerate: () => void;
     onUpdateTrip?: (tripId: string, data: TripData) => void;
+    isMapOpen?: boolean;
 }
 
-// Type for the modal data
+// ... imports ...
+
+
+
 interface ModalData {
     title: string;
     icon: any;
@@ -25,12 +30,16 @@ interface ModalData {
     colorTheme: 'blue' | 'indigo' | 'emerald' | 'amber' | 'rose' | 'violet' | 'orange' | 'pink';
 }
 
-export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdateTrip }: Props) {
+export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdateTrip, isMapOpen = false }: Props) {
     const { user } = useAuth();
+    const { balance, isSubscribed } = usePoints(); // Points Hook
     const advisory = trip.data?.advisory;
 
-    // State for the active modal
+    // State for the active modal (Details)
     const [modalData, setModalData] = useState<ModalData | null>(null);
+
+    // State for Payment Confirmation
+    const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
     const openModal = (title: string, icon: any, data: any, colorTheme: ModalData['colorTheme']) => {
         if (!data) return;
@@ -47,7 +56,25 @@ export default function AdvisoryView({ trip, loading, error, onGenerate, onUpdat
     return (
         <div className="max-w-7xl mx-auto pb-24 animate-in fade-in slide-in-from-bottom-6 duration-700 px-4 sm:px-6 relative">
 
-            {/* Modal Layer */}
+            {/* Payment Confirmation Modal */}
+            <PaymentConfirmationModal
+                isOpen={paymentModalOpen}
+                onClose={() => setPaymentModalOpen(false)}
+                onConfirm={onGenerate}
+                title="開啟 AI 旅遊顧問"
+                subtitle="AI 將為您全方位分析目的地天氣、安全與文化資訊"
+                targetLabel="分析目的地"
+                targetValue={trip.input.destination}
+                costLabel="顧問生成費用"
+                cost={30}
+                balance={balance}
+                isSubscribed={isSubscribed}
+            />
+
+            {/* Floating Regenerate Button */}
+            {!loading && <FloatingRegenerateButton onClick={() => setPaymentModalOpen(true)} />}
+
+            {/* Modal Layer (Content Details) */}
             {modalData && (
                 <DetailModal
                     isOpen={!!modalData}
@@ -684,4 +711,28 @@ function Map(props: any) {
             <line x1="15" x2="15" y1="6" y2="21" />
         </svg>
     )
+}
+
+// Local components moved to shared
+import PaymentConfirmationModal from '../PaymentConfirmationModal';
+
+function FloatingRegenerateButton({ onClick, isMapOpen = false }: { onClick: () => void, isMapOpen?: boolean }) {
+    return (
+        <div className={`fixed bottom-8 z-40 animate-in slide-in-from-bottom-10 fade-in duration-700 delay-500 transition-all duration-300 -translate-x-1/2
+            ${isMapOpen ? 'left-1/2 lg:left-[29.17%] xl:left-[25%]' : 'left-1/2'}
+        `}>
+            <button
+                onClick={onClick}
+                className="group flex items-center gap-3 px-6 py-3 bg-white/90 backdrop-blur-md border border-brand-100 text-brand-700 rounded-full shadow-2xl hover:bg-brand-50 hover:scale-105 transition-all duration-300 ring-4 ring-black/5"
+            >
+                <div className="bg-brand-100 p-2 rounded-full group-hover:rotate-12 transition-transform duration-500">
+                    <Sparkles className="w-5 h-5 text-brand-600" />
+                </div>
+                <div className="flex flex-col items-start mr-1">
+                    <span className="text-xs font-bold text-brand-400 uppercase tracking-wider">Updates Available</span>
+                    <span className="text-sm font-black text-gray-800">重新生成建議</span>
+                </div>
+            </button>
+        </div>
+    );
 }
