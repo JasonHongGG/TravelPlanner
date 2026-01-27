@@ -456,9 +456,9 @@
             },
             "weather": {
                 "title": "天気と服装",
-                "forecast_label": "Forecast",
+                "forecast_label": "天気予報",
                 "view_forecast": "予報を見る",
-                "outfit_label": "Outfit",
+                "outfit_label": "服装",
                 "view_outfit": "服装ガイドを見る",
                 "modal_forecast_title": "天気予報詳細",
                 "modal_clothing_title": "服装アドバイス"

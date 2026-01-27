@@ -456,9 +456,9 @@
             },
             "weather": {
                 "title": "天氣概況 & 穿搭",
-                "forecast_label": "Forecast",
+                "forecast_label": "天氣預報",
                 "view_forecast": "查看完整預報",
-                "outfit_label": "Outfit",
+                "outfit_label": "穿搭建議",
                 "view_outfit": "查看穿搭指南",
                 "modal_forecast_title": "天氣預報詳情",
                 "modal_clothing_title": "穿搭建議詳情"

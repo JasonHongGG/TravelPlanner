@@ -456,9 +456,9 @@
             },
             "weather": {
                 "title": "날씨 및 복장",
-                "forecast_label": "Forecast",
+                "forecast_label": "일기 예보",
                 "view_forecast": "전체 예보 보기",
-                "outfit_label": "Outfit",
+                "outfit_label": "복장",
                 "view_outfit": "복장 가이드 보기",
                 "modal_forecast_title": "날씨 예보 상세",
                 "modal_clothing_title": "복장 제안 상세"
