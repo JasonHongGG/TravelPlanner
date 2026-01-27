@@ -69,8 +69,6 @@ export async function getCoverImage(req: Request, res: Response) {
         // Add 'filterui:aspect-wide' to prefer landscape images and 'filterui:photo-photo' for real photos
         const url = `https://www.bing.com/images/search?q=${encodeURIComponent(enhancedQuery)}&qft=+filterui:imagesize-large+filterui:aspect-wide+filterui:photo-photo&form=IRFLTR`;
 
-        console.log(url);
-
         const response = await fetch(url, {
             headers: {
                 'User-Agent': 'Mozilla/5.0'

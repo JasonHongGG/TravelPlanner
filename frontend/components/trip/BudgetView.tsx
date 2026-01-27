@@ -258,59 +258,59 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta, tripCurrency 
 
     return (
         <div
-            className="p-6 md:p-8 min-h-full bg-gray-50/50"
+            className="p-4 sm:p-6 md:p-8 min-h-full bg-gray-50/50"
             onClick={() => {
                 setSelectedBudgetCategory(null);
                 setEditingCategory(null);
             }}
         >
-            <div className="max-w-6xl mx-auto space-y-8">
+            <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
 
                 {/* Header Section */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">{t('budget_view.overview_title')}</h2>
-                        <p className="text-gray-500 text-sm mt-1">{t('budget_view.overview_desc')}</p>
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">{t('budget_view.overview_title')}</h2>
+                        <p className="text-gray-500 text-xs sm:text-sm mt-1">{t('budget_view.overview_desc')}</p>
                     </div>
 
-                    <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200">
+                    <div className="flex items-center gap-2 bg-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl shadow-sm border border-gray-200 self-start sm:self-auto">
                         <Calendar className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm font-medium text-gray-700">{t('budget_view.total_days', { count: days.length })}</span>
+                        <span className="text-xs sm:text-sm font-medium text-gray-700">{t('budget_view.total_days', { count: days.length })}</span>
                     </div>
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                     {/* Card 1: Total */}
-                    <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center justify-between group hover:border-blue-500 transition-all">
+                    <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center justify-between group hover:border-blue-500 transition-all">
                         <div>
-                            <p className="text-sm font-medium text-gray-500 mb-1">{t('budget_view.total_estimated_cost')}</p>
-                            <h3 className="text-3xl font-extrabold text-gray-900 tracking-tight group-hover:text-blue-600 transition-colors">
-                                <span className="text-lg align-top mr-1 font-bold text-gray-400">{getCurrencySymbol(tripCurrency)}</span>
+                            <p className="text-xs sm:text-sm font-medium text-gray-500 mb-1">{t('budget_view.total_estimated_cost')}</p>
+                            <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight group-hover:text-blue-600 transition-colors">
+                                <span className="text-sm sm:text-lg align-top mr-1 font-bold text-gray-400">{getCurrencySymbol(tripCurrency)}</span>
                                 {safeRender(totalBudget.toLocaleString())}
                             </h3>
                         </div>
-                        <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                            <DollarSign className="w-6 h-6 text-blue-600" />
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-50 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                            <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                         </div>
                     </div>
 
                     {/* Card 2: Daily Avg */}
-                    <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center justify-between group hover:border-green-500 transition-all">
+                    <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center justify-between group hover:border-green-500 transition-all">
                         <div>
-                            <p className="text-sm font-medium text-gray-500 mb-1">{t('budget_view.daily_average')}</p>
-                            <h3 className="text-2xl font-bold text-gray-900 group-hover:text-green-600 transition-colors">
-                                <span className="text-sm align-top mr-1 text-gray-400">{getCurrencySymbol(tripCurrency)}</span>
+                            <p className="text-xs sm:text-sm font-medium text-gray-500 mb-1">{t('budget_view.daily_average')}</p>
+                            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 group-hover:text-green-600 transition-colors">
+                                <span className="text-xs sm:text-sm align-top mr-1 text-gray-400">{getCurrencySymbol(tripCurrency)}</span>
                                 {safeRender(averageDailySpend.toLocaleString())}
                             </h3>
                         </div>
-                        <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                            <Activity className="w-6 h-6 text-emerald-600" />
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-50 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                            <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
                         </div>
                     </div>
 
                     {/* Card 3: Alert Status (Replaces Highest Category if over budget exists) */}
-                    <div className={`bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center justify-between group transition-all ${hasBudgetAlert ? 'hover:border-red-500' : 'hover:border-green-500'
+                    <div className={`bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center justify-between group transition-all sm:col-span-2 md:col-span-1 ${hasBudgetAlert ? 'hover:border-red-500' : 'hover:border-green-500'
                         }`}>
                         {/* Simple logic: if any category is over budget, show warning */}
                         {hasBudgetAlert ? (
@@ -360,7 +360,7 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta, tripCurrency 
                             <div className="flex flex-col items-center gap-8">
 
                                 {/* Donut Chart */}
-                                <div id="pie-chart-container" className="w-64 h-64 md:w-72 md:h-72 relative shrink-0 outline-none">
+                                <div id="pie-chart-container" className="w-48 h-48 sm:w-64 sm:h-64 md:w-72 md:h-72 relative shrink-0 outline-none">
                                     <style>{`
                                         #pie-chart-container .recharts-wrapper,
                                         #pie-chart-container .recharts-surface,
@@ -425,7 +425,7 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta, tripCurrency 
                                 </div>
 
                                 {/* Legend Positioned Below Chart - Shows ALL Categories */}
-                                <div className="w-full grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
+                                <div className="w-full grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2 sm:gap-3">
                                     {budgetData.map((item, idx) => {
                                         const isSelected = selectedBudgetCategory === item.key;
                                         const status = getBudgetStatus(item.key, item.value);
@@ -439,7 +439,7 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta, tripCurrency 
                                                     setSelectedDetailDay(null);
                                                     setSelectedBudgetCategory(isSelected ? null : item.key);
                                                 }}
-                                                className={`flex flex-col justify-between p-4 rounded-xl cursor-pointer border transition-all duration-200 group relative ${isSelected
+                                                className={`flex flex-col justify-between p-3 sm:p-4 rounded-lg sm:rounded-xl cursor-pointer border transition-all duration-200 group relative ${isSelected
                                                     ? 'bg-gray-900 border-gray-900 text-white shadow-lg shadow-gray-200 scale-[1.02]'
                                                     : 'bg-white border-gray-100 hover:border-gray-200 hover:bg-gray-50 text-gray-600 hover:shadow-md'
                                                     }`}
@@ -449,28 +449,28 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta, tripCurrency 
                                                     <div className="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                                                 )}
 
-                                                <div className="flex items-center gap-3 mb-3">
+                                                <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                                                     {/* Color Indicator (Icon Background) */}
                                                     <div
-                                                        className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors`}
+                                                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 transition-colors`}
                                                         style={{
                                                             backgroundColor: `${color}20`,
                                                             color: color
                                                         }}
                                                     >
-                                                        {React.createElement(item.icon || Wallet, { className: "w-5 h-5" })}
+                                                        {React.createElement(item.icon || Wallet, { className: "w-4 h-4 sm:w-5 sm:h-5" })}
                                                     </div>
 
-                                                    <span className={`font-bold text-sm truncate ${isSelected ? 'text-white' : 'text-gray-900'}`}>
+                                                    <span className={`font-bold text-xs sm:text-sm truncate ${isSelected ? 'text-white' : 'text-gray-900'}`}>
                                                         {item.name}
                                                     </span>
                                                 </div>
 
                                                 <div className="flex items-end justify-between">
-                                                    <span className={`text-xs ${isSelected ? 'text-gray-400' : 'text-gray-400'}`}>
+                                                    <span className={`text-[10px] sm:text-xs ${isSelected ? 'text-gray-400' : 'text-gray-400'}`}>
                                                         {((item.value / totalBudget) * 100).toFixed(0)}%
                                                     </span>
-                                                    <span className={`font-bold text-lg leading-none ${isSelected ? 'text-white' : 'text-gray-900'}`}>
+                                                    <span className={`font-bold text-base sm:text-lg leading-none ${isSelected ? 'text-white' : 'text-gray-900'}`}>
                                                         {item.value.toLocaleString()}
                                                     </span>
                                                 </div>
@@ -482,13 +482,13 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta, tripCurrency 
                         </div>
 
                         {/* Daily Trend Chart */}
-                        <div className="bg-white rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 p-6 md:p-8">
-                            <div className="flex items-center justify-between mb-8">
+                        <div className="bg-white rounded-xl sm:rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 p-4 sm:p-6 md:p-8">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-6 sm:mb-8">
                                 <div>
-                                    <h3 className="font-bold text-lg text-gray-900">{t('budget_view.daily_trend_title')}</h3>
+                                    <h3 className="font-bold text-base sm:text-lg text-gray-900">{t('budget_view.daily_trend_title')}</h3>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
-                                    <TrendingUp className="w-4 h-4 text-brand-500" />
+                                <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 bg-gray-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border border-gray-100 self-start sm:self-auto">
+                                    <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-brand-500" />
                                     <span className="font-medium">{t('budget_view.average_per_day', { amount: `${getCurrencySymbol(tripCurrency)}${averageDailySpend.toLocaleString()}` })}</span>
                                 </div>
                             </div>
@@ -505,7 +505,7 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta, tripCurrency 
                                     outline: none !important;
                                 }
                             `}</style>
-                            <div id="trend-chart-container" className="h-72 w-full outline-none cursor-default">
+                            <div id="trend-chart-container" className="h-48 sm:h-64 md:h-72 w-full outline-none cursor-default">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <AreaChart
                                         data={dailyTrend}

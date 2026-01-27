@@ -86,18 +86,18 @@ export default function GalleryPage({ onBack, onSelectTrip }: GalleryPageProps) 
             {/* Navbar */}
             <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-30">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-16">
-                        <div className="flex items-center gap-3">
+                    <div className="flex justify-between h-14 sm:h-16">
+                        <div className="flex items-center gap-2 sm:gap-3">
                             <button
                                 onClick={onBack}
-                                className="flex items-center gap-2 text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
+                                className="flex items-center gap-1 sm:gap-2 text-gray-500 hover:text-gray-900 font-medium text-sm transition-colors"
                             >
                                 <ArrowLeft className="w-4 h-4" />
-                                返回
+                                <span className="hidden sm:inline">返回</span>
                             </button>
-                            <div className="h-6 w-px bg-gray-200 mx-2" />
+                            <div className="h-6 w-px bg-gray-200 mx-1 sm:mx-2 hidden sm:block" />
                             <div className="flex items-center gap-2">
-                                <span className="text-xl font-black text-gray-800 tracking-tight">探索旅程</span>
+                                <span className="text-lg sm:text-xl font-black text-gray-800 tracking-tight">探索旅程</span>
                             </div>
                         </div>
 
@@ -126,15 +126,15 @@ export default function GalleryPage({ onBack, onSelectTrip }: GalleryPageProps) 
             </nav>
 
             {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
                 {/* Hero Section */}
-                <div className="mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col items-center text-center">
+                <div className="mb-8 sm:mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col items-center text-center">
 
 
-                    <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight mb-2 sm:mb-3">
                         {isRandomMode ? '探索未知的旅程' : '探索熱門旅程'}
                     </h1>
-                    <p className="text-gray-500 text-lg max-w-2xl mx-auto">
+                    <p className="text-gray-500 text-sm sm:text-lg max-w-2xl mx-auto px-2">
                         {isRandomMode
                             ? '跳脫舒適圈，發現來自全球旅人的精彩行程，每次點擊都是驚喜！'
                             : '瀏覽近期社群中最受歡迎的旅程規劃，獲取靈感開始你的下一次冒險。'}

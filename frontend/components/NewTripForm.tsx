@@ -243,21 +243,21 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
         {/* Backdrop */}
         <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
 
         {/* Modal Container */}
-        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col relative z-10 animate-in fade-in zoom-in-95 duration-200 border border-gray-100">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-3xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col relative z-10 animate-in fade-in zoom-in-95 duration-200 border border-gray-100">
 
           {/* Header - Modern & Clean */}
-          <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-start bg-white sticky top-0 z-20">
+          <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-100 flex justify-between items-start bg-white sticky top-0 z-20">
             <div>
-              <h2 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-brand-600 to-sky-500 mb-1 flex items-center gap-2">
-                <Sparkles className="w-6 h-6 text-brand-500 fill-brand-500" />
+              <h2 className="text-xl sm:text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-brand-600 to-sky-500 mb-1 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-brand-500 fill-brand-500" />
                 {t('new_trip.title')}
               </h2>
-              <p className="text-sm text-gray-500 font-medium">{t('new_trip.subtitle')}</p>
+              <p className="text-xs sm:text-sm text-gray-500 font-medium hidden sm:block">{t('new_trip.subtitle')}</p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -298,8 +298,8 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
           </div>
 
           {/* Form Content - Scrollable */}
-          <div className="flex-1 overflow-y-auto px-8 py-6 scrollbar-hide bg-gray-50/30">
-            <form id="new-trip-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-6 scrollbar-hide bg-gray-50/30">
+            <form id="new-trip-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-4 sm:gap-x-8 gap-y-2">
 
               <SectionHeader title={t('new_trip.basic_info')} />
 
@@ -503,38 +503,41 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
           </div>
 
           {/* Footer - Fixed */}
-          <div className="px-8 py-5 border-t border-gray-100 bg-white flex justify-end gap-3 rounded-b-3xl">
-            <div className="flex items-center gap-4 mr-auto">
-              <div className="flex flex-col">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('new_trip.estimated_cost')}</span>
-                <span className="text-lg font-black text-brand-600 flex items-center gap-1">
-                  {estimatedCost} <span className="text-xs font-bold text-brand-400">PTS</span>
+          <div className="px-4 sm:px-8 py-4 sm:py-5 border-t border-gray-100 bg-white flex flex-col sm:flex-row sm:justify-end gap-3 rounded-b-2xl sm:rounded-b-3xl">
+            <div className="flex items-center gap-3 sm:gap-4 sm:mr-auto order-2 sm:order-1 justify-center sm:justify-start">
+              <div className="flex flex-col items-center sm:items-start">
+                <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider">{t('new_trip.estimated_cost')}</span>
+                <span className="text-base sm:text-lg font-black text-brand-600 flex items-center gap-1">
+                  {estimatedCost} <span className="text-[10px] sm:text-xs font-bold text-brand-400">PTS</span>
                 </span>
               </div>
-              <div className="w-px h-8 bg-gray-200"></div>
-              <div className="flex flex-col">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('new_trip.current_balance')}</span>
-                <span className={`text-lg font-black flex items-center gap-1 ${balance < estimatedCost ? 'text-red-500' : 'text-gray-700'}`}>
-                  {balance} <span className={`text-xs font-bold ${balance < estimatedCost ? 'text-red-300' : 'text-gray-400'}`}>PTS</span>
+              <div className="w-px h-6 sm:h-8 bg-gray-200"></div>
+              <div className="flex flex-col items-center sm:items-start">
+                <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider">{t('new_trip.current_balance')}</span>
+                <span className={`text-base sm:text-lg font-black flex items-center gap-1 ${balance < estimatedCost ? 'text-red-500' : 'text-gray-700'}`}>
+                  {balance} <span className={`text-[10px] sm:text-xs font-bold ${balance < estimatedCost ? 'text-red-300' : 'text-gray-400'}`}>PTS</span>
                 </span>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2.5 text-gray-600 bg-white border border-gray-300 hover:border-gray-400 rounded-xl hover:bg-gray-50 transition-all font-bold text-sm"
-            >
-              {t('new_trip.cancel')}
-            </button>
-            <button
-              type="submit"
-              form="new-trip-form"
-              className="px-8 py-2.5 text-white bg-brand-600 hover:bg-brand-700 rounded-xl transition-all font-bold text-sm shadow-lg shadow-brand-200 hover:shadow-xl hover:-translate-y-0.5 flex items-center gap-2"
-            >
-              <Plane className="w-4 h-4" />
-              {t('new_trip.start_generating')}
-            </button>
+            <div className="flex gap-3 order-1 sm:order-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 text-gray-600 bg-white border border-gray-300 hover:border-gray-400 rounded-xl hover:bg-gray-50 transition-all font-bold text-sm"
+              >
+                {t('new_trip.cancel')}
+              </button>
+              <button
+                type="submit"
+                form="new-trip-form"
+                className="flex-1 sm:flex-none px-4 sm:px-8 py-2.5 text-white bg-brand-600 hover:bg-brand-700 rounded-xl transition-all font-bold text-sm shadow-lg shadow-brand-200 hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2"
+              >
+                <Plane className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('new_trip.start_generating')}</span>
+                <span className="sm:hidden">開始</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

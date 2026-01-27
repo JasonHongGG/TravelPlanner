@@ -306,15 +306,15 @@ export default function LandingPage({ onLoginClick }: Props) {
             </section>
 
             {/* Footer CTA (Premium Design) */}
-            <section className="relative py-32 px-6 flex justify-center overflow-hidden">
+            <section className="relative py-16 sm:py-24 md:py-32 px-4 sm:px-6 flex justify-center overflow-hidden">
                 <div className="w-full max-w-5xl relative">
 
                     {/* Ambient Glows Behind Card */}
-                    <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-[100px] -translate-y-1/2 pointer-events-none"></div>
-                    <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[100px] -translate-y-1/2 pointer-events-none"></div>
+                    <div className="absolute top-1/2 left-1/4 w-48 sm:w-96 h-48 sm:h-96 bg-blue-500/20 rounded-full blur-[80px] sm:blur-[100px] -translate-y-1/2 pointer-events-none"></div>
+                    <div className="absolute top-1/2 right-1/4 w-48 sm:w-96 h-48 sm:h-96 bg-purple-500/20 rounded-full blur-[80px] sm:blur-[100px] -translate-y-1/2 pointer-events-none"></div>
 
                     {/* Main Card Container */}
-                    <div className="relative overflow-hidden bg-white/5 backdrop-blur-3xl rounded-[2.5rem] border border-white/10 p-12 md:p-24 text-center shadow-2xl shadow-indigo-500/10 group">
+                    <div className="relative overflow-hidden bg-white/5 backdrop-blur-3xl rounded-2xl sm:rounded-[2.5rem] border border-white/10 p-6 sm:p-12 md:p-24 text-center shadow-2xl shadow-indigo-500/10 group">
 
                         {/* Dynamic Background Effects */}
                         <div className="absolute inset-0 bg-grid opacity-10 pointer-events-none"></div>
@@ -327,21 +327,21 @@ export default function LandingPage({ onLoginClick }: Props) {
                                 <span>Start Your Journey Today</span>
                             </div>
 
-                            <h2 className="text-5xl md:text-7xl font-bold mb-8 leading-tight tracking-tight">
+                            <h2 className="text-3xl sm:text-5xl md:text-7xl font-bold mb-6 sm:mb-8 leading-tight tracking-tight">
                                 Ready for your next <br />
                                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 animate-pulse">
                                     adventure?
                                 </span>
                             </h2>
 
-                            <p className="text-slate-400 text-lg md:text-xl max-w-2xl mb-10 leading-relaxed">
+                            <p className="text-slate-400 text-base sm:text-lg md:text-xl max-w-2xl mb-8 sm:mb-10 leading-relaxed">
                                 Join thousands of modern explorers who are traveling smarter, not harder. Experience the future of trip planning.
                             </p>
 
-                            <div className="flex flex-col sm:flex-row items-center gap-6">
+                            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                                 <button
                                     onClick={onLoginClick}
-                                    className="px-10 py-5 rounded-full bg-white text-[#0f172a] font-bold text-lg shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 group/btn"
+                                    className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 rounded-full bg-white text-[#0f172a] font-bold text-base sm:text-lg shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 group/btn"
                                 >
                                     Get Started Free
                                     <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />

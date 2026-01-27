@@ -717,17 +717,17 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
       )}
 
       {/* 1. Header (Sticky) */}
-      <header className="bg-white border-b border-gray-200 h-16 flex-none z-50 flex items-center justify-between px-6 shadow-sm">
-        <div className="flex items-center gap-4">
+      <header className="bg-white border-b border-gray-200 h-14 sm:h-16 flex-none z-50 flex items-center justify-between px-3 sm:px-6 shadow-sm">
+        <div className="flex items-center gap-2 sm:gap-4">
           <button onClick={onBack} className="text-gray-500 hover:text-gray-900 font-medium text-sm flex items-center gap-1">
-            ← {t('common.back')}
+            ← <span className="hidden sm:inline">{t('common.back')}</span>
           </button>
-          <div className="h-6 w-px bg-gray-300 mx-2 hidden md:block"></div>
-          <h1 className="text-lg font-bold text-gray-800 truncate max-w-md hidden md:block">
+          <div className="h-6 w-px bg-gray-300 mx-1 sm:mx-2 hidden sm:block"></div>
+          <h1 className="text-sm sm:text-lg font-bold text-gray-800 truncate max-w-[120px] sm:max-w-md hidden sm:block">
             {trip.title || trip.input.destination}
           </h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3">
           {!isSharedView && (
             <VisibilityToggle
               visibility={trip.visibility || 'private'}
@@ -782,8 +782,8 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
           )}
 
           {!isSharedView && (
-            <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> {t('trip.ready') || "Ready"}
+            <div className="bg-green-100 text-green-700 px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" /> <span className="hidden sm:inline">{t('trip.ready') || "Ready"}</span>
             </div>
           )}
         </div>
@@ -884,14 +884,14 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
                 </button>
               </div>
 
-              <div className="absolute bottom-6 left-6 text-white z-10 drop-shadow-md">
-                <h1 className="text-4xl font-bold mb-1 tracking-tight">{tripMeta.title || trip.title || trip.input.destination}</h1>
-                <div className="flex items-center gap-3 text-sm font-medium text-white/90">
-                  <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {tripMeta.dateRange || trip.input.dateRange}</span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {tripMeta.days || days.length} {t('trip.days')}</span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1"><DollarSign className="w-4 h-4" /> {trip.input.budget || '~'}</span>
+              <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 text-white z-10 drop-shadow-md">
+                <h1 className="text-2xl sm:text-4xl font-bold mb-1 tracking-tight line-clamp-2 sm:line-clamp-1">{tripMeta.title || trip.title || trip.input.destination}</h1>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm font-medium text-white/90">
+                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">{tripMeta.dateRange || trip.input.dateRange}</span><span className="sm:hidden">{(tripMeta.dateRange || trip.input.dateRange || '').split(' ')[0]}</span></span>
+                  <span className="hidden sm:inline">•</span>
+                  <span className="flex items-center gap-1"><Clock className="w-3 h-3 sm:w-4 sm:h-4" /> {tripMeta.days || days.length} {t('trip.days')}</span>
+                  <span className="hidden sm:inline">•</span>
+                  <span className="hidden sm:flex items-center gap-1"><DollarSign className="w-4 h-4" /> {trip.input.budget || '~'}</span>
                 </div>
               </div>
             </div>

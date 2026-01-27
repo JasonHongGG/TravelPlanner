@@ -88,15 +88,15 @@ export default function ItineraryTimeline({ dayData, onFocusStop, onUpdateStop, 
    return (
       <div className="animate-in fade-in duration-300">
          {/* Day Header */}
-         <div className="mb-6 bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+         <div className="mb-4 sm:mb-6 bg-white p-4 sm:p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div className="flex-1">
-               <div className="flex items-center gap-3 mb-2">
-                  <div className="bg-brand-100 text-brand-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide">
+               <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+                  <div className="bg-brand-100 text-brand-700 px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold uppercase tracking-wide">
                      {t('timeline.day_label', { day: dayData.day })}
                   </div>
-                  <span className="text-gray-400 text-xs font-medium">{safeRender(dayData.date)}</span>
+                  <span className="text-gray-400 text-[10px] sm:text-xs font-medium">{safeRender(dayData.date)}</span>
                </div>
-               <h2 className="text-2xl font-bold text-gray-900 leading-tight">
+               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
                   {dayData.theme || t('timeline.day_title', { day: dayData.day })}
                </h2>
             </div>
@@ -104,7 +104,7 @@ export default function ItineraryTimeline({ dayData, onFocusStop, onUpdateStop, 
             {onExplore && (
                <button
                   onClick={onExplore}
-                  className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-brand-500 to-sky-500 text-white rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all font-bold text-sm"
+                  className="flex-shrink-0 flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-brand-500 to-sky-500 text-white rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all font-bold text-xs sm:text-sm w-full sm:w-auto"
                >
                   <Sparkles className="w-4 h-4 text-yellow-200 fill-yellow-200" />
                   <span>{t('timeline.explore')}</span>
@@ -184,9 +184,9 @@ export default function ItineraryTimeline({ dayData, onFocusStop, onUpdateStop, 
          )}
 
          {/* Timeline Container */}
-         <div className="relative ml-4 md:ml-6 pb-4">
+         <div className="relative ml-2 sm:ml-4 md:ml-6 pb-4">
             {/* Continuous Vertical Line */}
-            <div className="absolute top-0 bottom-0 left-8 w-0.5 bg-gray-300 transform -translate-x-1/2"></div>
+            <div className="absolute top-0 bottom-0 left-5 sm:left-8 w-0.5 bg-gray-300 transform -translate-x-1/2"></div>
 
             {dayData.stops?.map((stop, idx) => {
                const StopIcon = getStopIcon(stop);
@@ -199,10 +199,10 @@ export default function ItineraryTimeline({ dayData, onFocusStop, onUpdateStop, 
                const placeUrl = getGoogleMapsSearchLink(stop.name);
 
                return (
-                  <div key={idx} className="relative pl-16 pb-12 last:pb-0 group">
+                  <div key={idx} className="relative pl-10 sm:pl-16 pb-8 sm:pb-12 last:pb-0 group">
                      {/* Timeline Node */}
-                     <div className="absolute left-8 -translate-x-1/2 top-0 h-8 w-8 rounded-full border-2 border-brand-500 bg-white z-10 shadow-sm flex items-center justify-center transition-transform duration-300 group-hover:scale-110 flex-shrink-0">
-                        <StopIcon className="w-4 h-4 text-brand-600 stroke-[2.5]" />
+                     <div className="absolute left-5 sm:left-8 -translate-x-1/2 top-0 h-6 w-6 sm:h-8 sm:w-8 rounded-full border-2 border-brand-500 bg-white z-10 shadow-sm flex items-center justify-center transition-transform duration-300 group-hover:scale-110 flex-shrink-0">
+                        <StopIcon className="w-3 h-3 sm:w-4 sm:h-4 text-brand-600 stroke-[2.5]" />
                      </div>
 
                      {/* Time & Transport Header */}
@@ -238,10 +238,10 @@ export default function ItineraryTimeline({ dayData, onFocusStop, onUpdateStop, 
                      </div>
 
                      {/* Card */}
-                     <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow hover:border-brand-200 relative">
-                        <div className="flex justify-between items-start gap-4 mb-3">
+                     <div className="bg-white rounded-xl p-3 sm:p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow hover:border-brand-200 relative">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4 mb-3">
                            <div className="flex-1 flex items-center gap-2 group/title">
-                              <h3 className="text-xl font-bold text-gray-900 leading-snug">
+                              <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-snug line-clamp-2 sm:line-clamp-1">
                                  {safeRender(stop.name)}
                               </h3>
                               {onUpdateStop && editingStopIdx !== idx && (
@@ -296,27 +296,27 @@ export default function ItineraryTimeline({ dayData, onFocusStop, onUpdateStop, 
                         </div>
 
                         {/* Stop Meta Data */}
-                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] sm:text-xs text-gray-500 mb-3 sm:mb-4 bg-gray-50 p-2 sm:p-3 rounded-lg border border-gray-100">
                            <div className="flex items-center gap-2">
-                              <Clock className="w-3.5 h-3.5 text-gray-400" />
+                              <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />
                               <span>{safeRender(stop.endTime) ? t('timeline.until', { time: safeRender(stop.endTime) }) : t('timeline.time_flexible')}</span>
                            </div>
                            <div className="flex items-center gap-2">
-                              <Info className="w-3.5 h-3.5 text-gray-400" />
-                              <span>{safeRender(stop.openHours) || t('timeline.check_hours')}</span>
+                              <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />
+                              <span className="truncate">{safeRender(stop.openHours) || t('timeline.check_hours')}</span>
                            </div>
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-2 border-t border-gray-100">
                            {placeUrl && (
                               <a
                                  href={placeUrl}
                                  target="_blank"
                                  rel="noreferrer"
-                                 className="flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-800 transition-colors bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-md"
+                                 className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-semibold text-brand-600 hover:text-brand-800 transition-colors bg-brand-50 hover:bg-brand-100 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md"
                               >
-                                 <MapPin className="w-3.5 h-3.5" /> {t('timeline.view_map')}
+                                 <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t('timeline.view_map')}
                               </a>
                            )}
                            {navigationUrl && (
@@ -324,9 +324,9 @@ export default function ItineraryTimeline({ dayData, onFocusStop, onUpdateStop, 
                                  href={navigationUrl}
                                  target="_blank"
                                  rel="noreferrer"
-                                 className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-md"
+                                 className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors bg-gray-100 hover:bg-gray-200 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md"
                               >
-                                 <Navigation className="w-3.5 h-3.5" /> {t('timeline.navigate')}
+                                 <Navigation className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t('timeline.navigate')}
                               </a>
                            )}
                         </div>
