@@ -10,6 +10,7 @@ import DateRangePicker from './DateRangePicker';
 import PaymentConfirmationModal from './PaymentConfirmationModal';
 import { useTranslation } from 'react-i18next';
 import PremiumDropdown from './PremiumDropdown';
+import { useStatusAlert } from '../context/StatusAlertContext';
 
 interface Props {
   isOpen: boolean;
@@ -71,6 +72,7 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
   const { t, i18n } = useTranslation();
   const { settings } = useSettings();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { showAlert } = useStatusAlert(); // Hook
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
   const [showPointsModal, setShowPointsModal] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -200,7 +202,11 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
         }
       } catch (error) {
         console.error("Failed to parse JSON", error);
-        alert("Invalid JSON file");
+        showAlert({
+          type: 'error',
+          title: '檔案格式錯誤',
+          description: '這不是一個有效的行程 JSON 檔案。'
+        });
       }
     };
     reader.readAsText(fileObj);

@@ -10,6 +10,7 @@ import TripCard from './dashboard/TripCard';
 import { usePoints } from '../context/PointsContext';
 import { tripShareService } from '../services/TripShareService';
 import ExportTripModal from './ExportTripModal';
+import { useStatusAlert } from '../context/StatusAlertContext';
 
 interface Props {
   trips: Trip[];
@@ -29,6 +30,7 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t, i18n } = useTranslation();
   const { isSubscribed, openPurchaseModal } = usePoints();
+  const { showAlert } = useStatusAlert(); // Hook
   const [exportModalState, setExportModalState] = React.useState<{ isOpen: boolean, trip: Trip | null }>({ isOpen: false, trip: null });
   const [importError, setImportError] = React.useState<string | null>(null);
 
@@ -83,7 +85,12 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
           setExportModalState({ isOpen: false, trip: null });
           openPurchaseModal('membership');
         } else {
-          alert("匯出失敗，請稍後再試: " + error.message);
+          console.error("Export error fallback", error);
+          showAlert({
+            type: 'error',
+            title: '匯出失敗',
+            description: `匯出失敗，請稍後再試: ${error.message}`
+          });
         }
       }
 
@@ -97,7 +104,11 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
         downloadFile(dataStr, fileName);
       } catch (e) {
         console.error("Export failed", e);
-        alert("匯出失敗，請稍後再試");
+        showAlert({
+          type: 'error',
+          title: '匯出失敗',
+          description: '匯出失敗，請稍後再試。'
+        });
       }
     }
     setExportModalState({ isOpen: false, trip: null });
@@ -131,7 +142,11 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
     const isHong = fileName.endsWith('.hong');
 
     if (!isJson && !isHong) {
-      alert(t('dashboard.invalid_file'));
+      showAlert({
+        type: 'warning',
+        title: '檔案格式錯誤',
+        description: t('dashboard.invalid_file') || '只能上傳 .json 或 .hong 檔案'
+      });
       return;
     }
 
@@ -155,12 +170,20 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
           if (tripData.input && tripData.status) {
             onImportTrip(tripData);
           } else {
-            alert(t('dashboard.invalid_file'));
+            showAlert({
+              type: 'warning',
+              title: '檔案無效',
+              description: t('dashboard.invalid_file') || '檔案內容格式不正確'
+            });
           }
         }
       } catch (error) {
         console.error("Failed to parse file", error);
-        alert(t('dashboard.read_error'));
+        showAlert({
+          type: 'error',
+          title: '讀取錯誤',
+          description: t('dashboard.read_error') || '無法讀取檔案，請確認檔案是否損毀。'
+        });
       }
     };
     reader.readAsText(fileObj);

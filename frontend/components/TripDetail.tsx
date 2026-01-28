@@ -34,6 +34,7 @@ interface Props {
 
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
+import { useStatusAlert } from '../context/StatusAlertContext';
 
 export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMeta, isSharedView = false }: Props) {
   const { t, i18n } = useTranslation();
@@ -51,6 +52,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
   };
 
   const currentLanguage = getPromptLanguage(i18n.language);
+  const { showAlert } = useStatusAlert();
 
   const {
     selectedDay,
@@ -198,7 +200,11 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
       }
     } catch (e) {
       console.error('Failed to update visibility:', e);
-      alert('更新失敗，請稍後再試');
+      showAlert({
+        type: 'error',
+        title: '更新失敗',
+        description: '無法更新行程權限，請稍後再試。'
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -223,7 +229,11 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
       }
     } catch (e) {
       console.error('Failed to toggle share:', e);
-      alert(shouldShare ? '分享失敗，請稍後再試' : '取消分享失敗，請稍後再試');
+      showAlert({
+        type: 'error',
+        title: shouldShare ? '分享失敗' : '取消分享失敗',
+        description: '操作無法完成，請稍後再試。'
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -417,7 +427,11 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
         }
       } catch (e) {
         console.error("Failed to update trip from explorer", e);
-        alert(t('trip.error_update') || "更新行程時發生錯誤，請稍後再試。");
+        showAlert({
+          type: 'error',
+          title: '更新失敗',
+          description: t('trip.error_update') || "更新行程時發生錯誤，請稍後再試。"
+        });
       } finally {
         setIsUpdatingFromExplorer(false);
       }
@@ -597,7 +611,11 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
 
     // Validate size (max 20MB pre-compression)
     if (file.size > 20 * 1024 * 1024) {
-      alert("圖片原始大小請小於 20MB");
+      showAlert({
+        type: 'warning',
+        title: '檔案過大',
+        description: '圖片原始大小請小於 20MB'
+      });
       return;
     }
 
@@ -611,7 +629,11 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
       updateCoverImage(compressedDataUrl);
     } catch (err) {
       console.error("Image processing failed", err);
-      alert("圖片處理失敗");
+      showAlert({
+        type: 'error',
+        title: '處理失敗',
+        description: '圖片處理失敗，請確認檔案格式是否正確。'
+      });
     } finally {
       // Small delay to simulate processing and let state update
       setTimeout(() => setIsUploading(false), 500);

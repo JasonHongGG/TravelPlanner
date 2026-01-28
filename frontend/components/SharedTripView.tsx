@@ -7,6 +7,7 @@ import { getTripCover } from '../utils/tripUtils';
 import { safeRender } from '../utils/formatters';
 import { getDayMapConfig } from '../utils/mapHelpers';
 import { useAuth } from '../context/AuthContext';
+import { useStatusAlert } from '../context/StatusAlertContext';
 
 // Sub-components (reuse from TripDetail)
 import DaySelector from './trip/DaySelector';
@@ -29,6 +30,7 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
     const [viewState, setViewState] = useState<ViewState>('loading');
     const [sharedTrip, setSharedTrip] = useState<SharedTrip | null>(null);
     const [errorMessage, setErrorMessage] = useState<string>('');
+    const { showAlert } = useStatusAlert(); // Hook usage
 
     // Store latest permission in ref for SSE to check against without re-subscribing
     const currentPermissionRef = useRef<string | undefined>(undefined);
@@ -87,7 +89,11 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
 
                 // Alert if downgraded from write to read
                 if (oldPermission === 'write' && newPermission !== 'write') {
-                    alert('您的編輯權限已被更改為僅查看');
+                    showAlert({
+                        type: 'warning',
+                        title: '權限變更',
+                        description: '您的編輯權限已被更改為僅查看。'
+                    });
                 }
             }
             loadTrip();
@@ -122,7 +128,11 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
             // If permission revoked while editing, exit edit mode
             if (isEditMode && trip.userPermission !== 'write') {
                 setIsEditMode(false);
-                alert('您的編輯權限已被移除');
+                showAlert({
+                    type: 'error',
+                    title: '權限已移除',
+                    description: '您的編輯權限已被移除。'
+                });
             }
         } catch (error: any) {
             console.error('[SharedTripView] Failed to load trip:', error);
