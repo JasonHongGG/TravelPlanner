@@ -61,7 +61,16 @@
         "start_now": "Start Now",
         "no_trips": "No trips currently. Click the card above to create one.",
         "invalid_file": "Invalid trip file format",
-        "read_error": "Failed to read file"
+        "read_error": "Failed to read file",
+        "export_error_title": "Export Failed",
+        "export_error_desc": "Export failed, please try again later: {{message}}",
+        "export_error_generic": "Export failed, please try again later",
+        "invalid_file_format_title": "Invalid File Format",
+        "invalid_file_format_desc": "Only .json or .hong files are allowed",
+        "invalid_file_content_title": "Invalid File",
+        "invalid_file_content_desc": "The file content format is incorrect",
+        "read_error_title": "Read Error",
+        "read_error_desc": "Failed to read file, please check if the file is corrupted."
     },
     "new_trip": {
         "title": "Start Your Journey",
@@ -105,8 +114,10 @@
         "member_free": "Free for Members",
         "confirmed_payment": "Confirm Payment",
         "remaining_points": "Remaining Points",
-        "days_count": "({{count}} days total)",
-        "budget_amount_placeholder": "Enter budget amount (excl. flights)"
+        "days_count": "({{count}} Days)",
+        "budget_amount_placeholder": "Enter budget amount (excl. flights)",
+        "invalid_json_title": "Invalid File Format",
+        "invalid_json_desc": "This is not a valid trip JSON file."
     },
     "trip": {
         "create_new": "Create New Trip",
@@ -137,7 +148,19 @@
         "synced": "Synced",
         "syncing": "Syncing...",
         "offline": "Offline",
-        "connecting": "Connecting..."
+        "connecting": "Connecting...",
+        "permission_update_error_title": "Update Failed",
+        "permission_update_error_desc": "Failed to update trip permissions, please try again later.",
+        "share_error_title": "Share Failed",
+        "unshare_error_title": "Unshare Failed",
+        "share_action_error_desc": "Operation could not be completed, please try again later.",
+        "update_error_title": "Update Failed",
+        "image_too_large_title": "File Too Large",
+        "image_too_large_desc": "Image size must be less than 20MB",
+        "image_process_error_title": "Processing Failed",
+        "image_process_error_desc": "Image processing failed, please check file format.",
+        "insufficient_points_title": "Insufficient Points",
+        "insufficient_points_desc": "Generating this trip requires {{cost}} points. Current balance: {{balance}} points."
     },
     "trip_detail": {
         "tabs": {
@@ -472,5 +495,11 @@
             "generating": "Generating guide...",
             "generate_btn": "Generate Advisory Report"
         }
+    },
+    "shared": {
+        "permission_downgraded_title": "Permission Changed",
+        "permission_downgraded_desc": "Your permission has been changed to view-only.",
+        "permission_removed_title": "Permission Removed",
+        "permission_removed_desc": "Your edit permission has been removed."
     }
 }

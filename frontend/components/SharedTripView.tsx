@@ -91,8 +91,8 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
                 if (oldPermission === 'write' && newPermission !== 'write') {
                     showAlert({
                         type: 'warning',
-                        title: '權限變更',
-                        description: '您的編輯權限已被更改為僅查看。'
+                        title: t('shared.permission_downgraded_title'),
+                        description: t('shared.permission_downgraded_desc')
                     });
                 }
             }
@@ -130,8 +130,8 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
                 setIsEditMode(false);
                 showAlert({
                     type: 'error',
-                    title: '權限已移除',
-                    description: '您的編輯權限已被移除。'
+                    title: t('shared.permission_removed_title'),
+                    description: t('shared.permission_removed_desc')
                 });
             }
         } catch (error: any) {

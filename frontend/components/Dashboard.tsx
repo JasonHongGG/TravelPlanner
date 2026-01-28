@@ -88,8 +88,8 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
           console.error("Export error fallback", error);
           showAlert({
             type: 'error',
-            title: '匯出失敗',
-            description: `匯出失敗，請稍後再試: ${error.message}`
+            title: t('dashboard.export_error_title'),
+            description: t('dashboard.export_error_desc', { message: error.message })
           });
         }
       }
@@ -106,8 +106,8 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
         console.error("Export failed", e);
         showAlert({
           type: 'error',
-          title: '匯出失敗',
-          description: '匯出失敗，請稍後再試。'
+          title: t('dashboard.export_error_title'),
+          description: t('dashboard.export_error_generic')
         });
       }
     }
@@ -144,8 +144,8 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
     if (!isJson && !isHong) {
       showAlert({
         type: 'warning',
-        title: '檔案格式錯誤',
-        description: t('dashboard.invalid_file') || '只能上傳 .json 或 .hong 檔案'
+        title: t('dashboard.invalid_file_format_title'),
+        description: t('dashboard.invalid_file_format_desc')
       });
       return;
     }
@@ -172,8 +172,8 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
           } else {
             showAlert({
               type: 'warning',
-              title: '檔案無效',
-              description: t('dashboard.invalid_file') || '檔案內容格式不正確'
+              title: t('dashboard.invalid_file_content_title'),
+              description: t('dashboard.invalid_file_content_desc')
             });
           }
         }
@@ -181,8 +181,8 @@ export default function Dashboard({ trips, onNewTrip, onSelectTrip, onDeleteTrip
         console.error("Failed to parse file", error);
         showAlert({
           type: 'error',
-          title: '讀取錯誤',
-          description: t('dashboard.read_error') || '無法讀取檔案，請確認檔案是否損毀。'
+          title: t('dashboard.read_error_title'),
+          description: t('dashboard.read_error_desc')
         });
       }
     };

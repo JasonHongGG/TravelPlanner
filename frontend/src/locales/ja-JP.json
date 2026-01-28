@@ -61,7 +61,16 @@
         "start_now": "今すぐ開始",
         "no_trips": "旅程はまだありません。上のカードをクリックして作成しましょう。",
         "invalid_file": "無効な旅程ファイル形式",
-        "read_error": "ファイルの読み込みに失敗しました"
+        "read_error": "ファイルの読み込みに失敗しました",
+        "export_error_title": "エクスポート失敗",
+        "export_error_desc": "エクスポートに失敗しました。後でもう一度お試しください: {{message}}",
+        "export_error_generic": "エクスポートに失敗しました。後でもう一度お試しください",
+        "invalid_file_format_title": "無効なファイル形式",
+        "invalid_file_format_desc": ".json または .hong ファイルのみアップロード可能です",
+        "invalid_file_content_title": "無効なファイル",
+        "invalid_file_content_desc": "ファイルの内容が正しくありません",
+        "read_error_title": "読み込みエラー",
+        "read_error_desc": "ファイルを読み込めませんでした。ファイルが破損していないか確認してください。"
     },
     "new_trip": {
         "title": "旅を始めよう",
@@ -137,7 +146,19 @@
         "synced": "同期済み",
         "syncing": "同期中...",
         "offline": "オフライン",
-        "connecting": "接続中..."
+        "connecting": "接続中...",
+        "permission_update_error_title": "Update Failed",
+        "permission_update_error_desc": "Failed to update trip permissions, please try again later.",
+        "share_error_title": "Share Failed",
+        "unshare_error_title": "Unshare Failed",
+        "share_action_error_desc": "Operation could not be completed, please try again later.",
+        "update_error_title": "Update Failed",
+        "image_too_large_title": "File Too Large",
+        "image_too_large_desc": "Image size must be less than 20MB",
+        "image_process_error_title": "Processing Failed",
+        "image_process_error_desc": "Image processing failed, please check file format.",
+        "insufficient_points_title": "Insufficient Points",
+        "insufficient_points_desc": "Generating this trip requires {{cost}} points. Current balance: {{balance}} points."
     },
     "trip_detail": {
         "tabs": {
@@ -472,5 +493,11 @@
             "generating": "ガイドを生成中...",
             "generate_btn": "アドバイザリーレポートを生成"
         }
+    },
+    "shared": {
+        "permission_downgraded_title": "権限変更",
+        "permission_downgraded_desc": "編集権限が閲覧のみに変更されました。",
+        "permission_removed_title": "権限削除",
+        "permission_removed_desc": "編集権限が削除されました。"
     }
 }

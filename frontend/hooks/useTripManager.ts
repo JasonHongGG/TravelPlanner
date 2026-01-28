@@ -5,11 +5,15 @@ import { tripShareService } from '../services/TripShareService';
 import { usePoints } from '../context/PointsContext';
 import { useAuth } from '../context/AuthContext';
 import { calculateTripCost } from '../utils/tripUtils';
+import { useStatusAlert } from '../context/StatusAlertContext';
+import { useTranslation } from 'react-i18next';
 
 
 export const useTripManager = () => {
   const { balance, openPurchaseModal, isSubscribed } = usePoints();
   const { user } = useAuth();
+  const { showAlert } = useStatusAlert(); // Hook
+  const { t } = useTranslation();
 
   // Initialize state directly from localStorage
   const [trips, setTrips] = useState<Trip[]>(() => {
@@ -119,7 +123,6 @@ export const useTripManager = () => {
 
     // Initial Frontend Check (UX only)
     if (!isSubscribed && balance < cost) {
-      alert(`點數不足！產生此行程需要 ${cost} 點，目前餘額 ${balance} 點。`);
       openPurchaseModal();
       return;
     }
@@ -157,7 +160,6 @@ export const useTripManager = () => {
 
     // Initial Frontend Check
     if (balance < cost) {
-      alert(`點數不足！重試此行程需要 ${cost} 點，目前餘額 ${balance} 點。`);
       openPurchaseModal();
       return;
     }

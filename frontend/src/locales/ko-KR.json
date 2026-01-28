@@ -61,7 +61,16 @@
         "start_now": "지금 시작",
         "no_trips": "아직 여행 일정이 없습니다. 위 카드를 클릭하여 만들어보세요.",
         "invalid_file": "유효하지 않은 파일 형식",
-        "read_error": "파일 읽기 실패"
+        "read_error": "파일 읽기 실패",
+        "export_error_title": "내보내기 실패",
+        "export_error_desc": "내보내기에 실패했습니다. 나중에 다시 시도해주세요: {{message}}",
+        "export_error_generic": "내보내기에 실패했습니다. 나중에 다시 시도해주세요",
+        "invalid_file_format_title": "유효하지 않은 파일 형식",
+        "invalid_file_format_desc": ".json 또는 .hong 파일만 업로드할 수 있습니다",
+        "invalid_file_content_title": "유효하지 않은 파일",
+        "invalid_file_content_desc": "파일 내용 형식이 올바르지 않습니다",
+        "read_error_title": "읽기 오류",
+        "read_error_desc": "파일을 읽을 수 없습니다. 파일이 손상되었는지 확인해주세요."
     },
     "new_trip": {
         "title": "여행 시작하기",
@@ -137,7 +146,19 @@
         "synced": "동기화됨",
         "syncing": "동기화 중...",
         "offline": "오프라인",
-        "connecting": "연결 중..."
+        "connecting": "연결 중...",
+        "permission_update_error_title": "Update Failed",
+        "permission_update_error_desc": "Failed to update trip permissions, please try again later.",
+        "share_error_title": "Share Failed",
+        "unshare_error_title": "Unshare Failed",
+        "share_action_error_desc": "Operation could not be completed, please try again later.",
+        "update_error_title": "Update Failed",
+        "image_too_large_title": "File Too Large",
+        "image_too_large_desc": "Image size must be less than 20MB",
+        "image_process_error_title": "Processing Failed",
+        "image_process_error_desc": "Image processing failed, please check file format.",
+        "insufficient_points_title": "Insufficient Points",
+        "insufficient_points_desc": "Generating this trip requires {{cost}} points. Current balance: {{balance}} points."
     },
     "trip_detail": {
         "tabs": {
@@ -472,5 +493,11 @@
             "generating": "가이드 생성 중...",
             "generate_btn": "어드바이저 리포트 생성"
         }
+    },
+    "shared": {
+        "permission_downgraded_title": "권한 변경",
+        "permission_downgraded_desc": "편집 권한이 보기 전용으로 변경되었습니다.",
+        "permission_removed_title": "권한 제거",
+        "permission_removed_desc": "편집 권한이 제거되었습니다."
     }
 }

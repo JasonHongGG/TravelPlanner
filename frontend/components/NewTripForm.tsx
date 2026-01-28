@@ -204,8 +204,8 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
         console.error("Failed to parse JSON", error);
         showAlert({
           type: 'error',
-          title: '檔案格式錯誤',
-          description: '這不是一個有效的行程 JSON 檔案。'
+          title: t('new_trip.invalid_json_title'),
+          description: t('new_trip.invalid_json_desc')
         });
       }
     };

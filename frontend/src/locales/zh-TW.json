@@ -61,7 +61,16 @@
         "start_now": "立即開始",
         "no_trips": "目前沒有任何行程，點擊上方卡片開始建立。",
         "invalid_file": "無效的行程檔案格式",
-        "read_error": "檔案讀取失敗"
+        "read_error": "檔案讀取失敗",
+        "export_error_title": "匯出失敗",
+        "export_error_desc": "匯出失敗，請稍後再試: {{message}}",
+        "export_error_generic": "匯出失敗，請稍後再試",
+        "invalid_file_format_title": "檔案格式錯誤",
+        "invalid_file_format_desc": "只能上傳 .json 或 .hong 檔案",
+        "invalid_file_content_title": "檔案無效",
+        "invalid_file_content_desc": "檔案內容格式不正確",
+        "read_error_title": "讀取錯誤",
+        "read_error_desc": "無法讀取檔案，請確認檔案是否損毀。"
     },
     "new_trip": {
         "title": "開始您的旅程",
@@ -106,7 +115,9 @@
         "confirmed_payment": "確認支付",
         "remaining_points": "剩餘點數",
         "days_count": "(共 {{count}} 天)",
-        "budget_amount_placeholder": "請輸入預算金額 (不含機票)"
+        "budget_amount_placeholder": "請輸入預算金額 (不含機票)",
+        "invalid_json_title": "檔案格式錯誤",
+        "invalid_json_desc": "這不是一個有效的行程 JSON 檔案。"
     },
     "trip": {
         "create_new": "建立新行程",
@@ -137,7 +148,19 @@
         "synced": "同步",
         "syncing": "同步中...",
         "offline": "離線",
-        "connecting": "連線中..."
+        "connecting": "連線中...",
+        "permission_update_error_title": "更新失敗",
+        "permission_update_error_desc": "無法更新行程權限，請稍後再試。",
+        "share_error_title": "分享失敗",
+        "unshare_error_title": "取消分享失敗",
+        "share_action_error_desc": "操作無法完成，請稍後再試。",
+        "update_error_title": "更新失敗",
+        "image_too_large_title": "檔案過大",
+        "image_too_large_desc": "圖片原始大小請小於 20MB",
+        "image_process_error_title": "處理失敗",
+        "image_process_error_desc": "圖片處理失敗，請確認檔案格式是否正確。",
+        "insufficient_points_title": "點數不足",
+        "insufficient_points_desc": "產生此行程需要 {{cost}} 點，目前餘額 {{balance}} 點。"
     },
     "trip_detail": {
         "tabs": {
@@ -472,5 +495,11 @@
             "generating": "正在為您生成指南...",
             "generate_btn": "立即生成旅遊顧問報告"
         }
+    },
+    "shared": {
+        "permission_downgraded_title": "權限變更",
+        "permission_downgraded_desc": "您的編輯權限已被更改為僅查看。",
+        "permission_removed_title": "權限已移除",
+        "permission_removed_desc": "您的編輯權限已被移除。"
     }
 }

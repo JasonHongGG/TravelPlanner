@@ -202,8 +202,8 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
       console.error('Failed to update visibility:', e);
       showAlert({
         type: 'error',
-        title: '更新失敗',
-        description: '無法更新行程權限，請稍後再試。'
+        title: t('trip.permission_update_error_title'),
+        description: t('trip.permission_update_error_desc')
       });
     } finally {
       setIsSyncing(false);
@@ -231,8 +231,8 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
       console.error('Failed to toggle share:', e);
       showAlert({
         type: 'error',
-        title: shouldShare ? '分享失敗' : '取消分享失敗',
-        description: '操作無法完成，請稍後再試。'
+        title: shouldShare ? t('trip.share_error_title') : t('trip.unshare_error_title'),
+        description: t('trip.share_action_error_desc')
       });
     } finally {
       setIsSyncing(false);
@@ -429,8 +429,8 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
         console.error("Failed to update trip from explorer", e);
         showAlert({
           type: 'error',
-          title: '更新失敗',
-          description: t('trip.error_update') || "更新行程時發生錯誤，請稍後再試。"
+          title: t('trip.update_error_title'),
+          description: t('trip.error_update')
         });
       } finally {
         setIsUpdatingFromExplorer(false);
@@ -613,8 +613,8 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
     if (file.size > 20 * 1024 * 1024) {
       showAlert({
         type: 'warning',
-        title: '檔案過大',
-        description: '圖片原始大小請小於 20MB'
+        title: t('trip.image_too_large_title'),
+        description: t('trip.image_too_large_desc')
       });
       return;
     }
@@ -631,8 +631,8 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
       console.error("Image processing failed", err);
       showAlert({
         type: 'error',
-        title: '處理失敗',
-        description: '圖片處理失敗，請確認檔案格式是否正確。'
+        title: t('trip.image_process_error_title'),
+        description: t('trip.image_process_error_desc')
       });
     } finally {
       // Small delay to simulate processing and let state update
