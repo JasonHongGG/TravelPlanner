@@ -20,6 +20,7 @@ COPY . .
 
 ENV NODE_ENV=production
 ENV COPILOT_SERVER_PORT=3003
+ENV NODE_OPTIONS=--experimental-specifier-resolution=node
 
 EXPOSE 3003
 

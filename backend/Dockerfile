@@ -11,6 +11,8 @@ RUN npm ci
 
 COPY . .
 
+ENV NODE_OPTIONS=--experimental-specifier-resolution=node
+
 EXPOSE 3001 3002 3003
 
 CMD ["npm", "run", "server"]
