@@ -144,6 +144,8 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         try {
             if (pkg) {
+                const pkgDisplayName = (pkg as any).name
+                    || (pkg.type === 'subscription' ? '訂閱方案' : `${pkg.points} 點`);
                 let updatedUser;
                 if (pkg.type === 'subscription') {
                     // Activate Subscription
@@ -151,7 +153,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     setIsSubscribed(true);
                 } else {
                     // Add Points
-                    updatedUser = await addUserPoints(user.email, pkg.points, `購買 ${pkg.name} 方案`);
+                    updatedUser = await addUserPoints(user.email, pkg.points, `購買 ${pkgDisplayName} 方案`);
                     setBalance(updatedUser.points);
                 }
 

@@ -341,6 +341,29 @@ export default function AttractionExplorer({
         const currentTab = activeTab;
         const currentBuffer = buffer[currentTab];
         const flushedCount = currentBuffer.length;
+        // 1) If we already have buffered (already-paid) items, always reveal them first.
+        // Revealing buffered items should NOT trigger a paywall and should NOT consume credits.
+        if (flushedCount > 0) {
+            consumeBuffer();
+
+            // Update target count for progress indicator
+            const nextTarget = results[currentTab].length + BATCH_SIZE;
+            setTargetCount(nextTarget);
+
+            // If we revealed a full batch, we are done.
+            if (flushedCount >= BATCH_SIZE) return;
+            // Otherwise, fall through and try to fetch the remaining items.
+        }
+
+        // 2) If a preload stream is already running for this tab, hijack it:
+        // stream callback will route remaining items directly into results.
+        if (preloadingTab === currentTab && !forceInit) {
+            setIsLoadingMore(true);
+            isLoadingMoreRef.current = true;
+            return;
+        }
+
+        // 3) No buffered items and no in-flight preload: we may need to pay.
         const remainingCredits = getRemainingBatchCredits(currentTab);
         if (remainingCredits <= 0) {
             setPaymentConfirmation({
@@ -352,46 +375,11 @@ export default function AttractionExplorer({
             return;
         }
 
-        // Consume one batch credit for this load-more action
+        // 4) Start a new fetch and stream into results.
         addBatchCreditsImmediate(currentTab, -1);
         setIsLoadingMore(true);
-        // Sync ref immediately for the active stream callback to see
         isLoadingMoreRef.current = true;
 
-        // 1. Flush Buffer to Results Immediately
-        // Whether full batch or partial, show them NOW.
-        if (flushedCount > 0) {
-            // Only reveal ONE batch at a time
-            consumeBuffer();
-        }
-
-        // Update Target Count
-        const nextTarget = results[currentTab].length + BATCH_SIZE;
-        setTargetCount(nextTarget);
-
-        // 2. Check if satisfied
-        // If we flushed a full batch (or more), we are done. Be happy.
-        if (flushedCount >= BATCH_SIZE) {
-            setIsLoadingMore(false);
-            isLoadingMoreRef.current = false;
-            return;
-        }
-
-        // 3. If Preloading is Active FOR THIS TAB:
-        // We did NOTHING else here. The active stream callback will see `isLoadingMoreRef.current = true`
-        // and automatically start pushing the REST of the items to `results`.
-        // The useEffect will handle turning off isLoadingMore when preloadingTab becomes null.
-        if (preloadingTab === currentTab) {
-            return;
-        }
-
-        // No extra paywall here; we already consumed a credit above
-
-        // 4. If NO Preloading Active (or preloading wrong tab):
-        // Start a new fetch. Since `isLoadingMore` is true, `fetchNextBatchBackground`
-        // will stream items directly to `results`.
-        // Start a new fetch. Since `isLoadingMore` is true, `fetchNextBatchBackground`
-        // will stream items directly to `results`.
         await fetchNextBatchBackground(forceInit);
 
         setIsLoadingMore(false);

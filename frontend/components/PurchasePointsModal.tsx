@@ -45,6 +45,13 @@ export default function PurchasePointsModal({ isOpen, onClose, initialTab = 'poi
     const [errorMessage, setErrorMessage] = useState<string>('');
     const [countdown, setCountdown] = useState(3);
 
+    const closeAndReset = React.useCallback(() => {
+        setPurchaseStep('select');
+        setErrorMessage('');
+        setCountdown(3);
+        onClose();
+    }, [onClose]);
+
     // Auto-close timer effect
     React.useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -54,8 +61,7 @@ export default function PurchasePointsModal({ isOpen, onClose, initialTab = 'poi
                 setCountdown((prev) => {
                     if (prev <= 1) {
                         clearInterval(timer);
-                        onClose();
-                        setPurchaseStep('select');
+                        closeAndReset();
                         return 0;
                     }
                     return prev - 1;
@@ -63,7 +69,7 @@ export default function PurchasePointsModal({ isOpen, onClose, initialTab = 'poi
             }, 1000);
         }
         return () => clearInterval(timer);
-    }, [purchaseStep, onClose]);
+    }, [purchaseStep, closeAndReset]);
 
     if (!isOpen) return null;
 
@@ -111,8 +117,17 @@ export default function PurchasePointsModal({ isOpen, onClose, initialTab = 'poi
     ];
 
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
-            <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300"
+            onClick={() => {
+                // On success, allow clicking the backdrop to close immediately.
+                if (purchaseStep === 'success') closeAndReset();
+            }}
+        >
+            <div
+                className="relative w-full max-w-4xl bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
+                onClick={(e) => e.stopPropagation()}
+            >
 
                 {/* Header & Tab Switcher Overlay - Only show in select step */}
                 {purchaseStep === 'select' && (
@@ -157,7 +172,7 @@ export default function PurchasePointsModal({ isOpen, onClose, initialTab = 'poi
 
                         <div className="justify-self-end">
                             <button
-                                onClick={onClose}
+                                onClick={closeAndReset}
                                 className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
                             >
                                 <X className="w-5 h-5" />
@@ -178,7 +193,7 @@ export default function PurchasePointsModal({ isOpen, onClose, initialTab = 'poi
                                 <p className="text-xs font-medium text-gray-500">{t('purchase.next_payment').replace("Next: ", "")}</p>
                             </div>
                         </div>
-                        <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"><X className="w-5 h-5" /></button>
+                        <button onClick={closeAndReset} className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"><X className="w-5 h-5" /></button>
                     </div>
                 )}
 
@@ -507,7 +522,10 @@ export default function PurchasePointsModal({ isOpen, onClose, initialTab = 'poi
                                         </p>
                                     </>
                                 )}
-                                <button className="px-8 py-2 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors">
+                                <button
+                                    onClick={closeAndReset}
+                                    className="px-8 py-2 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors"
+                                >
                                     {t('purchase.auto_close', { seconds: countdown })}
                                 </button>
                             </div>
