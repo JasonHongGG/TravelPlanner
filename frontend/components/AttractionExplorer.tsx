@@ -555,7 +555,6 @@ export default function AttractionExplorer({
     return (
         <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
             {/* Premium Confirmation Modal */}
-            {/* Premium Confirmation Modal */}
             <PaymentConfirmationModal
                 isOpen={!!paymentConfirmation}
                 onClose={() => setPaymentConfirmation(null)}
@@ -573,13 +572,25 @@ export default function AttractionExplorer({
                 targetLabel={t('explorer.search_target')}
                 targetValue={paymentConfirmation?.query}
                 costLabel={t('explorer.search_cost')}
-                cost={paymentConfirmation ? paymentConfirmation.totalCost : 0}
+                cost={config.ATTRACTION_SEARCH_COST}
+                lineItems={[
+                    { label: t('explorer.search_cost'), value: `${config.ATTRACTION_SEARCH_COST} 點` },
+                    { label: t('explorer.queue_size'), value: t('explorer.queue_unit', { count: QUEUE_SIZE }) },
+                ]}
+                total={paymentConfirmation ? paymentConfirmation.totalCost : 0}
+                totalLabel={t('explorer.total_cost')}
                 balance={balance}
                 isSubscribed={isSubscribed}
                 memberFreeLabel={t('explorer.member_free')}
                 insufficientPointsLabel={t('explorer.go_to_store')}
                 cancelBtnText={t('explorer.cancel')}
                 confirmBtnText={t('explorer.confirm_pay')}
+                currentBalanceLabel={t('explorer.current_balance')}
+                remainingBalanceLabel={t('explorer.remaining_balance')}
+                onInsufficientPointsClick={() => {
+                    setPaymentConfirmation(null);
+                    openPurchaseModal();
+                }}
             />
 
             <div className="bg-white rounded-3xl w-full max-w-7xl h-full max-h-[95vh] flex flex-col overflow-hidden shadow-2xl relative">

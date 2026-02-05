@@ -110,6 +110,9 @@
         "confirm_title": "Confirm Trip Generation",
         "confirm_subtitle": "AI will craft your exclusive itinerary",
         "planning_fee": "Planning Fee",
+        "base_fee": "Base Fee",
+        "daily_fee": "Daily Fee",
+        "daily_fee_detail": "{{daily}} pts x {{days}} days = {{total}} pts",
         "total_cost": "Total Cost",
         "member_free": "Free for Members",
         "confirmed_payment": "Confirm Payment",
@@ -118,6 +121,9 @@
         "budget_amount_placeholder": "Enter budget amount (excl. flights)",
         "invalid_json_title": "Invalid File Format",
         "invalid_json_desc": "This is not a valid trip JSON file."
+    },
+    "insufficient_points": {
+        "go_to_store": "Go to Store"
     },
     "trip": {
         "create_new": "Create New Trip",

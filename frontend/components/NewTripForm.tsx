@@ -5,7 +5,7 @@ import { X, Calendar, MapPin, Users, Heart, DollarSign, Train, Home, Clock, Chec
 import AttractionExplorer from './AttractionExplorer';
 import { usePoints } from '../context/PointsContext';
 import { useSettings } from '../context/SettingsContext';
-import { calculateTripCost } from '../utils/tripUtils';
+import { calculateTripCost, calculateTripDays } from '../utils/tripUtils';
 import DateRangePicker from './DateRangePicker';
 import PaymentConfirmationModal from './PaymentConfirmationModal';
 import { useTranslation } from 'react-i18next';
@@ -150,6 +150,7 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
   };
 
   // Calculate real-time cost
+  const tripDays = calculateTripDays(formData.dateRange);
   const estimatedCost = calculateTripCost(formData.dateRange, config.TRIP_BASE_COST, config.TRIP_DAILY_COST);
   const finalCost = isSubscribed ? 0 : estimatedCost; // Subscriber benefit
 
@@ -582,7 +583,20 @@ export default function NewTripForm({ isOpen, onClose, onSubmit }: Props) {
         targetLabel={t('new_trip.destination')}
         targetValue={formData.destination}
         costLabel={t('new_trip.planning_fee')}
-        cost={estimatedCost}
+        cost={config.TRIP_BASE_COST}
+        lineItems={[
+          { label: t('new_trip.base_fee'), value: `${config.TRIP_BASE_COST} 點` },
+          {
+            label: t('new_trip.daily_fee'),
+            value: t('new_trip.daily_fee_detail', {
+              daily: config.TRIP_DAILY_COST,
+              days: tripDays,
+              total: config.TRIP_DAILY_COST * tripDays,
+            }),
+          },
+        ]}
+        total={estimatedCost}
+        totalLabel={t('new_trip.total_cost')}
         balance={balance}
         isSubscribed={isSubscribed}
         memberFreeLabel={t('new_trip.member_free')}

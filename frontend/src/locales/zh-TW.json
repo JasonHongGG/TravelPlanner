@@ -110,6 +110,9 @@
         "confirm_title": "確認生成行程",
         "confirm_subtitle": "AI 將為您量身打造專屬的旅遊行程",
         "planning_fee": "行程規劃費用",
+        "base_fee": "基本費用",
+        "daily_fee": "每日費用",
+        "daily_fee_detail": "{{daily}} 點 x {{days}} 天 = {{total}} 點",
         "total_cost": "總計花費",
         "member_free": "會員免費",
         "confirmed_payment": "確認支付",
@@ -118,6 +121,9 @@
         "budget_amount_placeholder": "請輸入預算金額 (不含機票)",
         "invalid_json_title": "檔案格式錯誤",
         "invalid_json_desc": "這不是一個有效的行程 JSON 檔案。"
+    },
+    "insufficient_points": {
+        "go_to_store": "前往儲值中心"
     },
     "trip": {
         "create_new": "建立新行程",

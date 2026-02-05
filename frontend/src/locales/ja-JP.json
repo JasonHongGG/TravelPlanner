@@ -110,12 +110,18 @@
         "confirm_title": "旅程生成の確認",
         "confirm_subtitle": "AIがあなた専用の旅程を作成します",
         "planning_fee": "計画料",
+        "base_fee": "基本料金",
+        "daily_fee": "日別料金",
+        "daily_fee_detail": "{{daily}} pts x {{days}} 日 = {{total}} pts",
         "total_cost": "合計費用",
         "member_free": "会員無料",
         "confirmed_payment": "支払いを確認",
         "remaining_points": "残りのポイント",
         "days_count": "(合計 {{count}} 日間)",
         "budget_amount_placeholder": "予算を入力 (航空券除く)"
+    },
+    "insufficient_points": {
+        "go_to_store": "ストアへ移動"
     },
     "trip": {
         "create_new": "新しい旅程を作成",

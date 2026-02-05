@@ -110,12 +110,18 @@
         "confirm_title": "일정 생성 확인",
         "confirm_subtitle": "AI가 당신만의 특별한 여행 일정을 제작합니다",
         "planning_fee": "계획 수수료",
+        "base_fee": "기본 비용",
+        "daily_fee": "일일 비용",
+        "daily_fee_detail": "{{daily}} pts x {{days}}일 = {{total}} pts",
         "total_cost": "총 비용",
         "member_free": "회원 무료",
         "confirmed_payment": "결제 확인",
         "remaining_points": "잔여 포인트",
         "days_count": "(총 {{count}}일)",
         "budget_amount_placeholder": "예산 입력 (항공권 제외)"
+    },
+    "insufficient_points": {
+        "go_to_store": "충전소로 이동"
     },
     "trip": {
         "create_new": "새 여행 만들기",
