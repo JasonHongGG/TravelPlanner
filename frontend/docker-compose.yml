@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3001}
+        VITE_DB_API_URL: ${VITE_DB_API_URL:-http://localhost:3002}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
+        VITE_PORT: ${VITE_PORT:-3000}
+    ports:
+      - "${VITE_PORT:-3000}:3000"
+    env_file:
+      - ./.env
+    restart: unless-stopped
+    networks:
+      - default
+      - hong_service
+
+networks:
+  hong_service:
+    external: true

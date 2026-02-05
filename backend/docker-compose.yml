@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: npm run db
+    env_file:
+      - ./.env
+    environment:
+      DB_SERVER_PORT: ${DB_SERVER_PORT:-3002}
+    ports:
+      - "${DB_SERVER_PORT:-3002}:3002"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - default
+      - hong_service
+
+  copilot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: npm run copilot
+    env_file:
+      - ./.env
+    environment:
+      COPILOT_SERVER_PORT: ${COPILOT_SERVER_PORT:-3003}
+    ports:
+      - "${COPILOT_SERVER_PORT:-3003}:3003"
+    restart: unless-stopped
+    networks:
+      - default
+      - hong_service
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: npm run server
+    depends_on:
+      - db
+      - copilot
+    env_file:
+      - ./.env
+    environment:
+      PORT: ${PORT:-3001}
+      DB_SERVER_URL: ${DB_SERVER_URL:-http://db:3002}
+      COPILOT_SERVER_URL: ${COPILOT_SERVER_URL:-http://copilot:3003/process}
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:3000}
+    ports:
+      - "${PORT:-3001}:3001"
+    restart: unless-stopped
+    networks:
+      - default
+      - hong_service
+
+networks:
+  hong_service:
+    external: true
+
+
+  
