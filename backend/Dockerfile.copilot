@@ -39,4 +39,4 @@ ENV NODE_OPTIONS=--experimental-specifier-resolution=node
 
 EXPOSE 3003
 
-CMD ["node", "dist/copilotServer.js"]
+CMD ["node", "dist/backend/src/copilotServer.js"]

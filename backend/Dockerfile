@@ -34,4 +34,4 @@ ENV NODE_OPTIONS=--experimental-specifier-resolution=node
 
 EXPOSE 3001 3002 3003
 
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/backend/src/server.js"]

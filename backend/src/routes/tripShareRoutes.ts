@@ -60,7 +60,7 @@ export default router;
 // Encryption Routes (Public)
 // ==========================================
 
-import { exportTripJson } from '../controllers/tripShareController';
+import { exportTripJson } from '../controllers/tripShareController.js';
 
 router.post('/trips/export/json', requireAuth, exportTripJson);
 router.post('/trips/encrypt', encryptTrip);

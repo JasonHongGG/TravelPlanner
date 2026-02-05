@@ -5,11 +5,11 @@ services:
     build:
       context: ..
       dockerfile: backend/Dockerfile
-    command: node dist/dbServer.js
+    command: node dist/backend/src/dbServer.js
     env_file:
       - ./.env
     environment:
-      DB_SERVER_PORT: ${DB_SERVER_PORT:-3002}
+      DB_SERVER_PORT: 3002
     ports:
       - "${DB_SERVER_PORT:-3002}:3002"
     volumes:
@@ -24,11 +24,11 @@ services:
     build:
       context: ..
       dockerfile: backend/Dockerfile.copilot
-    command: node dist/copilotServer.js
+    command: node dist/backend/src/copilotServer.js
     env_file:
       - ./.env
     environment:
-      COPILOT_SERVER_PORT: ${COPILOT_SERVER_PORT:-3003}
+      COPILOT_SERVER_PORT: 3003
     ports:
       - "${COPILOT_SERVER_PORT:-3003}:3003"
     restart: unless-stopped
@@ -40,17 +40,17 @@ services:
     build:
       context: ..
       dockerfile: backend/Dockerfile
-    command: node dist/server.js
+    command: node dist/backend/src/server.js
     depends_on:
       - travel-planner-db
       - travel-planner-copilot
     env_file:
       - ./.env
     environment:
-      PORT: ${PORT:-3001}
-      DB_SERVER_URL: ${DB_SERVER_URL:-http://travel-planner-db}
-      COPILOT_SERVER_URL: ${COPILOT_SERVER_URL:-http://travel-planner-copilot/process}
-      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://travel-planner-frontend}
+      PORT: 3001
+      DB_SERVER_URL: ${DB_SERVER_URL:-http://travel-planner-db:3002}
+      COPILOT_SERVER_URL: ${COPILOT_SERVER_URL:-http://travel-planner-copilot:3003/process}
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://travel-planner-frontend,http://localhost:7000,https://travelplanner.alberthongtunnel.dpdns.org}
     ports:
       - "${PORT:-3001}:3001"
     restart: unless-stopped

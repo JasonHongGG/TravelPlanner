@@ -1,5 +1,5 @@
 import { IAIProvider, TripInput, TripData, Message, AttractionRecommendation, FeasibilityResult, UpdateResult } from "./aiProvider.js";
-import { SERVICE_CONFIG } from "../../config/serviceConfig";
+import { SERVICE_CONFIG } from "../../config/serviceConfig.js";
 
 // Provider for Custom Local API
 export class LocalApiProvider implements IAIProvider {

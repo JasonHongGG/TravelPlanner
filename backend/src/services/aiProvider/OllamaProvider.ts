@@ -7,8 +7,8 @@ import {
     constructFeasibilityPrompt,
     constructExplorerUpdatePrompt,
     constructAdvisoryPrompt
-} from "../../config/aiConfig";
-import { SERVICE_CONFIG } from "../../config/serviceConfig";
+} from "../../config/aiConfig.js";
+import { SERVICE_CONFIG } from "../../config/serviceConfig.js";
 
 export class OllamaProvider implements IAIProvider {
     private baseUrl: string;

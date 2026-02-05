@@ -1,4 +1,4 @@
-import { TripData, TripInput, Message, AttractionRecommendation, FeasibilityResult } from "../../types";
+import type { TripData, TripInput, Message, AttractionRecommendation, FeasibilityResult } from "../../types.js";
 
 export type { TripData, TripInput, Message, AttractionRecommendation, FeasibilityResult };
 

@@ -1,5 +1,5 @@
 
-import type { TripInput, TripData, Message } from "../types";
+import type { TripInput, TripData, Message } from "../types.js";
 
 // ==========================================
 // System Instructions
