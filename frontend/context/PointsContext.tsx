@@ -1,7 +1,9 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { addUserPoints, activateUserSubscription, getUserProfile, Transaction } from '../services/database/userService';
+
+const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
 interface PointPackage {
     id: string;
@@ -32,6 +34,7 @@ interface PointsContextType {
     isSubscribed: boolean; // Added
     purchasePoints: (packageId: string) => Promise<void>;
     spendPoints: (amount: number, description: string) => Promise<boolean>;
+    refreshProfile: () => Promise<void>;
     isLoading: boolean;
     isPurchaseModalOpen: boolean;
     openPurchaseModal: (initialTab?: 'points' | 'membership') => void;
@@ -61,32 +64,31 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
     const closePurchaseModal = () => setIsPurchaseModalOpen(false);
 
+    const refreshProfile = useCallback(async () => {
+        if (user?.email) {
+            try {
+                const userProfile = await getUserProfile(user.email);
+                if (userProfile) {
+                    setBalance(userProfile.points);
+                    setTransactions(userProfile.transactions || []);
+                    const sub = userProfile.subscription;
+                    const isValid = sub?.active && sub.endDate > Date.now();
+                    setIsSubscribed(!!isValid);
+                }
+            } catch (error) {
+                console.error("Failed to fetch user points:", error);
+            }
+        } else {
+            setBalance(0);
+            setTransactions([]);
+            setIsSubscribed(false);
+        }
+    }, [user?.email]);
+
     // Fetch user profile on mount or user change
     useEffect(() => {
-        const fetchProfile = async () => {
-            if (user?.email) {
-                // setIsLoading(true); // Don't block whole UI, just profile loading
-                try {
-                    const userProfile = await getUserProfile(user.email);
-                    if (userProfile) {
-                        setBalance(userProfile.points);
-                        setTransactions(userProfile.transactions || []);
-                        const sub = userProfile.subscription;
-                        const isValid = sub?.active && sub.endDate > Date.now();
-                        setIsSubscribed(!!isValid);
-                    }
-                } catch (error) {
-                    console.error("Failed to fetch user points:", error);
-                }
-            } else {
-                setBalance(0);
-                setTransactions([]);
-                setIsSubscribed(false);
-            }
-        };
-
-        fetchProfile();
-    }, [user?.email]);
+        refreshProfile();
+    }, [refreshProfile]);
 
     // Fetch Packages from Backend
     const [packages, setPackages] = useState<PointPackage[]>([]);
@@ -94,7 +96,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     useEffect(() => {
         const fetchPackages = async () => {
             try {
-                const response = await fetch('http://localhost:3001/packages');
+                const response = await fetch(`${BACKEND_URL}/packages`);
                 if (response.ok) {
                     const data = await response.json();
                     setPackages(data);
@@ -103,7 +105,6 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 console.error("Failed to fetch packages:", e);
             }
         };
-        fetchPackages();
         fetchPackages();
     }, []);
 
@@ -123,7 +124,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     useEffect(() => {
         const fetchConfig = async () => {
             try {
-                const response = await fetch('http://localhost:3001/config');
+                const response = await fetch(`${BACKEND_URL}/config`);
                 if (response.ok) {
                     const data = await response.json();
                     setPointConfig(data);
@@ -193,6 +194,7 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             isSubscribed,
             purchasePoints,
             spendPoints,
+            refreshProfile,
             isLoading,
             isPurchaseModalOpen,
             openPurchaseModal,

@@ -31,6 +31,11 @@ type SidebarTab = 'must' | 'avoid' | 'current';
 type StopStatus = 'keep' | 'remove' | 'neutral';
 type PaymentMode = 'search' | 'loadMore';
 
+function isInsufficientPointsError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return /insufficient\s+points/i.test(message);
+}
+
 export default function AttractionExplorer({
     isOpen,
     onClose,
@@ -45,7 +50,7 @@ export default function AttractionExplorer({
     const [location, setLocation] = useState(initialLocation);
     const [lastSearchLocation, setLastSearchLocation] = useState(initialLocation);
 
-    const { balance, openPurchaseModal, isSubscribed, config } = usePoints();
+    const { balance, openPurchaseModal, isSubscribed, config, refreshProfile } = usePoints();
     const { user } = useAuth();
     const { settings } = useSettings();
     const QUEUE_SIZE = settings.explorerQueueSize; // Dynamic from user settings
@@ -232,6 +237,7 @@ export default function AttractionExplorer({
             }
         };
 
+        let didInitSucceed = false;
         try {
             // Exclude everything we know about
             const existingNames = [
@@ -276,13 +282,36 @@ export default function AttractionExplorer({
                 }
             );
 
+            if (isInit) didInitSucceed = true;
+
         } catch (e: any) {
             console.error("Background fetch failed", e);
-            if (e.message === "QUOTA_EXCEEDED" && isMounted.current) {
+            if (!isMounted.current) return;
+
+            if (e?.message === "QUOTA_EXCEEDED") {
                 // Backend says no quota, but frontend thought we had credits. Sync up.
                 setBatchCreditsImmediate(currentTab, 0);
+                return;
+            }
+
+            if (forceInit && isInsufficientPointsError(e)) {
+                // User just paid (load more), but backend rejected due to points.
+                // Restore the local credit and reopen the paywall so user can go to store.
+                addBatchCreditsImmediate(currentTab, 1);
+                setPaymentConfirmation({
+                    mode: 'loadMore',
+                    query: lastSearchLocation,
+                    totalCost: getBatchCost(),
+                    targetTab: currentTab
+                });
+                return;
             }
         } finally {
+            if (didInitSucceed) {
+                // Init mode performs point deduction on the backend.
+                // Refresh local points/transactions so UI stays consistent.
+                refreshProfile();
+            }
             if (isMounted.current) {
                 // Only clear if WE were the one preloading this tab
                 setPreloadingTab(prev => (prev === currentTab ? null : prev));
@@ -445,6 +474,8 @@ export default function AttractionExplorer({
     const executeSearchLogic = async (query: string, targetTab: TabType, isNewSearch: boolean, userId?: string) => {
         setInitialLoading(true);
         addBatchCreditsImmediate(targetTab, -1);
+        let sessionStarted = false;
+        let didInitSucceed = false;
         try {
             // Initial fetch only excludes current stops (results are empty)
             const excludeNames = [...currentStops.map(s => s.name)];
@@ -494,12 +525,35 @@ export default function AttractionExplorer({
                 {
                     mode: 'init',
                     queueSize: QUEUE_SIZE,
-                    onSessionStart: (id) => setSessionIds(prev => ({ ...prev, [targetTab]: id }))
+                    onSessionStart: (id) => {
+                        sessionStarted = true;
+                        setSessionIds(prev => ({ ...prev, [targetTab]: id }));
+                    }
                 }
             );
+
+            didInitSucceed = true;
         } catch (e) {
             console.error(e);
+
+            if (isMounted.current && !sessionStarted) {
+                // Init failed before a session was created; revert local credit consumption.
+                addBatchCreditsImmediate(targetTab, 1);
+            }
+
+            if (isMounted.current && isInsufficientPointsError(e)) {
+                // Backend rejected after confirmation (e.g., 403). Reopen the paywall.
+                setPaymentConfirmation({
+                    mode: 'search',
+                    query,
+                    totalCost: getBatchCost(),
+                    targetTab
+                });
+            }
         } finally {
+            if (didInitSucceed) {
+                refreshProfile();
+            }
             if (isMounted.current) setInitialLoading(false);
         }
     };
