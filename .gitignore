@@ -30,6 +30,13 @@ database/
 *.db
 *.sqlite
 
+# Allow source folders with these names
+!backend/src/services/
+!backend/src/services/data/
+!backend/src/services/data/**
+!frontend/services/database/
+!frontend/services/database/**
+
 # Secrets
 .env
 .agent/
