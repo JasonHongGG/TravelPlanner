@@ -4,9 +4,16 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
+
+  const devPort = (() => {
+    const raw = env.VITE_PORT || '';
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isFinite(parsed) ? parsed : 3000;
+  })();
+
   return {
     server: {
-      port: 3000,
+      port: devPort,
       host: '0.0.0.0',
       fs: {
         allow: [path.resolve(__dirname, '..')]
