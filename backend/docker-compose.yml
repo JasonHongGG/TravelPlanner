@@ -10,6 +10,7 @@ services:
       - ./.env
     environment:
       DB_SERVER_PORT: ${DB_SERVER_PORT:-3002}
+      TSX_ESM: "true"
     ports:
       - "${DB_SERVER_PORT:-3002}:3002"
     volumes:
@@ -29,6 +30,7 @@ services:
       - ./.env
     environment:
       COPILOT_SERVER_PORT: ${COPILOT_SERVER_PORT:-3003}
+      TSX_ESM: "true"
     ports:
       - "${COPILOT_SERVER_PORT:-3003}:3003"
     restart: unless-stopped
@@ -51,6 +53,7 @@ services:
       DB_SERVER_URL: ${DB_SERVER_URL:-http://travel-planner-db}
       COPILOT_SERVER_URL: ${COPILOT_SERVER_URL:-http://travel-planner-copilot/process}
       FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://travel-planner-frontend}
+      TSX_ESM: "true"
     ports:
       - "${PORT:-3001}:3001"
     restart: unless-stopped

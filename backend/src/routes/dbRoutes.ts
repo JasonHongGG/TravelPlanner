@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { requireAuth } from '../utils/auth';
-import { addTransaction, getUser, login, getSettings, updateSettings } from '../controllers/dbController';
+import { requireAuth } from '../utils/auth.js';
+import { addTransaction, getUser, login, getSettings, updateSettings } from '../controllers/dbController.js';
 
 const router = Router();
 

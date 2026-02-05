@@ -1,5 +1,5 @@
-import { COSTS, TRIP_DAILY_COST, NEW_USER_BONUS, ATTRACTION_SEARCH_COST, calculateCost, PointAction } from "../../config/costConfig";
-import { GALLERY_PAGE_MAX, GALLERY_PAGE_SIZE_DEFAULT, GALLERY_PAGE_SIZE_MAX, RANDOM_TRIPS_DEFAULT, RANDOM_TRIPS_MAX, RECOMMENDATION_COUNT } from "../../config/apiLimits";
+import { COSTS, TRIP_DAILY_COST, NEW_USER_BONUS, ATTRACTION_SEARCH_COST, calculateCost, PointAction } from "../../config/costConfig.js";
+import { GALLERY_PAGE_MAX, GALLERY_PAGE_SIZE_DEFAULT, GALLERY_PAGE_SIZE_MAX, RANDOM_TRIPS_DEFAULT, RANDOM_TRIPS_MAX, RECOMMENDATION_COUNT } from "../../config/apiLimits.js";
 
 export class PricingService {
     getConfig() {

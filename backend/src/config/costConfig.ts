@@ -1,4 +1,4 @@
-import { calculateTripCost } from '../utils/sharedUtils';
+import { calculateTripCost } from '../utils/sharedUtils.js';
 
 export const TRIP_BASE_COST = 50;
 export const TRIP_DAILY_COST = 10;

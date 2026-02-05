@@ -1,16 +1,16 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import { BackendAIService } from './services/BackendAIService';
-import apiRoutes from './routes/apiRoutes';
-import dbRoutes from './routes/dbRoutes';
-import tripShareRoutes from './routes/tripShareRoutes';
-import { errorHandler } from './middleware/errorHandler';
-import { configService } from './config/configService';
-import { corsOptions } from './config/corsConfig';
+import { BackendAIService } from './services/BackendAIService.js';
+import apiRoutes from './routes/apiRoutes.js';
+import dbRoutes from './routes/dbRoutes.js';
+import tripShareRoutes from './routes/tripShareRoutes.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import { configService } from './config/configService.js';
+import { corsOptions } from './config/corsConfig.js';
 
-import { requestLogger } from './middleware/requestLogger';
-import { logger } from './utils/logger';
+import { requestLogger } from './middleware/requestLogger.js';
+import { logger } from './utils/logger.js';
 
 const app = express();
 const port = process.env.PORT || 3001;

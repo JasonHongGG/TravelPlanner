@@ -1,10 +1,10 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import dbRoutes from './routes/dbRoutes';
-import { errorHandler } from './middleware/errorHandler';
-import { configService } from './config/configService';
-import { corsOptions } from './config/corsConfig';
+import dbRoutes from './routes/dbRoutes.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import { configService } from './config/configService.js';
+import { corsOptions } from './config/corsConfig.js';
 
 const app = express();
 const port = process.env.DB_SERVER_PORT || 3002;

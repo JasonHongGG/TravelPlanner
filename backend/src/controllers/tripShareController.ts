@@ -1,8 +1,8 @@
 import type { Request, Response } from 'express';
-import * as tripShareService from '../services/data/tripShareService';
-import * as cryptoService from '../services/security/cryptoService';
-import { parseBoundedInt } from '../utils/params';
-import { GALLERY_PAGE_MAX, GALLERY_PAGE_SIZE_DEFAULT, GALLERY_PAGE_SIZE_MAX, RANDOM_TRIPS_DEFAULT, RANDOM_TRIPS_MAX } from '../config/apiLimits';
+import * as tripShareService from '../services/data/tripShareService.js';
+import * as cryptoService from '../services/security/cryptoService.js';
+import { parseBoundedInt } from '../utils/params.js';
+import { GALLERY_PAGE_MAX, GALLERY_PAGE_SIZE_DEFAULT, GALLERY_PAGE_SIZE_MAX, RANDOM_TRIPS_DEFAULT, RANDOM_TRIPS_MAX } from '../config/apiLimits.js';
 
 // Local type definition (shared types not directly importable in backend)
 type TripVisibility = 'private' | 'public';
@@ -322,7 +322,7 @@ export function decryptTrip(req: Request, res: Response) {
 // Export Endpoints
 // ==========================================
 
-import { readUsers } from '../services/data/userStore';
+import { readUsers } from '../services/data/userStore.js';
 
 export function exportTripJson(req: Request, res: Response) {
     try {

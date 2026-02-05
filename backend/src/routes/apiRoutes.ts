@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { requireAuth } from '../utils/auth';
-import { getConfig, getPackages, generate, streamUpdate, streamRecommendations } from '../controllers/aiController';
-import { getCoverImage } from '../controllers/coverController';
+import { requireAuth } from '../utils/auth.js';
+import { getConfig, getPackages, generate, streamUpdate, streamRecommendations } from '../controllers/aiController.js';
+import { getCoverImage } from '../controllers/coverController.js';
 
 const router = Router();
 

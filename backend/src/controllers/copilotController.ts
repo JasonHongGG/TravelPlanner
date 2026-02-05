@@ -9,9 +9,9 @@ import {
     constructExplorerUpdatePrompt,
     constructAdvisoryPrompt,
     SYSTEM_INSTRUCTION
-} from "../config/aiConfig";
-import { SERVICE_CONFIG } from "../config/serviceConfig";
-import { RECOMMENDATION_COUNT } from "../config/apiLimits";
+} from "../config/aiConfig.js";
+import { SERVICE_CONFIG } from "../config/serviceConfig.js";
+import { RECOMMENDATION_COUNT } from "../config/apiLimits.js";
 
 // Copilot Client Setup
 const binPath = path.join(process.cwd(), 'node_modules', '.bin');

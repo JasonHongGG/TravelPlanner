@@ -1,5 +1,5 @@
 
-import { TRIP_BASE_COST, TRIP_DAILY_COST } from "../config/costConfig";
+import { TRIP_BASE_COST, TRIP_DAILY_COST } from "../config/costConfig.js";
 
 export const calculateTripCost = (dateRange: string): number => {
     // Default to at least 1 day if parsing fails

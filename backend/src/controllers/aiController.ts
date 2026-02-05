@@ -1,10 +1,10 @@
 import type { Request, Response } from 'express';
-import { BackendAIService } from '../services/BackendAIService';
-import { deductPoints } from '../services/business/pointsService';
-import { pricingService } from '../services/business/pricingService';
-import { packageService } from '../services/business/packageService';
-import { RECOMMENDATION_COUNT } from '../config/apiLimits';
-import { sessionStore } from '../services/recommendationSessionStore';
+import { BackendAIService } from '../services/BackendAIService.js';
+import { deductPoints } from '../services/business/pointsService.js';
+import { pricingService } from '../services/business/pricingService.js';
+import { packageService } from '../services/business/packageService.js';
+import { RECOMMENDATION_COUNT } from '../config/apiLimits.js';
+import { sessionStore } from '../services/recommendationSessionStore.js';
 
 export function getConfig(req: Request, res: Response) {
     res.json(pricingService.getConfig());

@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import { verifyIdToken } from '../utils/auth';
-import { readUsers, toSafeUser, writeUsers, DEFAULT_SETTINGS, UserSettings } from '../services/data/userStore';
+import { verifyIdToken } from '../utils/auth.js';
+import { readUsers, toSafeUser, writeUsers, DEFAULT_SETTINGS, UserSettings } from '../services/data/userStore.js';
 
 type TransactionPayload = {
     id: string;

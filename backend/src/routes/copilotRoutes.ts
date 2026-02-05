@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { requireAuth } from '../utils/auth';
-import { processCopilot } from '../controllers/copilotController';
+import { requireAuth } from '../utils/auth.js';
+import { processCopilot } from '../controllers/copilotController.js';
 
 const router = Router();
 

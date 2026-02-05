@@ -1,4 +1,4 @@
-import { AVAILABLE_PACKAGES } from "../../config/packageConfig";
+import { AVAILABLE_PACKAGES } from "../../config/packageConfig.js";
 
 export class PackageService {
     list() {

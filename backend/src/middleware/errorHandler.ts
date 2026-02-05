@@ -9,7 +9,7 @@ export class AppError extends Error {
     }
 }
 
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export function errorHandler(err: unknown, req: Request, res: Response, next: NextFunction) {
     if (res.headersSent) {
