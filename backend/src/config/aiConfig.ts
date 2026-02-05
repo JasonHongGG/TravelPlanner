@@ -1,5 +1,5 @@
 
-import { TripInput, TripData, Message } from "../types";
+import type { TripInput, TripData, Message } from "../types";
 
 // ==========================================
 // System Instructions
