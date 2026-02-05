@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { BackendAIService } from './services/BackendAIService';
 import apiRoutes from './routes/apiRoutes';
+import dbRoutes from './routes/dbRoutes';
 import tripShareRoutes from './routes/tripShareRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { configService } from './config/configService';
@@ -21,6 +22,7 @@ app.use(express.json({ limit: '50mb' })); // Increase limit for high-res cover i
 app.use(requestLogger);
 
 app.use('/', apiRoutes);
+app.use('/db', dbRoutes);
 app.use('/api', tripShareRoutes);
 
 app.use(errorHandler);

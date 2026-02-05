@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  db:
+  travel-planner-db:
     build:
       context: .
       dockerfile: Dockerfile
@@ -20,7 +20,7 @@ services:
       - default
       - hong_service
 
-  copilot:
+  travel-planner-copilot:
     build:
       context: .
       dockerfile: Dockerfile
@@ -36,21 +36,21 @@ services:
       - default
       - hong_service
 
-  server:
+  travel-planner-server:
     build:
       context: .
       dockerfile: Dockerfile
     command: npm run server
     depends_on:
-      - db
-      - copilot
+      - travel-planner-db
+      - travel-planner-copilot
     env_file:
       - ./.env
     environment:
       PORT: ${PORT:-3001}
-      DB_SERVER_URL: ${DB_SERVER_URL:-http://db:3002}
-      COPILOT_SERVER_URL: ${COPILOT_SERVER_URL:-http://copilot:3003/process}
-      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:3000}
+      DB_SERVER_URL: ${DB_SERVER_URL:-http://travel-planner-db}
+      COPILOT_SERVER_URL: ${COPILOT_SERVER_URL:-http://travel-planner-copilot/process}
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://travel-planner-frontend}
     ports:
       - "${PORT:-3001}:3001"
     restart: unless-stopped
