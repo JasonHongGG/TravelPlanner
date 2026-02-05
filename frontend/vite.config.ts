@@ -11,10 +11,16 @@ export default defineConfig(({ mode }) => {
     return Number.isFinite(parsed) ? parsed : 3000;
   })();
 
+  const allowedHosts = (env.VITE_ALLOWED_HOSTS || '')
+    .split(',')
+    .map((host) => host.trim())
+    .filter(Boolean);
+
   return {
     server: {
       port: devPort,
       host: '0.0.0.0',
+      allowedHosts: allowedHosts.length > 0 ? allowedHosts : true,
       fs: {
         allow: [path.resolve(__dirname, '..')]
       },
