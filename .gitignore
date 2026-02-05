@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local Data
+data/
+database/
+*.db
+*.db
+*.sqlite
+
+# Secrets
+.env
+.agent/
+.shared/

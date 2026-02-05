@@ -1,5 +1,0 @@
-{
-  "name": "AI Travel Planner Dashboard",
-  "description": "An intelligent dashboard for generating, managing, and interacting with travel itineraries using Google Gemini AI. Features a structured specific prompt system, JSON-based state, and an interactive AI assistant for real-time itinerary modifications.",
-  "requestFramePermissions": []
-}
