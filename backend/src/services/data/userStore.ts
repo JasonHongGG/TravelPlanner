@@ -2,11 +2,21 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Setup Data Directory
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_DIR = path.join(path.dirname(path.dirname(path.dirname(__dirname))), 'data');
+function resolveDataDir() {
+    // Preferred: explicit env var, or relative to runtime working dir (WORKDIR in Docker)
+    const preferred = (process.env.DATA_DIR || '').trim() || path.join(process.cwd(), 'data');
+
+    // Legacy fallback: older builds wrote under a dist-relative path (e.g. /app/backend/dist/backend/data)
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const legacy = path.join(path.dirname(path.dirname(path.dirname(__dirname))), 'data');
+
+    return { preferred, legacy };
+}
+
+const { preferred: DATA_DIR, legacy: LEGACY_DATA_DIR } = resolveDataDir();
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const LEGACY_USERS_FILE = path.join(LEGACY_DATA_DIR, 'users.json');
 
 if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -54,12 +64,26 @@ export const toSafeUser = (user: StoredUser) => {
 };
 
 export const readUsers = (): Record<string, StoredUser> => {
-    if (!fs.existsSync(USERS_FILE)) {
-        return {};
-    }
     try {
-        const data = fs.readFileSync(USERS_FILE, 'utf-8');
-        return JSON.parse(data) as Record<string, StoredUser>;
+        if (fs.existsSync(USERS_FILE)) {
+            const data = fs.readFileSync(USERS_FILE, 'utf-8');
+            return JSON.parse(data) as Record<string, StoredUser>;
+        }
+
+        // Auto-migrate legacy location if present
+        if (fs.existsSync(LEGACY_USERS_FILE)) {
+            const data = fs.readFileSync(LEGACY_USERS_FILE, 'utf-8');
+            const parsed = JSON.parse(data) as Record<string, StoredUser>;
+            try {
+                fs.mkdirSync(DATA_DIR, { recursive: true });
+                fs.writeFileSync(USERS_FILE, JSON.stringify(parsed, null, 2));
+            } catch (e) {
+                console.error('Error migrating legacy users file, continuing with legacy data', e);
+            }
+            return parsed;
+        }
+
+        return {};
     } catch (e) {
         console.error("Error reading users file, returning empty", e);
         return {};

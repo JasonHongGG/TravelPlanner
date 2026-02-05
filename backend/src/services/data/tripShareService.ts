@@ -96,7 +96,7 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const DATA_DIR = path.join(__dirname, '../../../data');
+const DATA_DIR = (process.env.DATA_DIR || '').trim() || path.join(process.cwd(), 'data');
 const TRIP_INDEX_PATH = path.join(DATA_DIR, 'trip_index.json');
 const SHARED_TRIPS_DIR = path.join(DATA_DIR, 'shared_trips');
 const TRIP_META_DIR = path.join(DATA_DIR, 'trip_meta');

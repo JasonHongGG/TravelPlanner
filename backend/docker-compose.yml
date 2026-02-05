@@ -13,8 +13,8 @@ services:
     ports:
       - "${DB_SERVER_PORT:-3002}:3002"
     volumes:
-      - ./data:/app/data
-      - ./logs:/app/logs
+      - ./data:/app/backend/data
+      - ./logs:/app/backend/logs
     restart: unless-stopped
     networks:
       - default
@@ -31,6 +31,9 @@ services:
       COPILOT_SERVER_PORT: 3003
     ports:
       - "${COPILOT_SERVER_PORT:-3003}:3003"
+    volumes:
+      - ./data:/app/backend/data
+      - ./logs:/app/backend/logs
     restart: unless-stopped
     networks:
       - default
@@ -53,6 +56,9 @@ services:
       FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://travel-planner-frontend,http://localhost:7000,https://travelplanner.alberthongtunnel.dpdns.org}
     ports:
       - "${PORT:-3001}:3001"
+    volumes:
+      - ./data:/app/backend/data
+      - ./logs:/app/backend/logs
     restart: unless-stopped
     networks:
       - default
