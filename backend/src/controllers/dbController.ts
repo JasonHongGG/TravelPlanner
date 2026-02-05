@@ -2,6 +2,16 @@ import type { Request, Response } from 'express';
 import { verifyIdToken } from '../utils/auth';
 import { readUsers, toSafeUser, writeUsers, DEFAULT_SETTINGS, UserSettings } from '../services/data/userStore';
 
+type TransactionPayload = {
+    id: string;
+    date: number;
+    amount: number;
+    type: string;
+    description: string;
+    metadata?: Record<string, any>;
+    originalAmount?: number;
+};
+
 export async function login(req: Request, res: Response) {
     try {
         const { idToken } = req.body;
@@ -74,7 +84,7 @@ export function addTransaction(req: Request, res: Response) {
     try {
         const emailParam = req.params.email;
         const email = Array.isArray(emailParam) ? emailParam[0] : emailParam;
-        const { transaction } = req.body;
+        const { transaction } = req.body as { transaction?: TransactionPayload };
         const authUser = (req as Request & { user?: { email?: string } }).user;
         const idempotencyKey = req.headers['idempotency-key'];
         if (!idempotencyKey || typeof idempotencyKey !== 'string') {
@@ -82,6 +92,10 @@ export function addTransaction(req: Request, res: Response) {
         }
         if (!transaction || !transaction.id) {
             return res.status(400).json({ error: "Transaction with id is required." });
+        }
+
+        if (typeof transaction.amount !== 'number' || typeof transaction.type !== 'string') {
+            return res.status(400).json({ error: "Invalid transaction payload." });
         }
 
         console.log(`[DB Server] Processing transaction for ${email}:`, transaction.type);

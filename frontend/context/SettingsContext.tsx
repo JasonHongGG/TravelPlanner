@@ -7,7 +7,7 @@ import {
     updateRemoteSettings,
     saveLocalSettings,
     loadLocalSettings
-} from '../services/database/SettingsService';
+} from '../services/database/settingsService';
 
 // ============================================================
 // Context Types
