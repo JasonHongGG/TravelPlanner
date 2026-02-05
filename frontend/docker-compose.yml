@@ -8,9 +8,8 @@ services:
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://travel-planner-server}
         VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
-        VITE_PORT: ${VITE_PORT:-3000}
     ports:
-      - "${VITE_PORT:-3000}:3000"
+      - "${VITE_PORT:-3000}:80"
     env_file:
       - ./.env
     restart: unless-stopped

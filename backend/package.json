@@ -5,6 +5,7 @@
     "type": "module",
     "main": "src/index.ts",
     "scripts": {
+        "build": "tsc -p tsconfig.json",
         "db": "tsx src/dbServer.ts",
         "copilot": "tsx src/copilotServer.ts",
         "server": "tsx src/server.ts",
