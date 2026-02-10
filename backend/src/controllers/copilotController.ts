@@ -75,7 +75,7 @@ async function writeCopilotLog(params: {
     const timestamp = formatTimestamp(new Date());
     const emailPrefix = getEmailPrefix(params.userEmail);
     const userPart = emailPrefix ? `${emailPrefix}_` : '';
-    const fileName = `${userPart}${params.actionLabel}_${timestamp}.json`;
+    const fileName = `${userPart}${timestamp}_${params.actionLabel}.json`;
     const safeFileName = sanitizeFilePart(fileName) || `copilot_log_${timestamp}.json`;
     const filePath = path.join(COPILOT_LOG_DIR, safeFileName);
 
