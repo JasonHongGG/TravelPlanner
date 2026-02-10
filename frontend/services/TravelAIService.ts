@@ -86,16 +86,25 @@ export class TravelAIService {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let fullText = "";
+        let sseBuffer = "";
+        let doneReceived = false;
 
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
 
-            const chunkStr = decoder.decode(value);
-            const lines = chunkStr.split('\n\n');
+            sseBuffer += decoder.decode(value, { stream: true });
 
-            for (const line of lines) {
-                if (line.startsWith('data: ')) {
+            // Process complete SSE events separated by a blank line.
+            const events = sseBuffer.split('\n\n');
+            sseBuffer = events.pop() || "";
+
+            for (const eventBlock of events) {
+                // An event block may contain multiple lines; we only care about data lines.
+                const lines = eventBlock.split('\n');
+                for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
+
                     const dataStr = line.substring(6);
                     try {
                         const data = JSON.parse(dataStr);
@@ -110,17 +119,18 @@ export class TravelAIService {
                         } else if (data.type === 'error') {
                             throw new Error(data.message);
                         } else if (data.type === 'done') {
-                            break;
+                            doneReceived = true;
                         }
                     } catch (e) {
-                        // Rethrow explicit errors from backend
-                        if (e instanceof Error && e.message && !e.message.includes("JSON")) {
-                            throw e;
-                        }
-                        // Ignore JSON parse errors for robustness
+                        // If we can't parse JSON here, it might be a truncated frame.
+                        // Put it back into the buffer and wait for the remaining bytes.
+                        sseBuffer = `${eventBlock}\n\n${sseBuffer}`;
+                        break;
                     }
                 }
             }
+
+            if (doneReceived) break;
         }
         return fullText;
     }
@@ -166,9 +176,9 @@ export class TravelAIService {
 
         let cleanJson = responseText.trim();
         if (cleanJson.startsWith('```json')) {
-            cleanJson = cleanJson.replace(/^```json/, '').replace(/```$/, '');
+            cleanJson = cleanJson.replace(/^```json\s*/i, '').replace(/```\s*$/, '');
         } else if (cleanJson.startsWith('```')) {
-            cleanJson = cleanJson.replace(/^```/, '').replace(/```$/, '');
+            cleanJson = cleanJson.replace(/^```\s*/i, '').replace(/```\s*$/, '');
         }
 
         return this.parseJsonFromResponse(cleanJson, true);
