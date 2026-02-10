@@ -41,8 +41,8 @@ export const SERVICE_CONFIG = {
     // Copilot SDK Configuration
     copilot: {
         models: {
-            tripGenerator: 'gemini-3-pro', // gpt-5.2 gemini-3-pro
-            tripUpdater: 'gemini-3-pro',
+            tripGenerator: 'gpt-5.2', // gpt-5.2 gemini-3-pro
+            tripUpdater: 'gpt-5.2',
             recommender: 'gemini-3-flash',
         }
     }
