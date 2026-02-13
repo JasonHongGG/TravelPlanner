@@ -32,6 +32,7 @@ services:
     ports:
       - "${COPILOT_SERVER_PORT:-3003}:3003"
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - ./data:/app/backend/data
       - ./logs:/app/backend/logs
       - ./copilot_logs:/app/backend/copilot_logs
