@@ -70,6 +70,7 @@ async function writeCopilotLog(params: {
     actionLabel: string;
     userEmail?: string;
     model: string;
+    input?: unknown;
     response: string;
 }) {
     const timestamp = formatTimestamp(new Date());
@@ -89,6 +90,7 @@ async function writeCopilotLog(params: {
                 actionLabel: params.actionLabel,
                 userEmail: params.userEmail || null,
                 model: params.model,
+                input: params.input ?? null,
                 response: params.response
             },
             null,
@@ -261,6 +263,10 @@ export async function processCopilot(req: Request, res: Response) {
                     actionLabel,
                     userEmail,
                     model,
+                    input: {
+                        requestBody: req.body,
+                        prompt
+                    },
                     response: fullResponse
                 });
             }
