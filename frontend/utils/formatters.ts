@@ -23,6 +23,7 @@ export const parseCostToNumber = (costStr: string | undefined): number => {
   if (match) {
     return parseInt(match[0], 10);
   }
+  return 0;
 };
 
 // Map i18n code to display name

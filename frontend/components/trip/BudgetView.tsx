@@ -578,7 +578,6 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta, tripCurrency 
                                         <div>
                                             <h4 className="font-bold text-gray-900 flex items-center gap-2">
                                                 <Calendar className="w-5 h-5 text-brand-600" />
-                                                <Calendar className="w-5 h-5 text-brand-600" />
                                                 {t('timeline.day_label', { day: selectedDetailDay })}
                                                 <span className="text-gray-400 font-normal">{t('budget_view.daily_list_title')}</span>
                                             </h4>
@@ -651,7 +650,7 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta, tripCurrency 
                                                                         className="font-bold text-base block"
                                                                         style={{ color: themeColor }}
                                                                     >
-                                                                        ¥{(stop.costAmount || parseCostToNumber(stop.costEstimate)).toLocaleString()}
+                                                                        ¥{((stop.costAmount ?? parseCostToNumber(stop.costEstimate)) ?? 0).toLocaleString()}
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -749,7 +748,7 @@ export default function BudgetView({ tripMeta, days, onUpdateMeta, tripCurrency 
                                                                         className="font-bold text-base block"
                                                                         style={{ color: themeColor }}
                                                                     >
-                                                                        {getCurrencySymbol(tripCurrency)}{(stop.costAmount || parseCostToNumber(stop.costEstimate)).toLocaleString()}
+                                                                        {getCurrencySymbol(tripCurrency)}{((stop.costAmount ?? parseCostToNumber(stop.costEstimate)) ?? 0).toLocaleString()}
                                                                     </span>
                                                                     {/* Show Multiplier Badge if applicable */}
                                                                     {(() => {
