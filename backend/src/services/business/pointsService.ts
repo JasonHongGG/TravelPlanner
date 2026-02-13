@@ -3,23 +3,29 @@ export async function deductPoints(
     cost: number,
     description: string,
     authToken: string,
-    metadata?: any
+    metadata?: any,
+    options?: {
+        idempotencyKey?: string;
+        transactionId?: string;
+    }
 ): Promise<boolean> {
     if (cost <= 0) return true;
     if (!userId) return true;
 
     try {
         const dbUrl = process.env.DB_SERVER_URL || "http://localhost:3002";
+        const idempotencyKey = options?.idempotencyKey || crypto.randomUUID();
+        const transactionId = options?.transactionId || crypto.randomUUID();
         const response = await fetch(`${dbUrl}/users/${userId}/transaction`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${authToken}`,
-                'Idempotency-Key': crypto.randomUUID()
+                'Idempotency-Key': idempotencyKey
             },
             body: JSON.stringify({
                 transaction: {
-                    id: crypto.randomUUID(),
+                    id: transactionId,
                     date: Date.now(),
                     amount: -cost,
                     type: 'spend',

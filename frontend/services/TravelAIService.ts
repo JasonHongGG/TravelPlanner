@@ -1,6 +1,33 @@
 import { TripInput, TripData, Message, AttractionRecommendation, FeasibilityResult, UpdateResult } from "../types";
 import { parseErrorResponse } from "./http/parseError";
 
+export type GenerationJobStatus = 'queued' | 'running' | 'completed' | 'failed';
+
+export interface GenerationJob {
+    jobId: string;
+    action: 'GENERATE_TRIP';
+    userId: string;
+    tripLocalId?: string;
+    clientRequestId: string;
+    tripInput: TripInput;
+    status: GenerationJobStatus;
+    billingStatus: 'pending' | 'charged' | 'charge_failed';
+    hasResult?: boolean;
+    result?: TripData;
+    error?: string;
+    createdAt: number;
+    updatedAt: number;
+    startedAt?: number;
+    finishedAt?: number;
+}
+
+export interface ClaimedGenerationJob {
+    jobId: string;
+    status: 'completed';
+    claimToken: string;
+    result: TripData;
+}
+
 
 const SERVER_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
@@ -160,6 +187,77 @@ export class TravelAIService {
 
         const data = await response.json();
         return data.text;
+    }
+
+    async createGenerationJob(
+        input: TripInput,
+        userId?: string,
+        options?: {
+            tripLocalId?: string;
+            clientRequestId?: string;
+        }
+    ): Promise<GenerationJob> {
+        const headers = this.getAuthHeaders();
+        const response = await fetch(`${SERVER_URL}/generation-jobs`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                userId,
+                action: 'GENERATE_TRIP',
+                description: `Generate Trip: ${input.destination}`,
+                tripInput: input,
+                tripLocalId: options?.tripLocalId,
+                clientRequestId: options?.clientRequestId || crypto.randomUUID()
+            })
+        });
+
+        if (!response.ok) {
+            throw await parseErrorResponse(response, 'Failed to create generation job');
+        }
+
+        return await response.json();
+    }
+
+    async getGenerationJob(jobId: string): Promise<GenerationJob> {
+        const headers = this.getAuthHeaders();
+        const response = await fetch(`${SERVER_URL}/generation-jobs/${jobId}`, {
+            method: 'GET',
+            headers
+        });
+
+        if (!response.ok) {
+            throw await parseErrorResponse(response, 'Failed to fetch generation job');
+        }
+
+        return await response.json();
+    }
+
+    async claimGenerationJob(jobId: string): Promise<ClaimedGenerationJob> {
+        const headers = this.getAuthHeaders();
+        const response = await fetch(`${SERVER_URL}/generation-jobs/${jobId}/claim`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({})
+        });
+
+        if (!response.ok) {
+            throw await parseErrorResponse(response, 'Failed to claim generation result');
+        }
+
+        return await response.json();
+    }
+
+    async ackGenerationJob(jobId: string, claimToken: string): Promise<void> {
+        const headers = this.getAuthHeaders();
+        const response = await fetch(`${SERVER_URL}/generation-jobs/${jobId}/ack`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ claimToken })
+        });
+
+        if (!response.ok) {
+            throw await parseErrorResponse(response, 'Failed to acknowledge generation result');
+        }
     }
 
     async generateTrip(input: TripInput, userId?: string): Promise<TripData> {

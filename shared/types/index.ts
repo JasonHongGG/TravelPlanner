@@ -113,6 +113,9 @@ export interface Trip {
   createdAt: number;
   status: TripStatus;
   input: TripInput;
+  generationJobId?: string;
+  generationClientRequestId?: string;
+  lastJobCheckAt?: number;
   data?: TripData;
   errorMsg?: string;
   generationTimeMs?: number;

@@ -5,6 +5,7 @@ import { BackendAIService } from './services/BackendAIService.js';
 import apiRoutes from './routes/apiRoutes.js';
 import dbRoutes from './routes/dbRoutes.js';
 import tripShareRoutes from './routes/tripShareRoutes.js';
+import { initGenerationJobMaintenance } from './controllers/aiController.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { configService } from './config/configService.js';
 import { corsOptions } from './config/corsConfig.js';
@@ -28,6 +29,7 @@ app.use('/api', tripShareRoutes);
 app.use(errorHandler);
 
 configService.validateAiServer();
+initGenerationJobMaintenance();
 
 
 app.listen(port, () => {

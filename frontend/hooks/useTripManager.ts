@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Trip, TripInput, TripData } from '../types';
 import { aiService } from '../services';
+import type { GenerationJob } from '../services/TravelAIService';
 import { tripShareService } from '../services/TripShareService';
 import { usePoints } from '../context/PointsContext';
 import { useAuth } from '../context/AuthContext';
@@ -14,6 +15,9 @@ export const useTripManager = () => {
   const { user } = useAuth();
   const { showAlert } = useStatusAlert(); // Hook
   const { t } = useTranslation();
+  const JOB_POLL_INTERVAL_MS = 3500;
+  const STALE_GENERATING_MS = 10 * 60 * 1000;
+  const activeJobPollingRef = useRef<Set<string>>(new Set());
 
   // Initialize state directly from localStorage
   const [trips, setTrips] = useState<Trip[]>(() => {
@@ -25,11 +29,95 @@ export const useTripManager = () => {
       return [];
     }
   });
+  const tripsRef = useRef<Trip[]>(trips);
 
   // Save to local storage whenever trips change
   useEffect(() => {
+    tripsRef.current = trips;
     localStorage.setItem('ai_travel_trips', JSON.stringify(trips));
   }, [trips]);
+
+  const applyGenerationJobToTrip = (tripId: string, job: GenerationJob) => {
+    setTrips(prev => prev.map(t => {
+      if (t.id !== tripId) return t;
+
+      if (job.status === 'failed') {
+        return {
+          ...t,
+          status: 'error',
+          errorMsg: job.error || 'Generation failed',
+          generationTimeMs: Date.now() - t.createdAt,
+          lastJobCheckAt: Date.now()
+        };
+      }
+
+      return {
+        ...t,
+        status: 'generating',
+        lastJobCheckAt: Date.now()
+      };
+    }));
+  };
+
+  const applyCompletedTripResult = (tripId: string, result: TripData) => {
+    setTrips(prev => prev.map(t => {
+      if (t.id !== tripId) return t;
+      return {
+        ...t,
+        status: 'complete',
+        data: result,
+        errorMsg: undefined,
+        generationTimeMs: Date.now() - t.createdAt,
+        lastJobCheckAt: Date.now()
+      };
+    }));
+  };
+
+  const pollGenerationJob = async (tripId: string, jobId: string) => {
+    const activeJobPolling = activeJobPollingRef.current;
+    if (activeJobPolling.has(jobId)) return;
+    activeJobPolling.add(jobId);
+
+    try {
+      while (true) {
+        const currentTrip = tripsRef.current.find(t => t.id === tripId);
+        if (!currentTrip) break;
+
+        const job = await aiService.getGenerationJob(jobId);
+        applyGenerationJobToTrip(tripId, job);
+
+        if (job.status === 'completed') {
+          const claimed = await aiService.claimGenerationJob(jobId);
+          applyCompletedTripResult(tripId, claimed.result);
+          try {
+            await aiService.ackGenerationJob(jobId, claimed.claimToken);
+          } catch (ackErr) {
+            console.warn('[TripManager] Ack generation job failed, will expire by TTL:', ackErr);
+          }
+          break;
+        }
+
+        if (job.status === 'failed') {
+          break;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, JOB_POLL_INTERVAL_MS));
+      }
+    } catch (err: any) {
+      setTrips(prev => prev.map(t =>
+        t.id === tripId
+          ? {
+            ...t,
+            status: 'error',
+            errorMsg: err?.message || 'Failed to fetch generation status',
+            generationTimeMs: Date.now() - t.createdAt
+          }
+          : t
+      ));
+    } finally {
+      activeJobPolling.delete(jobId);
+    }
+  };
 
   // Sync Cloud Trips when user logs in
   useEffect(() => {
@@ -109,13 +197,38 @@ export const useTripManager = () => {
     // We only want this to run when User connects (Login).
   }, [user?.email, isSubscribed]);
 
+  // Resume pending generation jobs after page reload / reconnect
+  useEffect(() => {
+    const pending = trips.filter(t => t.status === 'generating');
+    if (pending.length === 0) return;
+
+    for (const trip of pending) {
+      if (trip.generationJobId) {
+        void pollGenerationJob(trip.id, trip.generationJobId);
+      } else if (Date.now() - trip.createdAt > STALE_GENERATING_MS) {
+        setTrips(prev => prev.map(t =>
+          t.id === trip.id
+            ? {
+              ...t,
+              status: 'error',
+              errorMsg: t.errorMsg || 'Generation session expired. Please retry.',
+              generationTimeMs: Date.now() - t.createdAt
+            }
+            : t
+        ));
+      }
+    }
+  }, [trips]);
+
   const createTrip = async (input: TripInput) => {
+    const clientRequestId = crypto.randomUUID();
     const newTrip: Trip = {
       id: crypto.randomUUID(),
       title: input.destination,
       createdAt: Date.now(),
       status: 'generating',
       input,
+      generationClientRequestId: clientRequestId
     };
 
     // Calculate Cost
@@ -129,26 +242,31 @@ export const useTripManager = () => {
 
     setTrips(prev => [newTrip, ...prev]);
 
-    // Trigger AI Generation
-    // SECURITY: We pass user.email to backend. Backend executes deduction based on ACTION.
-    aiService.generateTrip(input, user?.email)
-      .then((data) => {
-
-        setTrips(prev => prev.map(t =>
-          t.id === newTrip.id
-            ? { ...t, status: 'complete', data, generationTimeMs: Date.now() - t.createdAt }
-            : t
-        ));
-      })
-      .catch(err => {
-        // If error involves "Insufficient points", we should probably handle it gracefully
-        console.error("Generation failed:", err);
-        setTrips(prev => prev.map(t =>
-          t.id === newTrip.id
-            ? { ...t, status: 'error', errorMsg: err.message, generationTimeMs: Date.now() - t.createdAt }
-            : t
-        ));
+    try {
+      const job = await aiService.createGenerationJob(input, user?.email, {
+        tripLocalId: newTrip.id,
+        clientRequestId
       });
+
+      setTrips(prev => prev.map(t =>
+        t.id === newTrip.id
+          ? {
+            ...t,
+            generationJobId: job.jobId,
+            lastJobCheckAt: Date.now()
+          }
+          : t
+      ));
+
+      void pollGenerationJob(newTrip.id, job.jobId);
+    } catch (err: any) {
+      console.error("Generation failed:", err);
+      setTrips(prev => prev.map(t =>
+        t.id === newTrip.id
+          ? { ...t, status: 'error', errorMsg: err.message, generationTimeMs: Date.now() - t.createdAt }
+          : t
+      ));
+    }
   };
 
   const retryTrip = async (tripId: string) => {
@@ -171,22 +289,32 @@ export const useTripManager = () => {
         : t
     ));
 
-    // Trigger AI Generation
-    aiService.generateTrip(trip.input, user?.email)
-      .then((data) => {
-        setTrips(prev => prev.map(t =>
-          t.id === tripId
-            ? { ...t, status: 'complete', data, generationTimeMs: Date.now() - (t.createdAt || Date.now()) }
-            : t
-        ));
-      })
-      .catch(err => {
-        setTrips(prev => prev.map(t =>
-          t.id === tripId
-            ? { ...t, status: 'error', errorMsg: err.message, generationTimeMs: Date.now() - (t.createdAt || Date.now()) }
-            : t
-        ));
+    try {
+      const clientRequestId = crypto.randomUUID();
+      const job = await aiService.createGenerationJob(trip.input, user?.email, {
+        tripLocalId: tripId,
+        clientRequestId
       });
+
+      setTrips(prev => prev.map(t =>
+        t.id === tripId
+          ? {
+            ...t,
+            generationJobId: job.jobId,
+            generationClientRequestId: clientRequestId,
+            lastJobCheckAt: Date.now()
+          }
+          : t
+      ));
+
+      void pollGenerationJob(tripId, job.jobId);
+    } catch (err: any) {
+      setTrips(prev => prev.map(t =>
+        t.id === tripId
+          ? { ...t, status: 'error', errorMsg: err.message, generationTimeMs: Date.now() - (t.createdAt || Date.now()) }
+          : t
+      ));
+    }
   };
 
   const updateTripData = (tripId: string, newData: TripData) => {
