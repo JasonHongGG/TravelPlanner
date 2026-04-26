@@ -1,64 +1,35 @@
 import type { Trip, TripVisibility, SharedTrip, SharedTripMeta, GalleryResponse } from '../types';
+import { API_BASE_URL, apiUrl, getAuthHeaders, requestBlob, requestJson } from './http/apiClient';
 
 // ==========================================
 // TripShareService - Frontend API Client
 // ==========================================
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-
 class TripShareService {
-    private getAuthHeaders(): HeadersInit {
-        const token = localStorage.getItem('google_auth_token');
-        const headers: HeadersInit = {
-            'Content-Type': 'application/json',
-            'X-Correlation-ID': crypto.randomUUID()
-        };
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-        return headers;
-    }
-
     // ==========================================
     // Trip Operations
     // ==========================================
 
     async saveTrip(trip: Trip, visibility: TripVisibility): Promise<string> {
         const tripId = trip.serverTripId || trip.id;
-
-        const response = await fetch(`${API_BASE_URL}/api/trips/${tripId}`, {
+        const result = await requestJson<{ tripId: string }>(`/api/trips/${tripId}`, {
             method: 'PUT',
-            headers: this.getAuthHeaders(),
-            body: JSON.stringify({ tripData: trip, visibility })
+            body: { tripData: trip, visibility },
+            fallbackMessage: 'Failed to save trip'
         });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to save trip');
-        }
-
-        const result = await response.json();
         return result.tripId;
     }
 
     async getTrip(tripId: string): Promise<SharedTrip> {
-        const response = await fetch(`${API_BASE_URL}/api/trips/${tripId}`, {
-            method: 'GET',
-            headers: this.getAuthHeaders()
+        return await requestJson<SharedTrip>(`/api/trips/${tripId}`, {
+            fallbackMessage: 'Failed to get trip'
         });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to get trip');
-        }
-
-        return response.json();
     }
 
     async deleteServerTrip(tripId: string): Promise<void> {
-        const response = await fetch(`${API_BASE_URL}/api/trips/${tripId}`, {
+        const response = await fetch(apiUrl(`/api/trips/${tripId}`), {
             method: 'DELETE',
-            headers: this.getAuthHeaders()
+            headers: getAuthHeaders()
         });
 
         // If 404, it means trip is already gone, which corresponds to "unshared" state.
@@ -73,18 +44,14 @@ class TripShareService {
     }
 
     async getMySharedTripIds(): Promise<string[]> {
-        const response = await fetch(`${API_BASE_URL}/api/trips/my`, {
-            method: 'GET',
-            headers: this.getAuthHeaders()
-        });
-
-        if (!response.ok) {
-            // If unauthorized or error, return empty array
+        try {
+            const result = await requestJson<{ tripIds?: string[] }>('/api/trips/my', {
+                fallbackMessage: 'Failed to fetch shared trips'
+            });
+            return result.tripIds || [];
+        } catch {
             return [];
         }
-
-        const result = await response.json();
-        return result.tripIds || [];
     }
 
     // ==========================================
@@ -92,35 +59,32 @@ class TripShareService {
     // ==========================================
 
     async updateVisibility(tripId: string, visibility: TripVisibility): Promise<void> {
-        const response = await fetch(`${API_BASE_URL}/api/trips/${tripId}/visibility`, {
+        await requestJson<{ message: string }>(`/api/trips/${tripId}/visibility`, {
             method: 'PATCH',
-            headers: this.getAuthHeaders(),
-            body: JSON.stringify({ visibility })
+            body: { visibility },
+            fallbackMessage: 'Failed to update visibility'
         });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to update visibility');
-        }
     }
 
     async updatePermissions(tripId: string, permissions: Record<string, 'read' | 'write'>): Promise<void> {
-        const response = await fetch(`${API_BASE_URL}/api/trips/${tripId}/permissions`, {
+        await requestJson<{ message: string }>(`/api/trips/${tripId}/permissions`, {
             method: 'PATCH',
-            headers: this.getAuthHeaders(),
-            body: JSON.stringify({ permissions })
+            body: { permissions },
+            fallbackMessage: 'Failed to update permissions'
         });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to update permissions');
-        }
     }
 
-    subscribeToTrip(tripId: string, onMessage: (type: string, data: any) => void): EventSource {
-        const url = `${API_BASE_URL}/api/trips/${tripId}/events`;
-        // Note: EventSource does not support custom headers. 
-        // If auth is needed, we must pass token in query param.
+    async createTripEventToken(tripId: string): Promise<string> {
+        const result = await requestJson<{ token: string }>(`/api/trips/${tripId}/events-token`, {
+            method: 'POST',
+            fallbackMessage: 'Failed to create trip event token'
+        });
+        return result.token;
+    }
+
+    subscribeToTrip(tripId: string, onMessage: (type: string, data: any) => void, token?: string): EventSource {
+        const params = token ? `?token=${encodeURIComponent(token)}` : '';
+        const url = `${API_BASE_URL}/api/trips/${tripId}/events${params}`;
         const eventSource = new EventSource(url);
 
         const handler = (event: MessageEvent) => {
@@ -146,17 +110,10 @@ class TripShareService {
     // ==========================================
 
     async likeTrip(tripId: string): Promise<number> {
-        const response = await fetch(`${API_BASE_URL}/api/trips/${tripId}/like`, {
+        const result = await requestJson<{ likeCount: number }>(`/api/trips/${tripId}/like`, {
             method: 'POST',
-            headers: this.getAuthHeaders()
+            fallbackMessage: 'Failed to like trip'
         });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to like trip');
-        }
-
-        const result = await response.json();
         return result.likeCount;
     }
 
@@ -165,31 +122,15 @@ class TripShareService {
     // ==========================================
 
     async getGallery(page: number = 1, pageSize: number = 12): Promise<GalleryResponse> {
-        const response = await fetch(
-            `${API_BASE_URL}/api/gallery?page=${page}&pageSize=${pageSize}`,
-            { method: 'GET' }
-        );
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to get gallery');
-        }
-
-        return response.json();
+        return await requestJson<GalleryResponse>(`/api/gallery?page=${page}&pageSize=${pageSize}`, {
+            fallbackMessage: 'Failed to get gallery'
+        });
     }
 
     async getRandomTrips(count: number = 6): Promise<SharedTripMeta[]> {
-        const response = await fetch(
-            `${API_BASE_URL}/api/gallery/random?count=${count}`,
-            { method: 'GET' }
-        );
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to get random trips');
-        }
-
-        const result = await response.json();
+        const result = await requestJson<{ trips: SharedTripMeta[] }>(`/api/gallery/random?count=${count}`, {
+            fallbackMessage: 'Failed to get random trips'
+        });
         return result.trips;
     }
 
@@ -203,21 +144,18 @@ class TripShareService {
     }
 
     async exportTripJson(tripData: Trip): Promise<Blob> {
-        const response = await fetch(`${API_BASE_URL}/api/trips/export/json`, {
-            method: 'POST',
-            headers: this.getAuthHeaders(),
-            body: JSON.stringify({ tripData })
-        });
-
-        if (!response.ok) {
-            if (response.status === 403) {
+        try {
+            return await requestBlob('/api/exports/json', {
+                method: 'POST',
+                body: { tripData },
+                fallbackMessage: 'Failed to export trip'
+            });
+        } catch (error: any) {
+            if (error.message?.includes('403')) {
                 throw new Error('Subscription required');
             }
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to export trip');
+            throw error;
         }
-
-        return await response.blob();
     }
 }
 

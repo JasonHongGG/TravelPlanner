@@ -452,8 +452,6 @@ export default function AttractionExplorer({
         addBatchCreditsImmediate(targetTab, 1 + QUEUE_SIZE);
         // Reset sessionId to force a new 'init' call (and payment deduction) on next fetch
         setSessionIds(prev => ({ ...prev, [targetTab]: null }));
-        // Reset sessionId to force a new 'init' call (and payment deduction) on next fetch
-        setSessionIds(prev => ({ ...prev, [targetTab]: null }));
         await handleLoadMore(true);
     };
 

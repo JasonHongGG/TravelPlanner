@@ -132,7 +132,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
     let eventSource: EventSource | null = null;
     let heartbeatTimer: NodeJS.Timeout;
 
-    const setupConnection = () => {
+    const setupConnection = async () => {
       const handleServerEvent = async (type: string, data: any) => {
         if (type === 'trip_updated' || type === 'visibility_updated') {
           try {
@@ -149,14 +149,18 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
         }
       };
 
-      eventSource = tripShareService.subscribeToTrip(trip.serverTripId!, handleServerEvent);
+      const token = await tripShareService.createTripEventToken(trip.serverTripId!);
+      eventSource = tripShareService.subscribeToTrip(trip.serverTripId!, handleServerEvent, token);
 
       // Update status based on native events
       eventSource.onopen = () => setConnectionStatus('connected');
       eventSource.onerror = () => setConnectionStatus('disconnected'); // Will likely auto-reconnect
     };
 
-    setupConnection();
+    void setupConnection().catch((error) => {
+      console.error('[TripDetail] Failed to connect to trip events', error);
+      setConnectionStatus('disconnected');
+    });
 
     // Heartbeat: Check readyState every 5 seconds
     heartbeatTimer = setInterval(() => {

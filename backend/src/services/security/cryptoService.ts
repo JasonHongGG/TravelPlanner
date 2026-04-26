@@ -7,11 +7,14 @@ const IV_LENGTH = 16;  // 12 bytes standard for GCM, utilizing 16 here if needed
 // Actually for aes-256-gcm, standard IV is 12 bytes (96 bits).
 const AUTH_TAG_LENGTH = 16;
 
-// Get Secret Key from Env or Fallback (DEV ONLY)
-// In production, this MUST be provided via env vars
-const SECRET_KEY_HEX = process.env.TRIP_ENCRYPTION_KEY || 'a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890'; // 32 bytes hex
+const DEV_SECRET_KEY_HEX = 'a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890';
+const SECRET_KEY_HEX = process.env.TRIP_ENCRYPTION_KEY || DEV_SECRET_KEY_HEX;
 
 function getSecretKey(): Buffer {
+    if (!process.env.TRIP_ENCRYPTION_KEY && process.env.NODE_ENV === 'production') {
+        throw new Error('TRIP_ENCRYPTION_KEY is required in production.');
+    }
+
     let key = Buffer.from(SECRET_KEY_HEX, 'hex');
     if (key.length !== KEY_LENGTH) {
         // If provided key is not hex or wrong length, derive one using scrypt (fallback)

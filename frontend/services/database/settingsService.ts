@@ -1,7 +1,4 @@
-import { parseErrorResponse } from "../http/parseError";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
-const SETTINGS_API_BASE_URL = `${API_BASE_URL}/db`;
+import { requestJson } from "../http/apiClient";
 
 export interface AppSettings {
     explorerQueueSize: number;
@@ -15,24 +12,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 const SETTINGS_STORAGE_KEY = 'travel_planner_settings';
 
-const getAuthHeaders = (): Record<string, string> => {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    const token = localStorage.getItem("google_auth_token");
-    if (token) headers.Authorization = `Bearer ${token}`;
-    return headers;
-};
-
 export const fetchRemoteSettings = async (email: string): Promise<AppSettings> => {
     try {
-        const response = await fetch(`${SETTINGS_API_BASE_URL}/users/${email}/settings`, {
-            headers: getAuthHeaders()
+        return await requestJson<AppSettings>(`/db/users/${email}/settings`, {
+            fallbackMessage: "Failed to fetch settings"
         });
-
-        if (!response.ok) {
-            throw await parseErrorResponse(response, "Failed to fetch settings");
-        }
-
-        return await response.json();
     } catch (error) {
         console.error("[SettingsService] Failed to fetch remote settings:", error);
         throw error;
@@ -41,17 +25,11 @@ export const fetchRemoteSettings = async (email: string): Promise<AppSettings> =
 
 export const updateRemoteSettings = async (email: string, settings: Partial<AppSettings>): Promise<AppSettings> => {
     try {
-        const response = await fetch(`${SETTINGS_API_BASE_URL}/users/${email}/settings`, {
+        return await requestJson<AppSettings>(`/db/users/${email}/settings`, {
             method: 'PUT',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ settings })
+            body: { settings },
+            fallbackMessage: "Failed to update settings"
         });
-
-        if (!response.ok) {
-            throw await parseErrorResponse(response, "Failed to update settings");
-        }
-
-        return await response.json();
     } catch (error) {
         console.error("[SettingsService] Failed to update remote settings:", error);
         throw error;

@@ -10,9 +10,8 @@ import {
     getGallery,
     getRandomTrips,
     getMyTrips,
-    encryptTrip,
-    decryptTrip,
-    subscribeToTrip
+    subscribeToTrip,
+    createTripEventToken
 } from '../controllers/tripShareController.js';
 
 const router = Router();
@@ -37,6 +36,7 @@ router.get('/trips/:tripId', optionalAuth, getTrip);
 // SSE Subscription (Optional auth handled in controller/service logic if needed, 
 // usually browser EventSource doesn't send headers easily, so we might rely on query param token if strict security needed. 
 // For now, open or query token. Let's keep it simple.)
+router.post('/trips/:tripId/events-token', requireAuth, createTripEventToken);
 router.get('/trips/:tripId/events', subscribeToTrip);
 
 // Save/Update trip (requires auth)
@@ -55,13 +55,3 @@ router.patch('/trips/:tripId/permissions', requireAuth, updatePermissions);
 router.post('/trips/:tripId/like', optionalAuth, likeTrip);
 
 export default router;
-
-// ==========================================
-// Encryption Routes (Public)
-// ==========================================
-
-import { exportTripJson } from '../controllers/tripShareController.js';
-
-router.post('/trips/export/json', requireAuth, exportTripJson);
-router.post('/trips/encrypt', encryptTrip);
-router.post('/trips/decrypt', decryptTrip);

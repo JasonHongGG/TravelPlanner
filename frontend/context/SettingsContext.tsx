@@ -19,9 +19,6 @@ interface SettingsContextType {
     resetToDefaults: () => Promise<void>;
     isSyncing: boolean;
     lastSyncError: string | null;
-    isSettingsModalOpen: boolean;
-    openSettingsModal: () => void;
-    closeSettingsModal: () => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -35,10 +32,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [isSyncing, setIsSyncing] = useState(false);
     const [lastSyncError, setLastSyncError] = useState<string | null>(null);
-    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-
-    const openSettingsModal = () => setIsSettingsModalOpen(true);
-    const closeSettingsModal = () => setIsSettingsModalOpen(false);
 
     // ============================================================
     // Sync Settings on User Login
@@ -147,10 +140,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             updateSettings,
             resetToDefaults,
             isSyncing,
-            lastSyncError,
-            isSettingsModalOpen,
-            openSettingsModal,
-            closeSettingsModal
+            lastSyncError
         }}>
             {children}
         </SettingsContext.Provider>

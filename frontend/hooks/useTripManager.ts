@@ -6,71 +6,39 @@ import { tripShareService } from '../services/TripShareService';
 import { usePoints } from '../context/PointsContext';
 import { useAuth } from '../context/AuthContext';
 import { calculateTripCost } from '../utils/tripUtils';
-import { useStatusAlert } from '../context/StatusAlertContext';
-import { useTranslation } from 'react-i18next';
+import {
+  applyCompletedTripResult as applyCompletedTripResultToList,
+  applyGenerationError,
+  applyGenerationJob,
+  createGeneratingTrip,
+  loadStoredTrips,
+  markStaleGeneratingTrip,
+  saveStoredTrips
+} from '../services/tripRuntime';
 
 
 export const useTripManager = () => {
   const { balance, openPurchaseModal, isSubscribed } = usePoints();
   const { user } = useAuth();
-  const { showAlert } = useStatusAlert(); // Hook
-  const { t } = useTranslation();
   const JOB_POLL_INTERVAL_MS = 3500;
   const STALE_GENERATING_MS = 10 * 60 * 1000;
   const activeJobPollingRef = useRef<Set<string>>(new Set());
 
-  // Initialize state directly from localStorage
-  const [trips, setTrips] = useState<Trip[]>(() => {
-    try {
-      const saved = localStorage.getItem('ai_travel_trips');
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      console.error("Failed to parse saved trips", e);
-      return [];
-    }
-  });
+  const [trips, setTrips] = useState<Trip[]>(loadStoredTrips);
   const tripsRef = useRef<Trip[]>(trips);
 
   // Save to local storage whenever trips change
   useEffect(() => {
     tripsRef.current = trips;
-    localStorage.setItem('ai_travel_trips', JSON.stringify(trips));
+    saveStoredTrips(trips);
   }, [trips]);
 
   const applyGenerationJobToTrip = (tripId: string, job: GenerationJob) => {
-    setTrips(prev => prev.map(t => {
-      if (t.id !== tripId) return t;
-
-      if (job.status === 'failed') {
-        return {
-          ...t,
-          status: 'error',
-          errorMsg: job.error || 'Generation failed',
-          generationTimeMs: Date.now() - t.createdAt,
-          lastJobCheckAt: Date.now()
-        };
-      }
-
-      return {
-        ...t,
-        status: 'generating',
-        lastJobCheckAt: Date.now()
-      };
-    }));
+    setTrips(prev => applyGenerationJob(prev, tripId, job));
   };
 
   const applyCompletedTripResult = (tripId: string, result: TripData) => {
-    setTrips(prev => prev.map(t => {
-      if (t.id !== tripId) return t;
-      return {
-        ...t,
-        status: 'complete',
-        data: result,
-        errorMsg: undefined,
-        generationTimeMs: Date.now() - t.createdAt,
-        lastJobCheckAt: Date.now()
-      };
-    }));
+    setTrips(prev => applyCompletedTripResultToList(prev, tripId, result));
   };
 
   const pollGenerationJob = async (tripId: string, jobId: string) => {
@@ -104,16 +72,7 @@ export const useTripManager = () => {
         await new Promise(resolve => setTimeout(resolve, JOB_POLL_INTERVAL_MS));
       }
     } catch (err: any) {
-      setTrips(prev => prev.map(t =>
-        t.id === tripId
-          ? {
-            ...t,
-            status: 'error',
-            errorMsg: err?.message || 'Failed to fetch generation status',
-            generationTimeMs: Date.now() - t.createdAt
-          }
-          : t
-      ));
+      setTrips(prev => applyGenerationError(prev, tripId, err?.message || 'Failed to fetch generation status'));
     } finally {
       activeJobPolling.delete(jobId);
     }
@@ -206,30 +165,14 @@ export const useTripManager = () => {
       if (trip.generationJobId) {
         void pollGenerationJob(trip.id, trip.generationJobId);
       } else if (Date.now() - trip.createdAt > STALE_GENERATING_MS) {
-        setTrips(prev => prev.map(t =>
-          t.id === trip.id
-            ? {
-              ...t,
-              status: 'error',
-              errorMsg: t.errorMsg || 'Generation session expired. Please retry.',
-              generationTimeMs: Date.now() - t.createdAt
-            }
-            : t
-        ));
+        setTrips(prev => markStaleGeneratingTrip(prev, trip.id));
       }
     }
   }, [trips]);
 
   const createTrip = async (input: TripInput) => {
     const clientRequestId = crypto.randomUUID();
-    const newTrip: Trip = {
-      id: crypto.randomUUID(),
-      title: input.destination,
-      createdAt: Date.now(),
-      status: 'generating',
-      input,
-      generationClientRequestId: clientRequestId
-    };
+    const newTrip = createGeneratingTrip(input, clientRequestId);
 
     // Calculate Cost
     const cost = calculateTripCost(input.dateRange);
@@ -261,11 +204,7 @@ export const useTripManager = () => {
       void pollGenerationJob(newTrip.id, job.jobId);
     } catch (err: any) {
       console.error("Generation failed:", err);
-      setTrips(prev => prev.map(t =>
-        t.id === newTrip.id
-          ? { ...t, status: 'error', errorMsg: err.message, generationTimeMs: Date.now() - t.createdAt }
-          : t
-      ));
+      setTrips(prev => applyGenerationError(prev, newTrip.id, err.message));
     }
   };
 
@@ -309,11 +248,7 @@ export const useTripManager = () => {
 
       void pollGenerationJob(tripId, job.jobId);
     } catch (err: any) {
-      setTrips(prev => prev.map(t =>
-        t.id === tripId
-          ? { ...t, status: 'error', errorMsg: err.message, generationTimeMs: Date.now() - (t.createdAt || Date.now()) }
-          : t
-      ));
+      setTrips(prev => applyGenerationError(prev, tripId, err.message));
     }
   };
 

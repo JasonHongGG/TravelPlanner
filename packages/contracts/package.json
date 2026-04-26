@@ -1,0 +1,13 @@
+{
+  "name": "@travel-planner/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "node ../../backend/node_modules/typescript/bin/tsc -p tsconfig.json",
+    "typecheck": "node ../../backend/node_modules/typescript/bin/tsc -p tsconfig.json --noEmit",
+    "test": "npm run typecheck"
+  }
+}

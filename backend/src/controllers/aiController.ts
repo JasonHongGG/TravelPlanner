@@ -1,94 +1,17 @@
 import type { Request, Response } from 'express';
-import { BackendAIService } from '../services/BackendAIService.js';
 import { deductPoints } from '../services/business/pointsService.js';
 import { pricingService } from '../services/business/pricingService.js';
 import { packageService } from '../services/business/packageService.js';
 import { RECOMMENDATION_COUNT } from '../config/apiLimits.js';
 import { sessionStore } from '../services/recommendationSessionStore.js';
+import { aiPipeline } from '../services/aiPipeline.js';
 import {
-    createGenerationJob,
-    findGenerationJobByClientRequestId,
-    claimGenerationJob,
-    ackGenerationJob,
-    failInProgressGenerationJobsOnStartup,
-    getGenerationJob,
-    purgeExpiredGenerationJobs,
-    updateGenerationJob
-} from '../services/data/generationJobStore.js';
-
-const generationInFlight = new Set<string>();
-
-function toPublicGenerationJob(job: any) {
-    const { result, claimToken, ...rest } = job;
-    return {
-        ...rest,
-        hasResult: Boolean(result)
-    };
-}
-
-async function runGenerationJob(jobId: string, authToken: string, costDescription: string) {
-    if (generationInFlight.has(jobId)) return;
-    generationInFlight.add(jobId);
-
-    try {
-        const current = getGenerationJob(jobId);
-        if (!current || current.status !== 'queued') return;
-
-        updateGenerationJob(jobId, {
-            status: 'running',
-            startedAt: Date.now(),
-            error: undefined,
-            claimToken: undefined,
-            claimedAt: undefined,
-            result: undefined,
-            billingStatus: 'pending'
-        });
-
-        const provider = BackendAIService.getProvider();
-        const trip = await provider.generateTrip(current.tripInput, current.userId, authToken);
-
-        const cost = pricingService.calculate('GENERATE_TRIP', { dateRange: current.tripInput?.dateRange });
-        const idempotencyKey = `tripgen:${current.userId}:${jobId}:charge:v1`;
-        const transactionId = `tripgen_charge_${jobId}`;
-        const charged = await deductPoints(
-            current.userId,
-            cost,
-            costDescription,
-            authToken,
-            { jobId, action: 'GENERATE_TRIP' },
-            { idempotencyKey, transactionId }
-        );
-
-        if (!charged) {
-            updateGenerationJob(jobId, {
-                status: 'failed',
-                billingStatus: 'charge_failed',
-                error: 'Point charge failed. Please retry generation.',
-                finishedAt: Date.now()
-            });
-            return;
-        }
-
-        updateGenerationJob(jobId, {
-            status: 'completed',
-            billingStatus: 'charged',
-            result: trip,
-            billedAt: Date.now(),
-            finishedAt: Date.now(),
-            error: undefined
-        });
-    } catch (error: any) {
-        console.error('[GenerationJob] Failed:', error);
-        updateGenerationJob(jobId, {
-            status: 'failed',
-            billingStatus: 'pending',
-            error: error?.message || 'Generation failed',
-            finishedAt: Date.now()
-        });
-    } finally {
-        generationInFlight.delete(jobId);
-    }
-}
+    ackGenerationJobForUser,
+    claimGenerationJobForUser,
+    createOrReuseGenerationJob,
+    getGenerationJobForUser,
+    initGenerationJobMaintenance as initGenerationJobMaintenanceService
+} from '../services/business/generationJobService.js';
 
 export function getConfig(req: Request, res: Response) {
     res.json(pricingService.getConfig());
@@ -107,7 +30,6 @@ export async function generate(req: Request, res: Response) {
         if (requestedUserId && requestedUserId !== userId) {
             return res.status(403).json({ error: "User mismatch." });
         }
-        const provider = BackendAIService.getProvider();
 
         // 1. Determine Cost
         let calculatedCost = 0;
@@ -130,19 +52,19 @@ export async function generate(req: Request, res: Response) {
         // 3. Dispatch to Provider (Unified)
         let result;
         if (action === 'GET_RECOMMENDATIONS') {
-            const results = await provider.getRecommendations(location, interests, category, excludeNames, userId, undefined, language, titleLanguage);
+            const results = await aiPipeline.getRecommendations(location, interests, category, excludeNames, userId, undefined, language, titleLanguage);
             result = { text: JSON.stringify(results) };
 
         } else if (action === 'CHECK_FEASIBILITY') {
-            const feasibility = await provider.checkFeasibility(tripData, modificationContext, userId, authToken, language);
+            const feasibility = await aiPipeline.checkFeasibility(tripData, modificationContext, userId, authToken, language);
             result = { text: JSON.stringify(feasibility) };
 
         } else if (action === 'GENERATE_TRIP') {
-            const trip = await provider.generateTrip(tripInput, userId, authToken);
+            const trip = await aiPipeline.generateTrip(tripInput, userId, authToken);
             result = { text: JSON.stringify(trip) };
 
         } else if (action === 'GENERATE_ADVISORY') {
-            const advisory = await provider.generateAdvisory!(tripData, userId, authToken, language);
+            const advisory = await aiPipeline.generateAdvisory(tripData, userId, authToken, language);
             result = { text: JSON.stringify(advisory) };
 
         } else {
@@ -166,7 +88,6 @@ export async function streamUpdate(req: Request, res: Response) {
         if (requestedUserId && requestedUserId !== userId) {
             return res.status(403).json({ error: "User mismatch." });
         }
-        const provider = BackendAIService.getProvider();
 
         // 1. Transaction Logic
         if (userId) {
@@ -191,12 +112,12 @@ export async function streamUpdate(req: Request, res: Response) {
         };
 
         if (action === 'CHAT_UPDATE') {
-            await provider.updateTrip(currentData, history, onThought, userId, authToken, language, tripLanguage);
+            await aiPipeline.updateTrip(currentData, history, onThought, userId, authToken, language, tripLanguage);
             res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
             res.end();
 
         } else if (action === 'EXPLORER_UPDATE') {
-            await provider.updateTripWithExplorer(
+            await aiPipeline.updateTripWithExplorer(
                 currentData,
                 dayIndex,
                 newMustVisit || [],
@@ -215,7 +136,7 @@ export async function streamUpdate(req: Request, res: Response) {
         } else if (action === 'GENERATE_TRIP') {
             const keepAlive = setInterval(() => res.write(`: keep-alive\n\n`), 5000);
             try {
-                const tripData = await provider.generateTrip(tripInput, userId, authToken);
+                const tripData = await aiPipeline.generateTrip(tripInput, userId, authToken);
                 if (userId) {
                     const cost = pricingService.calculate(action, { dateRange: tripInput?.dateRange });
                     const charged = await deductPoints(userId, cost, description || action, authToken);
@@ -267,25 +188,18 @@ export async function createGenerationJobHandler(req: Request, res: Response) {
             return res.status(400).json({ error: 'clientRequestId is required.' });
         }
 
-        const existing = findGenerationJobByClientRequestId(userId, clientRequestId);
-        if (existing) {
-            return res.status(200).json(toPublicGenerationJob(existing));
-        }
-
-        const costDescription = description || `Generate Trip: ${tripInput?.destination || 'Unknown'}`;
         if (!authToken) return res.status(401).json({ error: 'Missing auth token.' });
 
-        const job = createGenerationJob({
-            action: 'GENERATE_TRIP',
+        const result = createOrReuseGenerationJob({
             userId,
+            authToken,
             tripLocalId,
             clientRequestId,
-            tripInput
+            tripInput,
+            description
         });
 
-        void runGenerationJob(job.jobId, authToken, costDescription);
-
-        return res.status(202).json(toPublicGenerationJob(job));
+        return res.status(result.statusCode).json(result.job);
     } catch (error: any) {
         console.error('Error in /generation-jobs:', error);
         return res.status(500).json({ error: error.message });
@@ -302,11 +216,8 @@ export async function getGenerationJobHandler(req: Request, res: Response) {
         if (!userId) return res.status(401).json({ error: 'Missing authenticated user.' });
         if (!jobId) return res.status(400).json({ error: 'jobId is required.' });
 
-        const job = getGenerationJob(jobId);
-        if (!job) return res.status(404).json({ error: 'Generation job not found.' });
-        if (job.userId !== userId) return res.status(403).json({ error: 'Forbidden.' });
-
-        return res.json(toPublicGenerationJob(job));
+        const result = getGenerationJobForUser(jobId, userId);
+        return res.status(result.statusCode).json(result.body);
     } catch (error: any) {
         console.error('Error in GET /generation-jobs/:jobId:', error);
         return res.status(500).json({ error: error.message });
@@ -323,15 +234,8 @@ export async function claimGenerationJobHandler(req: Request, res: Response) {
         if (!userId) return res.status(401).json({ error: 'Missing authenticated user.' });
         if (!jobId) return res.status(400).json({ error: 'jobId is required.' });
 
-        const claimed = claimGenerationJob(jobId, userId);
-        if (!claimed) return res.status(404).json({ error: 'Generation job not claimable.' });
-
-        return res.json({
-            jobId: claimed.job.jobId,
-            status: claimed.job.status,
-            claimToken: claimed.claimToken,
-            result: claimed.job.result
-        });
+        const result = claimGenerationJobForUser(jobId, userId);
+        return res.status(result.statusCode).json(result.body);
     } catch (error: any) {
         console.error('Error in POST /generation-jobs/:jobId/claim:', error);
         return res.status(500).json({ error: error.message });
@@ -352,10 +256,8 @@ export async function ackGenerationJobHandler(req: Request, res: Response) {
             return res.status(400).json({ error: 'claimToken is required.' });
         }
 
-        const ok = ackGenerationJob(jobId, userId, claimToken);
-        if (!ok) return res.status(403).json({ error: 'Invalid claim token or forbidden.' });
-
-        return res.json({ ok: true });
+        const result = ackGenerationJobForUser(jobId, userId, claimToken);
+        return res.status(result.statusCode).json(result.body);
     } catch (error: any) {
         console.error('Error in POST /generation-jobs/:jobId/ack:', error);
         return res.status(500).json({ error: error.message });
@@ -363,20 +265,7 @@ export async function ackGenerationJobHandler(req: Request, res: Response) {
 }
 
 export function initGenerationJobMaintenance() {
-    try {
-        purgeExpiredGenerationJobs(true);
-        failInProgressGenerationJobsOnStartup();
-
-        setInterval(() => {
-            try {
-                purgeExpiredGenerationJobs(true);
-            } catch (e) {
-                console.error('[GenerationJobMaintenance] Cleanup failed:', e);
-            }
-        }, 60 * 60 * 1000);
-    } catch (e) {
-        console.error('[GenerationJobMaintenance] Init failed:', e);
-    }
+    initGenerationJobMaintenanceService();
 }
 
 export async function streamRecommendations(req: Request, res: Response) {
@@ -388,8 +277,6 @@ export async function streamRecommendations(req: Request, res: Response) {
         if (requestedUserId && requestedUserId !== userId) {
             return res.status(403).json({ error: "User mismatch." });
         }
-        const provider = BackendAIService.getProvider();
-
         // 1. Transaction Logic
         // 1. Transaction Logic
         const baseCost = pricingService.calculate('GET_RECOMMENDATIONS');
@@ -450,42 +337,22 @@ export async function streamRecommendations(req: Request, res: Response) {
         }
 
         // 3. Stream Recommendations
-        if (provider.getRecommendationsStream) {
-            // Use streaming if available
-            await provider.getRecommendationsStream(
-                location,
-                interests,
-                category || 'attraction',
-                excludeNames || [],
-                (item) => {
-                    res.write(`data: ${JSON.stringify({ type: 'item', item })}
-
-`);
-                },
-                userId,
-                authToken,
-                language,
-                titleLanguage,
-                RECOMMENDATION_COUNT
-            );
-        } else {
-            // Fallback to non-streaming
-            const items = await provider.getRecommendations(
-                location,
-                interests,
-                category || 'attraction',
-                excludeNames || [],
-                userId,
-                undefined,
-                language,
-                titleLanguage
-            );
-            for (const item of items) {
+        await aiPipeline.streamRecommendations(
+            location,
+            interests,
+            category || 'attraction',
+            excludeNames || [],
+            (item) => {
                 res.write(`data: ${JSON.stringify({ type: 'item', item })}
 
 `);
-            }
-        }
+            },
+            userId,
+            authToken,
+            language,
+            titleLanguage,
+            RECOMMENDATION_COUNT
+        );
 
         res.write(`data: ${JSON.stringify({ type: 'done' })}
 

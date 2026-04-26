@@ -1,6 +1,13 @@
 
 import { TRIP_BASE_COST, TRIP_DAILY_COST } from "../config/costConfig.js";
 
+const parseDateRangeParts = (dateRange: string): string[] => {
+    const explicitDateMatch = dateRange.match(/(\d{4}[/-]\d{1,2}[/-]\d{1,2})\s*(?:-|–|—|~|至|to)\s*(\d{4}[/-]\d{1,2}[/-]\d{1,2})/i);
+    if (explicitDateMatch) return [explicitDateMatch[1], explicitDateMatch[2]];
+
+    return dateRange.split(/\s+(?:-|–|—|~|至|to)\s+/i).map(s => s.trim());
+};
+
 export const calculateTripCost = (dateRange: string): number => {
     // Default to at least 1 day if parsing fails
     let days = 1;
@@ -12,7 +19,7 @@ export const calculateTripCost = (dateRange: string): number => {
     } else {
         // Try to parse date range "YYYY/MM/DD - YYYY/MM/DD" or "MM/DD - MM/DD"
         try {
-            const parts = dateRange.split('-').map(s => s.trim());
+            const parts = parseDateRangeParts(dateRange);
             if (parts.length === 2) {
                 const start = new Date(parts[0]);
                 const end = new Date(parts[1]);

@@ -1,14 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LogOut, User, Coins, History, ChevronDown, ChevronUp, CreditCard, Sparkles, Settings } from 'lucide-react';
+import { LogOut, Coins, History, ChevronDown, ChevronUp, CreditCard, Sparkles, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { usePoints } from '../context/PointsContext';
-import { useSettings } from '../context/SettingsContext';
+import { useAppShell } from '../context/AppShellContext';
 import TransactionHistoryModal from './TransactionHistoryModal';
-import SettingsModal from './SettingsModal';
 import { useTranslation } from 'react-i18next';
 
 export default function UserProfileMenu() {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const { user, logout } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -25,7 +24,7 @@ export default function UserProfileMenu() {
     }, []);
 
     const { balance, openPurchaseModal, isSubscribed } = usePoints();
-    const { isSettingsModalOpen, openSettingsModal, closeSettingsModal } = useSettings();
+    const { openSettingsModal } = useAppShell();
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
     if (!user) return null;
@@ -184,10 +183,6 @@ export default function UserProfileMenu() {
                 onClose={() => setIsHistoryModalOpen(false)}
             />
 
-            <SettingsModal
-                isOpen={isSettingsModalOpen}
-                onClose={closeSettingsModal}
-            />
         </div>
     );
 }

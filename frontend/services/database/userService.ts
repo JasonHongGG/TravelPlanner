@@ -1,7 +1,5 @@
+import { apiUrl, getAuthHeaders, requestJson } from "../http/apiClient";
 import { parseErrorResponse } from "../http/parseError";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
-const USER_API_BASE_URL = `${API_BASE_URL}/db`;
 
 export interface Transaction {
     id: string;
@@ -23,17 +21,10 @@ export interface User {
     };
 }
 
-const getAuthHeaders = (): Record<string, string> => {
-    const headers: Record<string, string> = {};
-    const token = localStorage.getItem("google_auth_token");
-    if (token) headers.Authorization = `Bearer ${token}`;
-    return headers;
-};
-
 export const getUserProfile = async (email: string): Promise<User | null> => {
     try {
-        const response = await fetch(`${USER_API_BASE_URL}/users/${email}`, {
-            headers: getAuthHeaders()
+        const response = await fetch(apiUrl(`/db/users/${email}`), {
+            headers: getAuthHeaders(false)
         });
 
         if (!response.ok) {
@@ -52,21 +43,14 @@ export const getUserProfile = async (email: string): Promise<User | null> => {
 
 const postTransaction = async (email: string, transaction: Transaction): Promise<User> => {
     try {
-        const response = await fetch(`${USER_API_BASE_URL}/users/${email}/transaction`, {
+        return await requestJson<User>(`/db/users/${email}/transaction`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
                 "Idempotency-Key": transaction.id
             },
-            body: JSON.stringify({ transaction })
+            body: { transaction },
+            fallbackMessage: "Transaction failed"
         });
-
-        if (!response.ok) {
-            throw await parseErrorResponse(response, "Transaction failed");
-        }
-
-        return await response.json();
     } catch (error) {
         if (error instanceof Error) {
             throw new Error(`[UserService] ${error.message}`);

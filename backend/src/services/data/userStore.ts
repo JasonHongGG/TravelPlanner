@@ -91,5 +91,7 @@ export const readUsers = (): Record<string, StoredUser> => {
 };
 
 export const writeUsers = (users: Record<string, StoredUser>) => {
-    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+    const tempFile = `${USERS_FILE}.${process.pid}.${Date.now()}.tmp`;
+    fs.writeFileSync(tempFile, JSON.stringify(users, null, 2));
+    fs.renameSync(tempFile, USERS_FILE);
 };

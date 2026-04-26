@@ -111,6 +111,12 @@ function ensureDirectories() {
     }
 }
 
+function atomicWriteJson(filePath: string, value: unknown): void {
+    const tempPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+    fs.writeFileSync(tempPath, JSON.stringify(value, null, 2), 'utf-8');
+    fs.renameSync(tempPath, filePath);
+}
+
 // ==========================================
 // SSE Clients Management
 // ==========================================
@@ -162,7 +168,8 @@ function readTripIndex(): TripIndex {
 }
 
 function writeTripIndex(index: TripIndex): void {
-    fs.writeFileSync(TRIP_INDEX_PATH, JSON.stringify(index, null, 2), 'utf-8');
+    ensureDirectories();
+    atomicWriteJson(TRIP_INDEX_PATH, index);
 }
 
 // ==========================================
@@ -186,7 +193,7 @@ export function getTripMeta(tripId: string): SharedTripMeta | null {
 function writeTripMeta(meta: SharedTripMeta): void {
     ensureDirectories();
     const filePath = path.join(TRIP_META_DIR, `${meta.tripId}.json`);
-    fs.writeFileSync(filePath, JSON.stringify(meta, null, 2), 'utf-8');
+    atomicWriteJson(filePath, meta);
 }
 
 function deleteTripMetaFile(tripId: string): void {
@@ -248,7 +255,7 @@ export function getSharedTrip(tripId: string): SharedTrip | null {
 function writeSharedTrip(trip: SharedTrip): void {
     ensureDirectories();
     const filePath = path.join(SHARED_TRIPS_DIR, `${trip.tripId}.json`);
-    fs.writeFileSync(filePath, JSON.stringify(trip, null, 2), 'utf-8');
+    atomicWriteJson(filePath, trip);
 }
 
 function deleteSharedTripFile(tripId: string): void {
@@ -379,6 +386,16 @@ export function getTrip(tripId: string, requesterId?: string, userIp?: string): 
 
     // Return trip mixed with the computed permission for the frontend to use
     return { ...trip, userPermission: permission };
+}
+
+export function canAccessTrip(tripId: string, requesterId?: string): boolean {
+    const trip = getSharedTrip(tripId);
+    if (!trip) return false;
+
+    if (trip.visibility === 'public') return true;
+    if (!requesterId) return false;
+    if (trip.ownerId === requesterId) return true;
+    return Boolean(trip.permissions?.[requesterId]);
 }
 
 export function updateVisibility(tripId: string, ownerId: string, visibility: TripVisibility): boolean {

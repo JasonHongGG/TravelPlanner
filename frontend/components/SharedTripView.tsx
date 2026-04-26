@@ -48,13 +48,30 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
     useEffect(() => {
         loadTrip();
 
-        // Setup SSE
-        const eventSource = tripShareService.subscribeToTrip(tripId, handleServerEvent);
+        let eventSource: EventSource | null = null;
+        let cancelled = false;
+
+        const setupEvents = async () => {
+            let token: string | undefined;
+            if (user?.email) {
+                try {
+                    token = await tripShareService.createTripEventToken(tripId);
+                } catch (error) {
+                    console.warn('[SharedTripView] Continuing without trip event token:', error);
+                }
+            }
+
+            if (cancelled) return;
+            eventSource = tripShareService.subscribeToTrip(tripId, handleServerEvent, token);
+        };
+
+        void setupEvents();
 
         return () => {
-            eventSource.close();
+            cancelled = true;
+            eventSource?.close();
         };
-    }, [tripId]);
+    }, [tripId, user?.email]);
 
     // Sync state to ref
     useEffect(() => {

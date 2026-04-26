@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Trip } from './types';
 import Dashboard from './components/Dashboard';
@@ -11,7 +11,9 @@ import { useAuth } from './context/AuthContext';
 import LoginScreen from './components/LoginScreen';
 import LandingPage from './components/LandingPage';
 import PurchasePointsModal from './components/PurchasePointsModal';
+import SettingsModal from './components/SettingsModal';
 import { usePoints } from './context/PointsContext';
+import { useAppShell } from './context/AppShellContext';
 import { StatusAlertProvider } from './context/StatusAlertContext';
 
 // Protected Route Component
@@ -37,26 +39,32 @@ const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
 // Travel Manager Component (Dashboard Logic)
 const TravelManager = () => {
   const { trips, createTrip, updateTripData, updateTrip, deleteTrip, importTrip, retryTrip } = useTripManager();
-  const { isPurchaseModalOpen, closePurchaseModal, initialTab } = usePoints();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [view, setView] = useState<'dashboard' | 'detail' | 'gallery'>('dashboard');
+  const routeTripId = (() => {
+    const match = location.pathname.match(/^\/dashboard\/trips\/([^/]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  })();
+  const view: 'dashboard' | 'detail' | 'gallery' = location.pathname === '/dashboard/gallery'
+    ? 'gallery'
+    : routeTripId
+      ? 'detail'
+      : 'dashboard';
 
   const handleSelectTrip = (trip: Trip) => {
-    setSelectedTripId(trip.id);
-    setView('detail');
+    navigate(`/dashboard/trips/${encodeURIComponent(trip.id)}`);
   };
 
   const handleDeleteTrip = (tripId: string) => {
     deleteTrip(tripId);
-    if (selectedTripId === tripId) {
-      setSelectedTripId(null);
-      setView('dashboard');
+    if (routeTripId === tripId) {
+      navigate('/dashboard');
     }
   };
 
-  const selectedTrip = trips.find(t => t.id === selectedTripId);
+  const selectedTrip = trips.find(t => t.id === routeTripId);
 
   return (
     <>
@@ -68,13 +76,13 @@ const TravelManager = () => {
           onDeleteTrip={handleDeleteTrip}
           onImportTrip={importTrip}
           onRetryTrip={retryTrip}
-          onOpenGallery={() => setView('gallery')}
+          onOpenGallery={() => navigate('/dashboard/gallery')}
         />
       )}
 
       {view === 'gallery' && (
         <GalleryPage
-          onBack={() => setView('dashboard')}
+          onBack={() => navigate('/dashboard')}
           onSelectTrip={(tripId) => {
             // For now, gallery selection within dashboard view might just act as preview or import
             // If we want to navigate to the shared view:
@@ -86,7 +94,7 @@ const TravelManager = () => {
       {view === 'detail' && selectedTrip && (
         <TripDetail
           trip={selectedTrip}
-          onBack={() => setView('dashboard')}
+          onBack={() => navigate('/dashboard')}
           onUpdateTrip={updateTripData}
           onUpdateTripMeta={(updates) => updateTrip(selectedTrip.id, updates)}
         />
@@ -99,13 +107,30 @@ const TravelManager = () => {
           onSubmit={createTrip}
         />
       )}
-
-      <PurchasePointsModal
-        isOpen={isPurchaseModalOpen}
-        onClose={closePurchaseModal}
-        initialTab={initialTab}
-      />
     </>
+  );
+};
+
+const PurchaseModalHost = () => {
+  const { isPurchaseModalOpen, closePurchaseModal, initialTab } = usePoints();
+
+  return (
+    <PurchasePointsModal
+      isOpen={isPurchaseModalOpen}
+      onClose={closePurchaseModal}
+      initialTab={initialTab}
+    />
+  );
+};
+
+const SettingsModalHost = () => {
+  const { isSettingsModalOpen, closeSettingsModal } = useAppShell();
+
+  return (
+    <SettingsModal
+      isOpen={isSettingsModalOpen}
+      onClose={closeSettingsModal}
+    />
   );
 };
 
@@ -149,6 +174,8 @@ export default function App() {
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <PurchaseModalHost />
+        <SettingsModalHost />
       </BrowserRouter>
     </StatusAlertProvider>
   );
@@ -170,21 +197,13 @@ const SharedTripViewWrapper = () => {
 const SharedTripViewWithParams = () => {
   const { tripId } = useParams<{ tripId: string }>();
   const navigate = useNavigate();
-  const { isPurchaseModalOpen, closePurchaseModal, initialTab } = usePoints();
 
   if (!tripId) return <Navigate to="/" />;
 
   return (
-    <>
-      <SharedTripView
-        tripId={tripId}
-        onBack={() => navigate('/')}
-      />
-      <PurchasePointsModal
-        isOpen={isPurchaseModalOpen}
-        onClose={closePurchaseModal}
-        initialTab={initialTab}
-      />
-    </>
+    <SharedTripView
+      tripId={tripId}
+      onBack={() => navigate('/')}
+    />
   );
 }

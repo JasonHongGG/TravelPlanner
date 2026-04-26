@@ -1,5 +1,7 @@
 import { TripInput, TripData, Message, AttractionRecommendation, FeasibilityResult, UpdateResult } from "../types";
 import { parseErrorResponse } from "./http/parseError";
+import { apiUrl, getAuthHeaders } from "./http/apiClient";
+import { mergeTripData, parseJsonFromText } from "./travelAiResponse";
 
 export type GenerationJobStatus = 'queued' | 'running' | 'completed' | 'failed';
 
@@ -28,75 +30,16 @@ export interface ClaimedGenerationJob {
     result: TripData;
 }
 
-
-const SERVER_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
-
 export class TravelAIService {
-
-    private getAuthHeaders(): Record<string, string> {
-        const headers: Record<string, string> = {
-            'Content-Type': 'application/json',
-            'X-Correlation-ID': crypto.randomUUID()
-        };
-        const token = localStorage.getItem('google_auth_token');
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        return headers;
-    }
-
-    private parseJsonFromResponse(text: string, strict = true): any {
-        const start = text.indexOf('{');
-        const end = text.lastIndexOf('}');
-
-        if (start === -1 || end === -1) {
-            throw new Error("Invalid response format: No JSON object found.");
-        }
-
-        const jsonStr = text.substring(start, end + 1);
-        try {
-            const data = JSON.parse(jsonStr);
-            if (strict) {
-                if (!data.tripMeta || !data.days) {
-                    // Relaxed check for now
-                }
-            }
-            return data;
-        } catch (e) {
-            console.error("JSON Parse Error:", e);
-            throw new Error("Failed to parse itinerary data.");
-        }
-    }
-
-    private mergeTripData(original: TripData, updates: Partial<TripData>): TripData {
-        const newData = { ...original };
-        if (updates.tripMeta) newData.tripMeta = { ...newData.tripMeta, ...updates.tripMeta };
-
-        if (updates.days && Array.isArray(updates.days)) {
-            const newDays = [...newData.days];
-            updates.days.forEach(updatedDay => {
-                const index = newDays.findIndex(d => d.day === updatedDay.day);
-                if (index !== -1) newDays[index] = updatedDay;
-                else newDays.push(updatedDay);
-            });
-            newDays.sort((a, b) => a.day - b.day);
-            newData.days = newDays;
-        }
-
-        if (updates.totals) newData.totals = updates.totals;
-        if (updates.advisory) newData.advisory = updates.advisory;
-
-
-        return newData;
-    }
-
     private async streamAndAccumulate(
         endpoint: string,
         body: any,
         onChunk?: (text: string) => void,
         onPlanningStart?: () => void
     ): Promise<string> {
-        const headers = this.getAuthHeaders();
+        const headers = getAuthHeaders();
 
-        const response = await fetch(`${SERVER_URL}${endpoint}`, {
+        const response = await fetch(apiUrl(endpoint), {
             method: 'POST',
             headers,
             body: JSON.stringify(body)
@@ -167,7 +110,7 @@ export class TravelAIService {
         description: string,
         bodyParams: any
     ): Promise<string> {
-        const headers = this.getAuthHeaders();
+        const headers = getAuthHeaders();
 
         const body = {
             action,
@@ -175,7 +118,7 @@ export class TravelAIService {
             ...bodyParams
         };
 
-        const response = await fetch(`${SERVER_URL}/generate`, {
+        const response = await fetch(apiUrl('/generate'), {
             method: 'POST',
             headers,
             body: JSON.stringify(body)
@@ -197,8 +140,8 @@ export class TravelAIService {
             clientRequestId?: string;
         }
     ): Promise<GenerationJob> {
-        const headers = this.getAuthHeaders();
-        const response = await fetch(`${SERVER_URL}/generation-jobs`, {
+        const headers = getAuthHeaders();
+        const response = await fetch(apiUrl('/generation-jobs'), {
             method: 'POST',
             headers,
             body: JSON.stringify({
@@ -219,8 +162,8 @@ export class TravelAIService {
     }
 
     async getGenerationJob(jobId: string): Promise<GenerationJob> {
-        const headers = this.getAuthHeaders();
-        const response = await fetch(`${SERVER_URL}/generation-jobs/${jobId}`, {
+        const headers = getAuthHeaders();
+        const response = await fetch(apiUrl(`/generation-jobs/${jobId}`), {
             method: 'GET',
             headers
         });
@@ -233,8 +176,8 @@ export class TravelAIService {
     }
 
     async claimGenerationJob(jobId: string): Promise<ClaimedGenerationJob> {
-        const headers = this.getAuthHeaders();
-        const response = await fetch(`${SERVER_URL}/generation-jobs/${jobId}/claim`, {
+        const headers = getAuthHeaders();
+        const response = await fetch(apiUrl(`/generation-jobs/${jobId}/claim`), {
             method: 'POST',
             headers,
             body: JSON.stringify({})
@@ -248,8 +191,8 @@ export class TravelAIService {
     }
 
     async ackGenerationJob(jobId: string, claimToken: string): Promise<void> {
-        const headers = this.getAuthHeaders();
-        const response = await fetch(`${SERVER_URL}/generation-jobs/${jobId}/ack`, {
+        const headers = getAuthHeaders();
+        const response = await fetch(apiUrl(`/generation-jobs/${jobId}/ack`), {
             method: 'POST',
             headers,
             body: JSON.stringify({ claimToken })
@@ -272,14 +215,7 @@ export class TravelAIService {
             }
         );
 
-        let cleanJson = responseText.trim();
-        if (cleanJson.startsWith('```json')) {
-            cleanJson = cleanJson.replace(/^```json\s*/i, '').replace(/```\s*$/, '');
-        } else if (cleanJson.startsWith('```')) {
-            cleanJson = cleanJson.replace(/^```\s*/i, '').replace(/```\s*$/, '');
-        }
-
-        return this.parseJsonFromResponse(cleanJson, true);
+        return parseJsonFromText<TripData>(responseText, 'Failed to parse itinerary data.');
     }
 
     async updateTrip(
@@ -293,9 +229,9 @@ export class TravelAIService {
     ): Promise<UpdateResult> {
         // Model is determined by backend configuration
 
-        const headers = this.getAuthHeaders();
+        const headers = getAuthHeaders();
 
-        const response = await fetch(`${SERVER_URL}/stream-update`, {
+        const response = await fetch(apiUrl('/stream-update'), {
             method: 'POST',
             headers,
             body: JSON.stringify({
@@ -400,11 +336,8 @@ export class TravelAIService {
         }
 
         if (isJsonMode) {
-            let cleanJson = jsonBuffer.trim();
-            if (cleanJson.startsWith('```json')) cleanJson = cleanJson.replace(/^```json/, '').replace(/```$/, '');
-
-            const partialUpdate = this.parseJsonFromResponse(cleanJson, false);
-            const updatedData = this.mergeTripData(currentData, partialUpdate);
+            const partialUpdate = parseJsonFromText<Partial<TripData>>(jsonBuffer, 'Failed to parse itinerary update data.');
+            const updatedData = mergeTripData(currentData, partialUpdate);
             const finalText = fullText.split(delimiter)[0].trim();
             const safeResponseText = finalText || "好的，已為您更新行程。";
             return { responseText: safeResponseText, updatedData: updatedData };
@@ -449,8 +382,8 @@ export class TravelAIService {
             const jsonPart = responseText.substring(delimiterIndex + delimiter.length);
 
             try {
-                const partialUpdate = JSON.parse(jsonPart);
-                const mergedData = this.mergeTripData(currentData, partialUpdate);
+                const partialUpdate = parseJsonFromText<Partial<TripData>>(jsonPart, 'Failed to parse explorer update data.');
+                const mergedData = mergeTripData(currentData, partialUpdate);
                 return { responseText: finalText, updatedData: mergedData };
             } catch (e) {
                 console.error("Failed to parse explorer update JSON", e);
@@ -509,8 +442,8 @@ export class TravelAIService {
             onSessionStart?: (sessionId: string) => void
         }
     ): Promise<void> {
-        const headers = this.getAuthHeaders();
-        const response = await fetch(`${SERVER_URL}/stream-recommendations`, {
+        const headers = getAuthHeaders();
+        const response = await fetch(apiUrl('/stream-recommendations'), {
             method: 'POST',
             headers,
             body: JSON.stringify({

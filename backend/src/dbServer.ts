@@ -1,20 +1,9 @@
 import 'dotenv/config';
-import express from 'express';
-import cors from 'cors';
-import dbRoutes from './routes/dbRoutes.js';
-import { errorHandler } from './middleware/errorHandler.js';
 import { configService } from './config/configService.js';
-import { corsOptions } from './config/corsConfig.js';
+import { createDbApp } from './app.js';
 
-const app = express();
+const app = createDbApp();
 const port = process.env.DB_SERVER_PORT || 3002;
-
-app.use(cors(corsOptions));
-app.use(express.json());
-
-app.use('/', dbRoutes);
-
-app.use(errorHandler);
 
 configService.validateDbServer();
 

@@ -6,6 +6,10 @@
     "main": "src/index.ts",
     "scripts": {
         "build": "tsc -p tsconfig.json",
+        "typecheck": "tsc -p tsconfig.json --noEmit",
+        "test": "tsx --test src/**/*.test.ts",
+        "lint": "npm run typecheck",
+        "migrate:report": "tsx src/scripts/createMigrationReport.ts",
         "db": "tsx src/dbServer.ts",
         "copilot": "tsx src/copilotServer.ts",
         "server": "tsx src/server.ts",

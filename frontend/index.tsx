@@ -7,6 +7,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './context/AuthContext';
 import { PointsProvider } from './context/PointsContext';
 import { SettingsProvider } from './context/SettingsContext';
+import { AppShellProvider } from './context/AppShellContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -26,7 +27,9 @@ root.render(
       <AuthProvider>
         <PointsProvider>
           <SettingsProvider>
-            <App />
+            <AppShellProvider>
+              <App />
+            </AppShellProvider>
           </SettingsProvider>
         </PointsProvider>
       </AuthProvider>

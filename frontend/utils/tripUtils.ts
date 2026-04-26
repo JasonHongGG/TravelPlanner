@@ -1,5 +1,12 @@
 import { Trip } from '../types';
 
+const parseDateRangeParts = (dateRange: string): string[] => {
+    const explicitDateMatch = dateRange.match(/(\d{4}[/-]\d{1,2}[/-]\d{1,2})\s*(?:-|–|—|~|至|to)\s*(\d{4}[/-]\d{1,2}[/-]\d{1,2})/i);
+    if (explicitDateMatch) return [explicitDateMatch[1], explicitDateMatch[2]];
+
+    return dateRange.split(/\s+(?:-|–|—|~|至|to)\s+/i).map(s => s.trim());
+};
+
 export const calculateTripDays = (dateRange: string): number => {
     // Default to at least 1 day if parsing fails
     let days = 1;
@@ -12,7 +19,7 @@ export const calculateTripDays = (dateRange: string): number => {
         // Try to parse date range "YYYY/MM/DD - YYYY/MM/DD" or "MM/DD - MM/DD"
         // This is a naive implementation assuming the input is relatively standard
         try {
-            const parts = dateRange.split('-').map(s => s.trim());
+            const parts = parseDateRangeParts(dateRange);
             if (parts.length === 2) {
                 // Heuristic: if no year, assume current year?
                 // Let's just try to parse directly.

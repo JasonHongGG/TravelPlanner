@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import * as tripShareService from '../services/data/tripShareService.js';
-import * as cryptoService from '../services/security/cryptoService.js';
+import { createTripEventToken as signTripEventToken, verifyTripEventToken } from '../services/security/tripEventTokenService.js';
 import { parseBoundedInt } from '../utils/params.js';
 import { GALLERY_PAGE_MAX, GALLERY_PAGE_SIZE_DEFAULT, GALLERY_PAGE_SIZE_MAX, RANDOM_TRIPS_DEFAULT, RANDOM_TRIPS_MAX } from '../config/apiLimits.js';
 
@@ -171,18 +171,40 @@ export function updatePermissions(req: Request, res: Response) {
 // SSE Subscription
 // ==========================================
 
+export function createTripEventToken(req: Request, res: Response) {
+    try {
+        const tripId = getStringParam(req.params.tripId);
+        const authUser = (req as Request & { user?: { email?: string } }).user;
+
+        if (!authUser?.email) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        if (!tripShareService.canAccessTrip(tripId, authUser.email)) {
+            return res.status(403).json({ error: 'Trip not found or access denied' });
+        }
+
+        res.json(signTripEventToken(tripId, authUser.email));
+    } catch (error: any) {
+        console.error('[TripShareController] Error creating trip event token:', error);
+        res.status(500).json({ error: error.message });
+    }
+}
+
 export function subscribeToTrip(req: Request, res: Response) {
     try {
         const tripId = getStringParam(req.params.tripId);
+        const token = typeof req.query.token === 'string' ? req.query.token : undefined;
+        const tokenPayload = token ? verifyTripEventToken(tripId, token) : null;
+
+        if (!tripShareService.canAccessTrip(tripId, tokenPayload?.userId)) {
+            return res.status(403).json({ error: 'Trip not found or access denied' });
+        }
 
         // Headers for SSE
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
-
-        // Optional: Check permission before subscribing?
-        // Ideally yes, but since events just say "updated", it's low risk.
-        // We'll let the service handle the subscription.
 
         tripShareService.subscribeToTrip(tripId, res);
 
@@ -281,81 +303,3 @@ export function getMyTrips(req: Request, res: Response) {
     }
 }
 
-// ==========================================
-// Encryption Endpoints
-// ==========================================
-
-export function encryptTrip(req: Request, res: Response) {
-    try {
-        const { tripData } = req.body;
-        if (!tripData) {
-            return res.status(400).json({ error: 'tripData is required' });
-        }
-
-        const encrypted = cryptoService.encryptTripData(tripData);
-        // We return plain text body so client can save directly as file content,
-        // or JSON object containing the string.
-        // Let's return JSON to be consistent.
-        res.json({ encryptedContent: encrypted });
-    } catch (error: any) {
-        console.error('[TripShareController] Encryption error:', error);
-        res.status(500).json({ error: 'Encryption failed' });
-    }
-}
-
-export function decryptTrip(req: Request, res: Response) {
-    try {
-        const { encryptedContent } = req.body;
-        if (!encryptedContent) {
-            return res.status(400).json({ error: 'encryptedContent is required' });
-        }
-
-        const tripData = cryptoService.decryptTripData(encryptedContent);
-        res.json({ tripData });
-    } catch (error: any) {
-        console.error('[TripShareController] Decryption error:', error);
-        res.status(400).json({ error: 'Invalid or corrupted file' });
-    }
-}
-
-// ==========================================
-// Export Endpoints
-// ==========================================
-
-import { readUsers } from '../services/data/userStore.js';
-
-export function exportTripJson(req: Request, res: Response) {
-    try {
-        const { tripData } = req.body;
-        const authUser = (req as Request & { user?: { email?: string } }).user;
-
-        if (!authUser?.email) {
-            return res.status(401).json({ error: 'Authentication required' });
-        }
-
-        if (!tripData) {
-            return res.status(400).json({ error: 'tripData is required' });
-        }
-
-        // Backend Validation: Check Subscription
-        const users = readUsers();
-        const user = users[authUser.email.toLowerCase()]; // Keys are usually lowercased
-
-        if (!user || !user.subscription || !user.subscription.active) {
-            console.warn(`[TripShareController] Blocked JSON export for unauthorized user: ${authUser.email}`);
-            return res.status(403).json({ error: 'Subscription required for JSON export.' });
-        }
-
-        // If valid, return the JSON data
-        // We set headers to force download
-        const filename = `trip_${tripData.title || 'export'}.json`;
-        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
-        res.setHeader('Content-Type', 'application/json');
-
-        res.json(tripData);
-
-    } catch (error: any) {
-        console.error('[TripShareController] Export error:', error);
-        res.status(500).json({ error: 'Export failed' });
-    }
-}

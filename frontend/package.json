@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test **/*.test.ts",
+    "lint": "npm run typecheck",
     "preview": "vite preview",
     "copilot-server": "npm run start:copilot --prefix backend",
     "db-server": "npm run start:db --prefix backend"
