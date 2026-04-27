@@ -84,27 +84,24 @@ export default function SharedTripView({ tripId, onBack }: SharedTripViewProps) 
     const handleServerEvent = (type: string, data: any) => {
         // console.log('[SharedTripView] Received event:', type, data);
 
-        if (type === 'trip_updated') {
+        if (type === 'trip_created' || type === 'trip_updated') {
             // Check timestamp to avoid overwriting local optimistic updates if we were the one saving?
             // For simplicity, we re-fetch to get latest state from server (Single Source of Truth)
             // Or if data contains the full trip, update directly. The backend currently sends minimal data.
             loadTrip();
         } else if (type === 'visibility_updated') {
             loadTrip();
-        } else if (type === 'permissions_updated') {
-            // Smart Update: Only refresh if MY permission actually changed
-            if (data.permissions && user?.email) {
+        } else if (type === 'membership_updated') {
+            if (data.memberEmail && user?.email) {
                 const myEmail = user.email.toLowerCase();
-                // Look up using lowercased email since keys are normalized
-                const newPermission = data.permissions[myEmail] || undefined;
+                if (String(data.memberEmail).toLowerCase() !== myEmail) return;
+                const newPermission = data.permission || undefined;
                 const oldPermission = currentPermissionRef.current;
 
-                // If permission is unchanged, skip reload
                 if (newPermission === oldPermission) {
                     return;
                 }
 
-                // Alert if downgraded from write to read
                 if (oldPermission === 'write' && newPermission !== 'write') {
                     showAlert({
                         type: 'warning',

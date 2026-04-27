@@ -1,20 +1,13 @@
 import type { GenerationJob } from './TravelAIService';
 import type { Trip, TripData, TripInput } from '../types';
+import { loadWorkspaceTrips, saveWorkspaceTrips } from './tripWorkspaceRepository';
 
-const TRIPS_STORAGE_KEY = 'ai_travel_trips';
-
-export function loadStoredTrips(): Trip[] {
-    try {
-        const saved = localStorage.getItem(TRIPS_STORAGE_KEY);
-        return saved ? JSON.parse(saved) : [];
-    } catch (error) {
-        console.error('Failed to parse saved trips', error);
-        return [];
-    }
+export function loadStoredTrips(userEmail?: string): Trip[] {
+    return loadWorkspaceTrips(userEmail);
 }
 
-export function saveStoredTrips(trips: Trip[]): void {
-    localStorage.setItem(TRIPS_STORAGE_KEY, JSON.stringify(trips));
+export function saveStoredTrips(trips: Trip[], userEmail?: string): void {
+    saveWorkspaceTrips(trips, userEmail);
 }
 
 export function createGeneratingTrip(input: TripInput, clientRequestId: string): Trip {

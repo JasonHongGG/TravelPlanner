@@ -124,6 +124,10 @@ export interface Trip {
   visibility?: TripVisibility;
   serverTripId?: string;      // Server-side ID (exists after sharing)
   lastSyncedAt?: number;      // Last sync timestamp
+  ownerId?: string;
+  userPermission?: TripPermission;
+  workspaceSource?: WorkspaceTripSource;
+  revision?: number;
 }
 
 export type MessageRole = 'user' | 'model';
@@ -189,20 +193,39 @@ export interface SharedTripMeta {
 // ... (previous types omitted)
 
 export type TripPermission = 'read' | 'write';
+export type TripMemberRole = 'owner' | 'editor' | 'viewer';
+export type TripMemberStatus = 'active' | 'revoked';
+export type WorkspaceTripSource = 'owned' | 'shared' | 'imported';
+export type WorkspaceTripRole = 'owner' | 'editor' | 'viewer';
+
+export interface TripMembership {
+  schemaVersion: 1;
+  tripId: string;
+  userId: string;
+  role: TripMemberRole;
+  status: TripMemberStatus;
+  createdAt: number;
+  updatedAt: number;
+}
 
 export interface SharedTrip {
   tripId: string;
   ownerId: string;
   visibility: TripVisibility;
-  // Legacy support
-  allowedUsers?: string[];
-  // New permissions
+  memberships?: TripMembership[];
+  // Derived from active memberships for existing share-modal state.
   permissions?: Record<string, TripPermission>;
-  // Computed permission for current viewer
   userPermission?: TripPermission;
+  revision?: number;
   createdAt: number;
   lastModified: number;
   tripData: Trip;
+}
+
+export interface WorkspaceTripSummary extends SharedTripMeta {
+  source: WorkspaceTripSource;
+  role: WorkspaceTripRole;
+  revision: number;
 }
 
 export interface TripIndex {

@@ -51,4 +51,49 @@ describe('fetchMissingOwnedCloudTrips', () => {
 
         assert.deepEqual(imported.map(item => item.serverTripId), ['trip-2']);
     });
+
+    it('imports shared workspace trips with collaboration metadata', async () => {
+        const imported = await fetchMissingOwnedCloudTrips({
+            ownerEmail: 'collab@example.com',
+            localTrips: [],
+            client: {
+                async getMySharedTripIds() {
+                    return [];
+                },
+                async getWorkspaceTrips() {
+                    return [{
+                        tripId: 'trip-shared',
+                        ownerId: 'owner@example.com',
+                        ownerName: 'Owner',
+                        visibility: 'private',
+                        title: 'Shared',
+                        destination: 'Tokyo',
+                        dateRange: '2026-05-01 to 2026-05-02',
+                        days: 2,
+                        createdAt: 1,
+                        lastModified: 2,
+                        viewCount: 0,
+                        likeCount: 0,
+                        recentEngagements: [],
+                        source: 'shared',
+                        role: 'editor',
+                        revision: 3
+                    }];
+                },
+                async getTrip() {
+                    return {
+                        ...trip('trip-shared', 'owner@example.com'),
+                        userPermission: 'write',
+                        revision: 3
+                    };
+                }
+            }
+        });
+
+        assert.equal(imported.length, 1);
+        assert.equal(imported[0].ownerId, 'owner@example.com');
+        assert.equal(imported[0].workspaceSource, 'shared');
+        assert.equal(imported[0].userPermission, 'write');
+        assert.equal(imported[0].revision, 3);
+    });
 });

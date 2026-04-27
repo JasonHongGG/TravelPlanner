@@ -40,10 +40,9 @@ export function getTrip(req: Request, res: Response) {
 // Save/Update Trip
 // ==========================================
 
-export function saveTrip(req: Request, res: Response) {
+export function createTripDocument(req: Request, res: Response) {
     try {
-        const tripId = getStringParam(req.params.tripId);
-        const { tripData, visibility } = req.body;
+        const { tripData, visibility, tripId: explicitTripId } = req.body;
         const authUser = (req as Request & { user?: { email?: string; name?: string; picture?: string } }).user;
 
         if (!authUser?.email) {
@@ -54,23 +53,69 @@ export function saveTrip(req: Request, res: Response) {
             return res.status(400).json({ error: 'tripData is required' });
         }
 
-        // Logic moved to service: service now handles permission check via reqUserEmail
-        const savedTripId = tripShareService.saveTrip({
+        const tripId = typeof explicitTripId === 'string'
+            ? explicitTripId
+            : typeof tripData.serverTripId === 'string'
+                ? tripData.serverTripId
+                : typeof tripData.id === 'string'
+                    ? tripData.id
+                    : '';
+
+        if (!tripId) {
+            return res.status(400).json({ error: 'tripId is required' });
+        }
+
+        if (visibility && !['public', 'private'].includes(visibility)) {
+            return res.status(400).json({ error: 'Invalid visibility value' });
+        }
+
+        const trip = tripShareService.createTripDocument({
             tripId,
             ownerId: authUser.email,
             ownerName: authUser.name || 'Anonymous',
             ownerPicture: authUser.picture,
             tripData,
             visibility: visibility || 'private',
-            reqUserEmail: authUser.email // Pass for permission check
+            reqUserEmail: authUser.email
         });
 
-        res.json({ tripId: savedTripId, message: 'Trip saved successfully' });
+        res.status(201).json({ tripId: trip.tripId, revision: trip.revision || 1, lastModified: trip.lastModified });
     } catch (error: any) {
-        console.error('[TripShareController] Error saving trip:', error);
-        if (error.message.includes('Access denied')) {
-            return res.status(403).json({ error: error.message });
+        console.error('[TripShareController] Error creating trip document:', error);
+        if (error.message.includes('already exists')) {
+            return res.status(409).json({ error: error.message, code: 'TRIP_ALREADY_EXISTS' });
         }
+        res.status(500).json({ error: error.message });
+    }
+}
+
+export function updateTripContent(req: Request, res: Response) {
+    try {
+        const tripId = getStringParam(req.params.tripId);
+        const { tripData, expectedRevision } = req.body;
+        const authUser = (req as Request & { user?: { email?: string } }).user;
+
+        if (!authUser?.email) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        if (!tripData) {
+            return res.status(400).json({ error: 'tripData is required' });
+        }
+
+        const trip = tripShareService.updateTripContent(
+            tripId,
+            authUser.email,
+            tripData,
+            typeof expectedRevision === 'number' ? expectedRevision : undefined
+        );
+
+        res.json({ tripId, revision: trip.revision || 1, lastModified: trip.lastModified });
+    } catch (error: any) {
+        console.error('[TripShareController] Error updating trip content:', error);
+        if (error.message.includes('Access denied')) return res.status(403).json({ error: error.message });
+        if (error.message.includes('Revision conflict')) return res.status(409).json({ error: error.message, code: 'REVISION_CONFLICT' });
+        if (error.message.includes('not found')) return res.status(404).json({ error: error.message });
         res.status(500).json({ error: error.message });
     }
 }
@@ -137,32 +182,43 @@ export function updateVisibility(req: Request, res: Response) {
 }
 
 // ==========================================
-// Update Permissions
+// Update Members
 // ==========================================
 
-export function updatePermissions(req: Request, res: Response) {
+export function upsertMember(req: Request, res: Response) {
     try {
         const tripId = getStringParam(req.params.tripId);
-        const { permissions } = req.body as { permissions: Record<string, 'read' | 'write'> };
+        const memberEmail = getStringParam(req.params.memberEmail) || req.body?.email;
+        const { permission } = req.body as { permission?: 'read' | 'write' };
         const authUser = (req as Request & { user?: { email?: string } }).user;
 
-        if (!authUser?.email) {
-            return res.status(401).json({ error: 'Authentication required' });
-        }
+        if (!authUser?.email) return res.status(401).json({ error: 'Authentication required' });
+        if (!memberEmail || typeof memberEmail !== 'string') return res.status(400).json({ error: 'member email is required' });
+        if (!permission || !['read', 'write'].includes(permission)) return res.status(400).json({ error: 'Invalid permission value' });
 
-        if (!permissions || typeof permissions !== 'object') {
-            return res.status(400).json({ error: 'permissions object is required' });
-        }
-
-        const success = tripShareService.updatePermissions(tripId, authUser.email, permissions);
-
-        if (!success) {
-            return res.status(403).json({ error: 'Trip not found or not authorized' });
-        }
-
-        res.json({ message: 'Permissions updated successfully' });
+        const trip = tripShareService.updateMemberPermission(tripId, authUser.email, memberEmail, permission);
+        if (!trip) return res.status(403).json({ error: 'Trip not found or not authorized' });
+        res.json({ tripId, memberEmail: memberEmail.toLowerCase(), permission, revision: trip.revision || 1 });
     } catch (error: any) {
-        console.error('[TripShareController] Error updating permissions:', error);
+        console.error('[TripShareController] Error upserting member:', error);
+        res.status(500).json({ error: error.message });
+    }
+}
+
+export function revokeMember(req: Request, res: Response) {
+    try {
+        const tripId = getStringParam(req.params.tripId);
+        const memberEmail = getStringParam(req.params.memberEmail);
+        const authUser = (req as Request & { user?: { email?: string } }).user;
+
+        if (!authUser?.email) return res.status(401).json({ error: 'Authentication required' });
+        if (!memberEmail) return res.status(400).json({ error: 'member email is required' });
+
+        const trip = tripShareService.revokeMember(tripId, authUser.email, memberEmail);
+        if (!trip) return res.status(403).json({ error: 'Trip not found or not authorized' });
+        res.json({ tripId, memberEmail: memberEmail.toLowerCase(), revision: trip.revision || 1 });
+    } catch (error: any) {
+        console.error('[TripShareController] Error revoking member:', error);
         res.status(500).json({ error: error.message });
     }
 }
@@ -180,11 +236,12 @@ export function createTripEventToken(req: Request, res: Response) {
             return res.status(401).json({ error: 'Authentication required' });
         }
 
-        if (!tripShareService.canAccessTrip(tripId, authUser.email)) {
+        const trip = tripShareService.getTrip(tripId, authUser.email);
+        if (!trip) {
             return res.status(403).json({ error: 'Trip not found or access denied' });
         }
 
-        res.json(signTripEventToken(tripId, authUser.email));
+        res.json(signTripEventToken(tripId, authUser.email, { role: trip.userPermission, revision: trip.revision }));
     } catch (error: any) {
         console.error('[TripShareController] Error creating trip event token:', error);
         res.status(500).json({ error: error.message });
@@ -232,13 +289,7 @@ export function likeTrip(req: Request, res: Response) {
             return res.status(404).json({ error: 'Trip not found' });
         }
 
-        // Only allow liking public trips or if user has access
-        // Modified to permit liking if allowListed
-        const hasAccess = trip.visibility === 'public' ||
-            trip.ownerId === authUser?.email ||
-            (authUser?.email && trip.permissions?.[authUser.email]);
-
-        if (!hasAccess) {
+        if (!tripShareService.canAccessTrip(tripId, authUser?.email)) {
             return res.status(403).json({ error: 'Access denied' });
         }
 
@@ -299,6 +350,42 @@ export function getMyTrips(req: Request, res: Response) {
         res.json({ tripIds });
     } catch (error: any) {
         console.error('[TripShareController] Error getting my trips:', error);
+        res.status(500).json({ error: error.message });
+    }
+}
+
+export function getWorkspaceTrips(req: Request, res: Response) {
+    try {
+        const authUser = (req as Request & { user?: { email?: string } }).user;
+
+        if (!authUser?.email) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        const trips = tripShareService.getWorkspaceTrips(authUser.email);
+        res.json({ trips, tripIds: trips.map(t => t.tripId) });
+    } catch (error: any) {
+        console.error('[TripShareController] Error getting workspace trips:', error);
+        res.status(500).json({ error: error.message });
+    }
+}
+
+export function removeWorkspaceTrip(req: Request, res: Response) {
+    try {
+        const tripId = getStringParam(req.params.tripId);
+        const authUser = (req as Request & { user?: { email?: string } }).user;
+
+        if (!authUser?.email) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        const result = tripShareService.removeFromWorkspace(tripId, authUser.email);
+        if (result === 'not_found') return res.status(404).json({ error: 'Trip not found' });
+        if (result === 'owner_cannot_remove') return res.status(409).json({ error: 'Owners must delete the canonical trip instead of removing it from workspace.' });
+        if (result === 'unauthorized') return res.status(403).json({ error: 'Trip not found or access denied' });
+        res.json({ message: 'Trip removed from workspace' });
+    } catch (error: any) {
+        console.error('[TripShareController] Error removing workspace trip:', error);
         res.status(500).json({ error: error.message });
     }
 }

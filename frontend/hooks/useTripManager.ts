@@ -22,15 +22,19 @@ export const useTripManager = () => {
   const JOB_POLL_INTERVAL_MS = 3500;
   const STALE_GENERATING_MS = 10 * 60 * 1000;
 
-  const [trips, setTrips] = useState<Trip[]>(loadStoredTrips);
+  const [trips, setTrips] = useState<Trip[]>(() => loadStoredTrips(user?.email));
   const tripsRef = useRef<Trip[]>(trips);
   const { pollGenerationJob } = useGenerationJobPolling({ tripsRef, setTrips, jobPollIntervalMs: JOB_POLL_INTERVAL_MS });
+
+  useEffect(() => {
+    setTrips(loadStoredTrips(user?.email));
+  }, [user?.email]);
 
   // Save to local storage whenever trips change
   useEffect(() => {
     tripsRef.current = trips;
-    saveStoredTrips(trips);
-  }, [trips]);
+    saveStoredTrips(trips, user?.email);
+  }, [trips, user?.email]);
 
   // Sync Cloud Trips when user logs in
   useEffect(() => {
@@ -190,7 +194,12 @@ export const useTripManager = () => {
     // If the trip was shared (has serverTripId or visibility), also delete from server
     if (trip && (trip.serverTripId || trip.visibility)) {
       const serverTripId = trip.serverTripId || trip.id;
-      tripShareService.deleteServerTrip(serverTripId).catch(err => {
+      const isOwnedCloudTrip = !trip.ownerId || !user?.email || trip.ownerId.toLowerCase() === user.email.toLowerCase();
+      const cloudDelete = isOwnedCloudTrip
+        ? tripShareService.deleteServerTrip(serverTripId)
+        : tripShareService.removeFromWorkspace(serverTripId);
+
+      cloudDelete.catch(err => {
         console.error('Failed to delete trip from server:', err);
         // We don't throw because local deletion already succeeded
       });

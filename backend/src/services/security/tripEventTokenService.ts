@@ -3,6 +3,8 @@ import crypto from 'crypto';
 type TripEventTokenPayload = {
     tripId: string;
     userId: string;
+    role?: 'read' | 'write';
+    revision?: number;
     expiresAt: number;
 };
 
@@ -28,10 +30,12 @@ function signPayload(encodedPayload: string) {
     return crypto.createHmac('sha256', getSecret()).update(encodedPayload).digest('base64url');
 }
 
-export function createTripEventToken(tripId: string, userId: string) {
+export function createTripEventToken(tripId: string, userId: string, options: { role?: 'read' | 'write'; revision?: number } = {}) {
     const payload: TripEventTokenPayload = {
         tripId,
         userId,
+        role: options.role,
+        revision: options.revision,
         expiresAt: Date.now() + TOKEN_TTL_MS
     };
     const encodedPayload = toBase64Url(JSON.stringify(payload));

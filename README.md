@@ -44,4 +44,6 @@ Generate data migration readiness artifacts:
 npm run migrate:report
 ```
 
+Collaboration data migration and local cleanup rules are documented in [docs/collaboration-data-migration.md](docs/collaboration-data-migration.md).
+
 Architecture refactors must keep the existing visual design stable. See `docs/visual-baseline.md` before changing UI structure, spacing, or visual hierarchy.

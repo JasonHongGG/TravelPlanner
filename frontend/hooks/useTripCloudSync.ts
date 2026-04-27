@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Trip, TripData, TripVisibility } from '../types';
 import { tripShareService } from '../services/TripShareService';
+import { createTripDocumentSaveQueue, type TripDocumentSaveQueue, type TripDocumentSaveResult } from '../services/tripDocumentSession';
 
 type ConnectionStatus = 'connected' | 'connecting' | 'disconnected';
 
@@ -24,6 +25,7 @@ export function useTripCloudSync({ trip, isSharedView, onUpdateTrip, onUpdateTri
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
+    const saveQueueRef = useRef<TripDocumentSaveQueue | null>(null);
 
     useEffect(() => {
         if (!trip.serverTripId || isSharedView) return;
@@ -104,8 +106,13 @@ export function useTripCloudSync({ trip, isSharedView, onUpdateTrip, onUpdateTri
         setIsSyncing(true);
         try {
             if (newVisibility === 'public') {
-                const serverTripId = await tripShareService.saveTrip(trip, 'public');
-                onUpdateTripMeta?.({ serverTripId, visibility: 'public', lastSyncedAt: Date.now() });
+                if (trip.serverTripId) {
+                    await tripShareService.updateVisibility(trip.serverTripId, 'public');
+                    onUpdateTripMeta?.({ visibility: 'public' });
+                } else {
+                    const result = await tripShareService.createTripDocument(trip, 'public');
+                    onUpdateTripMeta?.({ serverTripId: result.tripId, visibility: 'public', revision: result.revision, lastSyncedAt: Date.now() });
+                }
             } else if (trip.serverTripId) {
                 await tripShareService.updateVisibility(trip.serverTripId, 'private');
                 onUpdateTripMeta?.({ visibility: 'private' });
@@ -130,8 +137,12 @@ export function useTripCloudSync({ trip, isSharedView, onUpdateTrip, onUpdateTri
         setIsSyncing(true);
         try {
             if (shouldShare) {
-                const serverTripId = await tripShareService.saveTrip(trip, 'private');
-                onUpdateTripMeta?.({ serverTripId, visibility: 'private', lastSyncedAt: Date.now() });
+                if (trip.serverTripId) {
+                    onUpdateTripMeta?.({ visibility: trip.visibility || 'private' });
+                } else {
+                    const result = await tripShareService.createTripDocument(trip, 'private');
+                    onUpdateTripMeta?.({ serverTripId: result.tripId, visibility: 'private', revision: result.revision, lastSyncedAt: Date.now() });
+                }
             } else if (trip.serverTripId) {
                 await tripShareService.deleteServerTrip(trip.serverTripId);
                 onUpdateTripMeta?.({ serverTripId: undefined, lastSyncedAt: undefined });
@@ -148,25 +159,70 @@ export function useTripCloudSync({ trip, isSharedView, onUpdateTrip, onUpdateTri
         }
     }, [onUpdateTripMeta, showAlert, t, trip]);
 
-    const saveTripToCloud = useCallback(async (tripToSave: Trip) => {
+    const persistTripToCloud = useCallback(async (tripToSave: Trip): Promise<TripDocumentSaveResult> => {
         setIsSyncing(true);
         try {
             const visibility = tripToSave.visibility || trip.visibility || 'private';
-            await tripShareService.saveTrip(tripToSave, visibility);
-            onUpdateTripMeta?.({ lastSyncedAt: Date.now() });
+            if (tripToSave.serverTripId) {
+                const result = await tripShareService.updateTripContent(tripToSave.serverTripId, tripToSave, tripToSave.revision);
+                return { revision: result.revision, lastSyncedAt: Date.now() };
+            } else {
+                const result = await tripShareService.createTripDocument(tripToSave, visibility);
+                return { serverTripId: result.tripId, revision: result.revision, lastSyncedAt: Date.now() };
+            }
         } catch (error) {
             console.error('[TripDetail] Auto-sync failed:', error);
+            throw error;
         } finally {
             setIsSyncing(false);
         }
     }, [onUpdateTripMeta, trip.visibility]);
 
+    const handleSaveError = useCallback((error: unknown, failedTrip: Trip) => {
+        const message = error instanceof Error ? error.message : String(error);
+        if (!failedTrip.serverTripId || (!message.includes('409') && !message.includes('Revision conflict'))) return;
+
+        void tripShareService.getTrip(failedTrip.serverTripId).then(sharedTrip => {
+            if (sharedTrip.tripData?.data) onUpdateTrip(failedTrip.id, sharedTrip.tripData.data);
+            onUpdateTripMeta?.({
+                revision: sharedTrip.revision,
+                visibility: sharedTrip.visibility,
+                lastSyncedAt: Date.now()
+            });
+        }).catch(reloadError => {
+            console.error('[TripDetail] Failed to reload after sync conflict', reloadError);
+        });
+    }, [onUpdateTrip, onUpdateTripMeta]);
+
+    useEffect(() => {
+        saveQueueRef.current?.dispose();
+        saveQueueRef.current = createTripDocumentSaveQueue({
+            save: persistTripToCloud,
+            onSaved: (result) => {
+                const updates: Partial<Trip> = { lastSyncedAt: result.lastSyncedAt || Date.now() };
+                if (result.serverTripId) updates.serverTripId = result.serverTripId;
+                if (result.revision !== undefined) updates.revision = result.revision;
+                onUpdateTripMeta?.(updates);
+            },
+            onError: handleSaveError
+        });
+
+        return () => {
+            saveQueueRef.current?.dispose();
+            saveQueueRef.current = null;
+        };
+    }, [handleSaveError, onUpdateTripMeta, persistTripToCloud]);
+
+    const saveTripToCloud = useCallback(async (tripToSave: Trip) => {
+        saveQueueRef.current?.enqueue(tripToSave);
+    }, []);
+
     const handleTripUpdate = useCallback((tripId: string, newData: TripData) => {
         onUpdateTrip(tripId, newData);
         if (trip.serverTripId) {
-            void saveTripToCloud({ ...trip, data: newData });
+            saveQueueRef.current?.enqueue({ ...trip, data: newData });
         }
-    }, [onUpdateTrip, saveTripToCloud, trip]);
+    }, [onUpdateTrip, trip]);
 
     return {
         isShareModalOpen,

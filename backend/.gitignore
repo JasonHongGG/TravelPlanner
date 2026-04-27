@@ -1,6 +1,6 @@
 node_modules
 .env
 dist
-data
-logs
-copilot_logs
+/data
+/logs
+/copilot_logs

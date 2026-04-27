@@ -2,16 +2,20 @@ import { Router } from 'express';
 import { optionalAuth, requireAuth } from '../utils/auth.js';
 import {
     getTrip,
-    saveTrip,
     deleteTrip,
     updateVisibility,
-    updatePermissions,
+    upsertMember,
+    revokeMember,
     likeTrip,
     getGallery,
     getRandomTrips,
     getMyTrips,
+    getWorkspaceTrips,
+    removeWorkspaceTrip,
     subscribeToTrip,
-    createTripEventToken
+    createTripEventToken,
+    updateTripContent,
+    createTripDocument
 } from '../controllers/tripShareController.js';
 
 const router = Router();
@@ -29,6 +33,8 @@ router.get('/gallery/random', getRandomTrips);
 
 // Get user's own shared trips (for sync cleanup) - MUST be before :tripId routes
 router.get('/trips/my', requireAuth, getMyTrips);
+router.get('/workspace/trips', requireAuth, getWorkspaceTrips);
+router.delete('/workspace/trips/:tripId', requireAuth, removeWorkspaceTrip);
 
 // Get trip (optional auth for permission check)
 router.get('/trips/:tripId', optionalAuth, getTrip);
@@ -40,7 +46,8 @@ router.post('/trips/:tripId/events-token', requireAuth, createTripEventToken);
 router.get('/trips/:tripId/events', subscribeToTrip);
 
 // Save/Update trip (requires auth)
-router.put('/trips/:tripId', requireAuth, saveTrip);
+router.post('/trips', requireAuth, createTripDocument);
+router.patch('/trips/:tripId/content', requireAuth, updateTripContent);
 
 // Delete trip (requires auth)
 router.delete('/trips/:tripId', requireAuth, deleteTrip);
@@ -48,8 +55,10 @@ router.delete('/trips/:tripId', requireAuth, deleteTrip);
 // Update visibility (requires auth)
 router.patch('/trips/:tripId/visibility', requireAuth, updateVisibility);
 
-// Update permissions (requires auth)
-router.patch('/trips/:tripId/permissions', requireAuth, updatePermissions);
+// Update members (requires auth)
+router.post('/trips/:tripId/members', requireAuth, upsertMember);
+router.patch('/trips/:tripId/members/:memberEmail', requireAuth, upsertMember);
+router.delete('/trips/:tripId/members/:memberEmail', requireAuth, revokeMember);
 
 // Like trip (optional auth)
 router.post('/trips/:tripId/like', optionalAuth, likeTrip);

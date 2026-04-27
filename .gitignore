@@ -46,3 +46,6 @@ database/
 
 
 docs/*
+!docs/
+!docs/collaboration-data-migration.md
+!docs/collaboration-architecture.md

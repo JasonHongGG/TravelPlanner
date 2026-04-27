@@ -1,4 +1,4 @@
-import type { Trip, TripVisibility, SharedTrip, SharedTripMeta, GalleryResponse } from '../types';
+import type { Trip, TripVisibility, SharedTrip, SharedTripMeta, GalleryResponse, WorkspaceTripSummary } from '../types';
 import { API_BASE_URL, apiUrl, getAuthHeaders, requestBlob, requestJson } from './http/apiClient';
 
 // ==========================================
@@ -10,14 +10,21 @@ class TripShareService {
     // Trip Operations
     // ==========================================
 
-    async saveTrip(trip: Trip, visibility: TripVisibility): Promise<string> {
+    async createTripDocument(trip: Trip, visibility: TripVisibility): Promise<{ tripId: string; revision: number; lastModified: number }> {
         const tripId = trip.serverTripId || trip.id;
-        const result = await requestJson<{ tripId: string }>(`/api/trips/${tripId}`, {
-            method: 'PUT',
-            body: { tripData: trip, visibility },
-            fallbackMessage: 'Failed to save trip'
+        return await requestJson<{ tripId: string; revision: number; lastModified: number }>('/api/trips', {
+            method: 'POST',
+            body: { tripId, tripData: trip, visibility },
+            fallbackMessage: 'Failed to create trip document'
         });
-        return result.tripId;
+    }
+
+    async updateTripContent(tripId: string, trip: Trip, expectedRevision?: number): Promise<{ tripId: string; revision: number; lastModified: number }> {
+        return await requestJson<{ tripId: string; revision: number; lastModified: number }>(`/api/trips/${tripId}/content`, {
+            method: 'PATCH',
+            body: { tripData: trip, expectedRevision },
+            fallbackMessage: 'Failed to update trip content'
+        });
     }
 
     async getTrip(tripId: string): Promise<SharedTrip> {
@@ -54,6 +61,20 @@ class TripShareService {
         }
     }
 
+    async getWorkspaceTrips(): Promise<WorkspaceTripSummary[]> {
+        const result = await requestJson<{ trips?: WorkspaceTripSummary[] }>('/api/workspace/trips', {
+            fallbackMessage: 'Failed to fetch workspace trips'
+        });
+        return result.trips || [];
+    }
+
+    async removeFromWorkspace(tripId: string): Promise<void> {
+        await requestJson<{ message: string }>(`/api/workspace/trips/${tripId}`, {
+            method: 'DELETE',
+            fallbackMessage: 'Failed to remove trip from workspace'
+        });
+    }
+
     // ==========================================
     // Visibility & Permissions
     // ==========================================
@@ -66,11 +87,18 @@ class TripShareService {
         });
     }
 
-    async updatePermissions(tripId: string, permissions: Record<string, 'read' | 'write'>): Promise<void> {
-        await requestJson<{ message: string }>(`/api/trips/${tripId}/permissions`, {
-            method: 'PATCH',
-            body: { permissions },
-            fallbackMessage: 'Failed to update permissions'
+    async upsertMember(tripId: string, email: string, permission: 'read' | 'write'): Promise<void> {
+        await requestJson<{ message?: string }>(`/api/trips/${tripId}/members`, {
+            method: 'POST',
+            body: { email, permission },
+            fallbackMessage: 'Failed to update member'
+        });
+    }
+
+    async revokeMember(tripId: string, email: string): Promise<void> {
+        await requestJson<{ message?: string }>(`/api/trips/${tripId}/members/${encodeURIComponent(email)}`, {
+            method: 'DELETE',
+            fallbackMessage: 'Failed to revoke member'
         });
     }
 
@@ -98,7 +126,9 @@ class TripShareService {
 
         eventSource.addEventListener('trip_updated', handler);
         eventSource.addEventListener('visibility_updated', handler);
-        eventSource.addEventListener('permissions_updated', handler);
+        eventSource.addEventListener('trip_created', handler);
+        eventSource.addEventListener('membership_updated', handler);
+        eventSource.addEventListener('workspace_removed', handler);
         eventSource.addEventListener('trip_deleted', handler);
         eventSource.addEventListener('connected', (e) => console.log('SSE Connected', e.data));
 

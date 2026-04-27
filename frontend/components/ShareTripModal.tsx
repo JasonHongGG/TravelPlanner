@@ -36,13 +36,6 @@ export default function ShareTripModal({ isOpen, onClose, trip, onVisibilityChan
         try {
             const shared = await tripShareService.getTrip(trip.serverTripId);
             setPermissions(shared.permissions || {});
-
-            // Backward compatibility for legacy allowedUsers array
-            if (!shared.permissions && shared.allowedUsers) {
-                const migrated: Record<string, Permission> = {};
-                shared.allowedUsers.forEach(u => migrated[u] = 'read');
-                setPermissions(migrated);
-            }
         } catch (e) {
             console.error('Failed to load permissions:', e);
         }
@@ -71,7 +64,7 @@ export default function ShareTripModal({ isOpen, onClose, trip, onVisibilityChan
         setError(null);
         try {
             const newPermissions = { ...permissions, [email]: newPermission };
-            await tripShareService.updatePermissions(trip.serverTripId, newPermissions);
+            await tripShareService.upsertMember(trip.serverTripId, email, newPermission);
             setPermissions(newPermissions);
             setNewEmail('');
         } catch (e: any) {
@@ -88,7 +81,7 @@ export default function ShareTripModal({ isOpen, onClose, trip, onVisibilityChan
         try {
             const newPermissions = { ...permissions };
             delete newPermissions[email];
-            await tripShareService.updatePermissions(trip.serverTripId, newPermissions);
+            await tripShareService.revokeMember(trip.serverTripId, email);
             setPermissions(newPermissions);
         } catch (e: any) {
             setError(e.message || '移除失敗');
@@ -107,7 +100,7 @@ export default function ShareTripModal({ isOpen, onClose, trip, onVisibilityChan
         setPermissions(newPermissions);
 
         try {
-            await tripShareService.updatePermissions(trip.serverTripId, newPermissions);
+            await tripShareService.upsertMember(trip.serverTripId, email, perm);
         } catch (e: any) {
             setError(e.message || '更新權限失敗');
             setPermissions(oldPermissions); // Revert
