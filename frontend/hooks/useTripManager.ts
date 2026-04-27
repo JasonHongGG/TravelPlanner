@@ -1,15 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { Trip, TripInput, TripData } from '../types';
 import { aiService } from '../services';
-import type { GenerationJob } from '../services/TravelAIService';
 import { tripShareService } from '../services/TripShareService';
 import { usePoints } from '../context/PointsContext';
 import { useAuth } from '../context/AuthContext';
 import { calculateTripCost } from '../utils/tripUtils';
+import { fetchMissingOwnedCloudTrips } from '../services/cloudTripSync';
+import { useGenerationJobPolling } from './useGenerationJobPolling';
 import {
-  applyCompletedTripResult as applyCompletedTripResultToList,
   applyGenerationError,
-  applyGenerationJob,
   createGeneratingTrip,
   loadStoredTrips,
   markStaleGeneratingTrip,
@@ -22,61 +21,16 @@ export const useTripManager = () => {
   const { user } = useAuth();
   const JOB_POLL_INTERVAL_MS = 3500;
   const STALE_GENERATING_MS = 10 * 60 * 1000;
-  const activeJobPollingRef = useRef<Set<string>>(new Set());
 
   const [trips, setTrips] = useState<Trip[]>(loadStoredTrips);
   const tripsRef = useRef<Trip[]>(trips);
+  const { pollGenerationJob } = useGenerationJobPolling({ tripsRef, setTrips, jobPollIntervalMs: JOB_POLL_INTERVAL_MS });
 
   // Save to local storage whenever trips change
   useEffect(() => {
     tripsRef.current = trips;
     saveStoredTrips(trips);
   }, [trips]);
-
-  const applyGenerationJobToTrip = (tripId: string, job: GenerationJob) => {
-    setTrips(prev => applyGenerationJob(prev, tripId, job));
-  };
-
-  const applyCompletedTripResult = (tripId: string, result: TripData) => {
-    setTrips(prev => applyCompletedTripResultToList(prev, tripId, result));
-  };
-
-  const pollGenerationJob = async (tripId: string, jobId: string) => {
-    const activeJobPolling = activeJobPollingRef.current;
-    if (activeJobPolling.has(jobId)) return;
-    activeJobPolling.add(jobId);
-
-    try {
-      while (true) {
-        const currentTrip = tripsRef.current.find(t => t.id === tripId);
-        if (!currentTrip) break;
-
-        const job = await aiService.getGenerationJob(jobId);
-        applyGenerationJobToTrip(tripId, job);
-
-        if (job.status === 'completed') {
-          const claimed = await aiService.claimGenerationJob(jobId);
-          applyCompletedTripResult(tripId, claimed.result);
-          try {
-            await aiService.ackGenerationJob(jobId, claimed.claimToken);
-          } catch (ackErr) {
-            console.warn('[TripManager] Ack generation job failed, will expire by TTL:', ackErr);
-          }
-          break;
-        }
-
-        if (job.status === 'failed') {
-          break;
-        }
-
-        await new Promise(resolve => setTimeout(resolve, JOB_POLL_INTERVAL_MS));
-      }
-    } catch (err: any) {
-      setTrips(prev => applyGenerationError(prev, tripId, err?.message || 'Failed to fetch generation status'));
-    } finally {
-      activeJobPolling.delete(jobId);
-    }
-  };
 
   // Sync Cloud Trips when user logs in
   useEffect(() => {
@@ -91,53 +45,11 @@ export const useTripManager = () => {
 
       try {
         console.log('[TripManager] Syncing cloud trips...');
-        const serverTripIds = await tripShareService.getMySharedTripIds();
-        console.log('[TripManager] Found cloud trips:', serverTripIds);
-
-        if (serverTripIds.length === 0) return;
-
-        // Find trips that are on server but NOT locally
-        // We check against both local ID and serverTripId
-        const missingTripIds = serverTripIds.filter(serverId => {
-          return !trips.some(t => t.id === serverId || t.serverTripId === serverId);
+        const newTrips = await fetchMissingOwnedCloudTrips({
+          ownerEmail: user.email,
+          localTrips: tripsRef.current,
+          client: tripShareService
         });
-
-        if (missingTripIds.length === 0) {
-          console.log('[TripManager] All cloud trips are already synced.');
-          return;
-        }
-
-        console.log(`[TripManager] Found ${missingTripIds.length} missing cloud trips. Fetching...`);
-
-        const newTrips: Trip[] = [];
-
-        for (const tripId of missingTripIds) {
-          try {
-            const sharedTrip = await tripShareService.getTrip(tripId);
-
-            // STRICT CONSTRAINT: Only sync trips *they have shared* (owned by them)
-            // Backend sets ownerId to email.
-            if (sharedTrip.ownerId.toLowerCase() === user.email.toLowerCase()) {
-              const tripData = sharedTrip.tripData;
-
-              // Ensure critical fields are set to link correctly
-              tripData.serverTripId = sharedTrip.tripId;
-              tripData.visibility = sharedTrip.visibility;
-
-              // If ID collision happens (rare but possible if logic changes), generate new ID?
-              // But here we want to restore *exact* trip if possible.
-              // If local ID matches server ID, great. If not, simple import.
-              // tripData already has an ID.
-
-              // Verify again it's not in trips (just in case)
-              if (!trips.some(t => t.id === tripData.id)) {
-                newTrips.push(tripData);
-              }
-            }
-          } catch (fetchErr) {
-            console.error(`[TripManager] Failed to fetch shared trip ${tripId}`, fetchErr);
-          }
-        }
 
         if (newTrips.length > 0) {
           console.log(`[TripManager] Importing ${newTrips.length} cloud trips.`);
@@ -216,7 +128,7 @@ export const useTripManager = () => {
     const cost = calculateTripCost(trip.input.dateRange);
 
     // Initial Frontend Check
-    if (balance < cost) {
+    if (!isSubscribed && balance < cost) {
       openPurchaseModal();
       return;
     }

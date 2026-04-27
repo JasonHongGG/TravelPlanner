@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createJsonFileStore } from './jsonFileStore.js';
 
 function resolveDataDir() {
     // Preferred: explicit env var, or relative to runtime working dir (WORKDIR in Docker)
@@ -17,10 +18,6 @@ function resolveDataDir() {
 const { preferred: DATA_DIR, legacy: LEGACY_DATA_DIR } = resolveDataDir();
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const LEGACY_USERS_FILE = path.join(LEGACY_DATA_DIR, 'users.json');
-
-if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-}
 
 // User Settings Type
 export type UserSettings = {
@@ -63,11 +60,19 @@ export const toSafeUser = (user: StoredUser) => {
     return safeUser;
 };
 
+const userStore = createJsonFileStore<Record<string, StoredUser>>({
+    filePath: USERS_FILE,
+    defaultValue: () => ({}),
+    validate: (value) => value && typeof value === 'object' && !Array.isArray(value)
+        ? value as Record<string, StoredUser>
+        : {},
+    onReadError: (error) => console.error('Error reading users file, returning empty', error)
+});
+
 export const readUsers = (): Record<string, StoredUser> => {
     try {
-        if (fs.existsSync(USERS_FILE)) {
-            const data = fs.readFileSync(USERS_FILE, 'utf-8');
-            return JSON.parse(data) as Record<string, StoredUser>;
+        if (userStore.exists()) {
+            return userStore.read();
         }
 
         // Auto-migrate legacy location if present
@@ -75,8 +80,7 @@ export const readUsers = (): Record<string, StoredUser> => {
             const data = fs.readFileSync(LEGACY_USERS_FILE, 'utf-8');
             const parsed = JSON.parse(data) as Record<string, StoredUser>;
             try {
-                fs.mkdirSync(DATA_DIR, { recursive: true });
-                fs.writeFileSync(USERS_FILE, JSON.stringify(parsed, null, 2));
+                userStore.write(parsed);
             } catch (e) {
                 console.error('Error migrating legacy users file, continuing with legacy data', e);
             }
@@ -91,7 +95,5 @@ export const readUsers = (): Record<string, StoredUser> => {
 };
 
 export const writeUsers = (users: Record<string, StoredUser>) => {
-    const tempFile = `${USERS_FILE}.${process.pid}.${Date.now()}.tmp`;
-    fs.writeFileSync(tempFile, JSON.stringify(users, null, 2));
-    fs.renameSync(tempFile, USERS_FILE);
+    userStore.write(users);
 };

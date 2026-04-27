@@ -1,5 +1,6 @@
 import { IAIProvider, TripInput, TripData, Message, AttractionRecommendation, FeasibilityResult, UpdateResult } from "./aiProvider.js";
 import { SERVICE_CONFIG } from "../../config/serviceConfig.js";
+import { mergeTripData, parseJsonFromText } from "../aiResponseParser.js";
 
 const COPILOT_SERVER_URL = process.env.COPILOT_SERVER_URL || "http://localhost:3003/process";
 
@@ -61,12 +62,7 @@ export class CopilotProvider implements IAIProvider {
     }
 
     private parseJson(text: string): any {
-        try {
-            const clean = text.replace(/```json/g, '').replace(/```/g, '').trim();
-            return JSON.parse(clean);
-        } catch (e) {
-            return {};
-        }
+        return parseJsonFromText(text, { strict: false, fallback: {} });
     }
 
     private mergeHelper(original: TripData, updates: Partial<TripData>): TripData {
@@ -99,7 +95,7 @@ export class CopilotProvider implements IAIProvider {
         let updatedData = undefined;
         if (parts.length > 1) {
             const json = this.parseJson(parts[1]);
-            updatedData = this.mergeHelper(currentData, json);
+            updatedData = mergeTripData(currentData, json);
         }
         return { responseText: parts[0], updatedData };
     }
@@ -289,7 +285,7 @@ export class CopilotProvider implements IAIProvider {
         let updatedData = undefined;
         if (parts.length > 1) {
             const json = this.parseJson(parts[1]);
-            updatedData = this.mergeHelper(currentData, json);
+            updatedData = mergeTripData(currentData, json);
         }
         return { responseText: parts[0], updatedData };
     }

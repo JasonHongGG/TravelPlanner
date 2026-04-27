@@ -1,4 +1,6 @@
 import { randomUUID } from 'crypto';
+import path from 'path';
+import { createJsonFileStore, resolveDataDir } from './data/jsonFileStore.js';
 
 interface SessionData {
     userId: string;
@@ -11,60 +13,80 @@ interface SessionData {
     };
 }
 
+type SessionStoreFile = {
+    schemaVersion: 1;
+    sessions: Record<string, SessionData>;
+};
+
 class RecommendationSessionStore {
-    private sessions: Map<string, SessionData> = new Map();
-    private CLEANUP_INTERVAL = 1000 * 60 * 60; // 1 hour
-    private SESSION_TTL = 1000 * 60 * 60 * 24; // 24 hours
+    private readonly CLEANUP_INTERVAL = 1000 * 60 * 60;
+    private readonly SESSION_TTL = 1000 * 60 * 60 * 24;
+    private readonly store = createJsonFileStore<SessionStoreFile>({
+        filePath: path.join(resolveDataDir(), 'recommendation_sessions.json'),
+        defaultValue: () => ({ schemaVersion: 1, sessions: {} }),
+        validate: (value) => {
+            const parsed = value as Partial<SessionStoreFile>;
+            return {
+                schemaVersion: 1,
+                sessions: parsed.sessions && typeof parsed.sessions === 'object' ? parsed.sessions : {}
+            };
+        },
+        onReadError: (error) => console.error('[RecommendationSessionStore] Failed to read sessions:', error)
+    });
 
     constructor() {
-        setInterval(() => this.cleanup(), this.CLEANUP_INTERVAL);
+        const timer = setInterval(() => this.cleanup(), this.CLEANUP_INTERVAL);
+        timer.unref?.();
     }
 
     createSession(userId: string, initialQuota: number, context?: any): string {
         const sessionId = randomUUID();
-        this.sessions.set(sessionId, {
-            userId,
-            remainingQuota: initialQuota,
-            createdAt: Date.now(),
-            context
+        this.store.mutate((store) => {
+            store.sessions[sessionId] = {
+                userId,
+                remainingQuota: initialQuota,
+                createdAt: Date.now(),
+                context
+            };
         });
         return sessionId;
     }
 
     getSession(sessionId: string): SessionData | undefined {
-        return this.sessions.get(sessionId);
+        return this.store.read().sessions[sessionId];
     }
 
     consumeQuota(sessionId: string): boolean {
-        const session = this.sessions.get(sessionId);
-        if (!session) return false;
-
-        if (session.remainingQuota > 0) {
+        return this.store.mutate((store) => {
+            const session = store.sessions[sessionId];
+            if (!session || session.remainingQuota <= 0) return false;
             session.remainingQuota--;
             return true;
-        }
-        return false;
+        });
     }
 
     addQuota(sessionId: string, amount: number): boolean {
-        const session = this.sessions.get(sessionId);
-        if (!session) return false;
-
-        session.remainingQuota += amount;
-        return true;
+        return this.store.mutate((store) => {
+            const session = store.sessions[sessionId];
+            if (!session) return false;
+            session.remainingQuota += amount;
+            return true;
+        });
     }
 
     getQuota(sessionId: string): number {
-        return this.sessions.get(sessionId)?.remainingQuota || 0;
+        return this.getSession(sessionId)?.remainingQuota || 0;
     }
 
     private cleanup() {
         const now = Date.now();
-        for (const [id, session] of this.sessions.entries()) {
-            if (now - session.createdAt > this.SESSION_TTL) {
-                this.sessions.delete(id);
+        this.store.mutate((store) => {
+            for (const [id, session] of Object.entries(store.sessions)) {
+                if (now - session.createdAt > this.SESSION_TTL) {
+                    delete store.sessions[id];
+                }
             }
-        }
+        });
     }
 }
 

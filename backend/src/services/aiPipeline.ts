@@ -1,22 +1,28 @@
 import type { AttractionRecommendation, FeasibilityResult, Message, TripData, TripInput } from '../types.js';
-import type { UpdateResult } from './aiProvider/aiProvider.js';
+import type { IAIProvider, UpdateResult } from './aiProvider/aiProvider.js';
 import { BackendAIService } from './BackendAIService.js';
 
 export type AiAction = 'GENERATE_TRIP' | 'GET_RECOMMENDATIONS' | 'CHECK_FEASIBILITY' | 'GENERATE_ADVISORY' | 'CHAT_UPDATE' | 'EXPLORER_UPDATE';
+type ProviderResolver = () => IAIProvider;
 
 export class AiPipeline {
+    constructor(private readonly resolveProvider: ProviderResolver = () => BackendAIService.getProvider()) { }
+
+    private get provider(): IAIProvider {
+        return this.resolveProvider();
+    }
+
     async generateTrip(input: TripInput, userId?: string, authToken?: string): Promise<TripData> {
-        return BackendAIService.getProvider().generateTrip(input, userId, authToken);
+        return this.provider.generateTrip(input, userId, authToken);
     }
 
     async generateAdvisory(tripData: TripData, userId?: string, authToken?: string, language?: string): Promise<any> {
-        const provider = BackendAIService.getProvider();
-        if (!provider.generateAdvisory) throw new Error('Advisory generation is not supported by the active provider.');
-        return provider.generateAdvisory(tripData, userId, authToken, language);
+        if (!this.provider.generateAdvisory) throw new Error('Advisory generation is not supported by the active provider.');
+        return this.provider.generateAdvisory(tripData, userId, authToken, language);
     }
 
     async checkFeasibility(tripData: TripData, modificationContext: string, userId?: string, authToken?: string, language?: string): Promise<FeasibilityResult> {
-        return BackendAIService.getProvider().checkFeasibility(tripData, modificationContext, userId, authToken, language);
+        return this.provider.checkFeasibility(tripData, modificationContext, userId, authToken, language);
     }
 
     async updateTrip(
@@ -28,7 +34,7 @@ export class AiPipeline {
         language?: string,
         tripLanguage?: string
     ): Promise<UpdateResult> {
-        return BackendAIService.getProvider().updateTrip(currentData, history, onThought, userId, authToken, language, tripLanguage);
+        return this.provider.updateTrip(currentData, history, onThought, userId, authToken, language, tripLanguage);
     }
 
     async updateTripWithExplorer(
@@ -44,7 +50,7 @@ export class AiPipeline {
         language?: string,
         tripLanguage?: string
     ): Promise<UpdateResult> {
-        return BackendAIService.getProvider().updateTripWithExplorer(
+        return this.provider.updateTripWithExplorer(
             currentData,
             dayIndex,
             newMustVisit,
@@ -69,7 +75,7 @@ export class AiPipeline {
         language?: string,
         titleLanguage?: string
     ): Promise<AttractionRecommendation[]> {
-        return BackendAIService.getProvider().getRecommendations(location, interests, category, excludeNames, userId, authToken, language, titleLanguage);
+        return this.provider.getRecommendations(location, interests, category, excludeNames, userId, authToken, language, titleLanguage);
     }
 
     async streamRecommendations(
@@ -84,13 +90,12 @@ export class AiPipeline {
         titleLanguage?: string,
         count?: number
     ): Promise<void> {
-        const provider = BackendAIService.getProvider();
-        if (provider.getRecommendationsStream) {
-            await provider.getRecommendationsStream(location, interests, category, excludeNames, onItem, userId, authToken, language, titleLanguage, count);
+        if (this.provider.getRecommendationsStream) {
+            await this.provider.getRecommendationsStream(location, interests, category, excludeNames, onItem, userId, authToken, language, titleLanguage, count);
             return;
         }
 
-        const items = await provider.getRecommendations(location, interests, category, excludeNames, userId, authToken, language, titleLanguage);
+        const items = await this.provider.getRecommendations(location, interests, category, excludeNames, userId, authToken, language, titleLanguage);
         for (const item of items) onItem(item);
     }
 }

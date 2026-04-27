@@ -8,6 +8,7 @@ import { getStopIcon } from '../utils/icons';
 import { usePoints } from '../context/PointsContext';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
+import { collectKnownRecommendationNames, createInitialStopStatuses, getPromptLanguageName, type ExplorerStopStatus, type ExplorerTab } from '../services/attractionExplorerState';
 
 
 interface Props {
@@ -26,9 +27,9 @@ interface Props {
     referenceLanguage?: string;
 }
 
-type TabType = 'attraction' | 'food';
+type TabType = ExplorerTab;
 type SidebarTab = 'must' | 'avoid' | 'current';
-type StopStatus = 'keep' | 'remove' | 'neutral';
+type StopStatus = ExplorerStopStatus;
 type PaymentMode = 'search' | 'loadMore';
 
 function isInsufficientPointsError(error: unknown): boolean {
@@ -120,11 +121,7 @@ export default function AttractionExplorer({
 
             // Initialize existing stops status
             if (mode === 'modification') {
-                const initialStatuses: Record<string, StopStatus> = {};
-                currentStops.forEach(stop => {
-                    initialStatuses[stop.name] = 'neutral';
-                });
-                setStopStatuses(initialStatuses);
+                setStopStatuses(createInitialStopStatuses(currentStops));
                 setActiveSidebarTab('current');
             } else {
                 setSelections({});
@@ -240,21 +237,8 @@ export default function AttractionExplorer({
         let didInitSucceed = false;
         try {
             // Exclude everything we know about
-            const existingNames = [
-                ...currentStops.map(s => s.name),
-                ...results[currentTab].map(i => i.name),
-                ...buffer[currentTab].map(i => i.name)
-            ];
-
-            const getPromptLanguage = (lng: string) => {
-                switch (lng) {
-                    case 'en-US': return 'English';
-                    case 'ja-JP': return 'Japanese';
-                    case 'ko-KR': return 'Korean';
-                    default: return 'Traditional Chinese';
-                }
-            };
-            const lang = getPromptLanguage(i18n.language);
+            const existingNames = collectKnownRecommendationNames({ currentStops, results, buffer, tab: currentTab });
+            const lang = getPromptLanguageName(i18n.language);
             const titleLanguage = settings.titleLanguageMode === 'local'
                 ? "Local Language"
                 : (referenceLanguage || lang);

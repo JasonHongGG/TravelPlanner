@@ -1,6 +1,7 @@
 import { parseErrorResponse } from './parseError';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+const viteEnv = (import.meta as ImportMeta & { env?: { VITE_API_BASE_URL?: string } }).env;
+export const API_BASE_URL = viteEnv?.VITE_API_BASE_URL || 'http://localhost:3001';
 
 type ApiRequestOptions = Omit<RequestInit, 'body'> & {
     body?: unknown;

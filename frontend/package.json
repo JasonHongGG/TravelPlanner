@@ -8,6 +8,9 @@
     "build": "vite build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "tsx --test **/*.test.ts",
+    "test:e2e": "playwright test tests/e2e",
+    "test:visual": "playwright test tests/visual",
+    "test:visual:update": "playwright test tests/visual --update-snapshots",
     "lint": "npm run typecheck",
     "preview": "vite preview",
     "copilot-server": "npm run start:copilot --prefix backend",
@@ -36,6 +39,7 @@
   },
   "devDependencies": {
     "@github/copilot": "^0.0.382",
+    "@playwright/test": "^1.59.1",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",

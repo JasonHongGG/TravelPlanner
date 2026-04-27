@@ -1,6 +1,7 @@
 import { TripInput, TripData, Message, AttractionRecommendation, FeasibilityResult, UpdateResult } from "../types";
 import { parseErrorResponse } from "./http/parseError";
-import { apiUrl, getAuthHeaders } from "./http/apiClient";
+import { apiUrl, getAuthHeaders, requestJson } from "./http/apiClient";
+import { openSsePost, streamJsonEvents } from "./http/sseClient";
 import { mergeTripData, parseJsonFromText } from "./travelAiResponse";
 
 export type GenerationJobStatus = 'queued' | 'running' | 'completed' | 'failed';
@@ -37,71 +38,22 @@ export class TravelAIService {
         onChunk?: (text: string) => void,
         onPlanningStart?: () => void
     ): Promise<string> {
-        const headers = getAuthHeaders();
-
-        const response = await fetch(apiUrl(endpoint), {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body)
-        });
-
-        if (!response.ok) {
-            throw await parseErrorResponse(response, 'Server error');
-        }
-
-        if (!response.body) {
-            throw new Error("Failed to connect to streaming endpoint");
-        }
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
+        const response = await openSsePost(endpoint, body, 'Server error');
         let fullText = "";
-        let sseBuffer = "";
-        let doneReceived = false;
 
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
+        await streamJsonEvents(response, (data) => {
+            if (data.type === 'chunk' || data.type === 'content') {
+                const text = data.chunk;
+                fullText += text;
+                if (onChunk) onChunk(text);
 
-            sseBuffer += decoder.decode(value, { stream: true });
-
-            // Process complete SSE events separated by a blank line.
-            const events = sseBuffer.split('\n\n');
-            sseBuffer = events.pop() || "";
-
-            for (const eventBlock of events) {
-                // An event block may contain multiple lines; we only care about data lines.
-                const lines = eventBlock.split('\n');
-                for (const line of lines) {
-                    if (!line.startsWith('data: ')) continue;
-
-                    const dataStr = line.substring(6);
-                    try {
-                        const data = JSON.parse(dataStr);
-                        if (data.type === 'chunk' || data.type === 'content') {
-                            const text = data.chunk;
-                            fullText += text;
-                            if (onChunk) onChunk(text);
-
-                            if (fullText.includes("___UPDATE_JSON___") && onPlanningStart) {
-                                onPlanningStart();
-                            }
-                        } else if (data.type === 'error') {
-                            throw new Error(data.message);
-                        } else if (data.type === 'done') {
-                            doneReceived = true;
-                        }
-                    } catch (e) {
-                        // If we can't parse JSON here, it might be a truncated frame.
-                        // Put it back into the buffer and wait for the remaining bytes.
-                        sseBuffer = `${eventBlock}\n\n${sseBuffer}`;
-                        break;
-                    }
+                if (fullText.includes("___UPDATE_JSON___") && onPlanningStart) {
+                    onPlanningStart();
                 }
+            } else if (data.type === 'error') {
+                throw new Error(data.message);
             }
-
-            if (doneReceived) break;
-        }
+        });
         return fullText;
     }
 
@@ -110,25 +62,12 @@ export class TravelAIService {
         description: string,
         bodyParams: any
     ): Promise<string> {
-        const headers = getAuthHeaders();
-
         const body = {
             action,
             description,
             ...bodyParams
         };
-
-        const response = await fetch(apiUrl('/generate'), {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body)
-        });
-
-        if (!response.ok) {
-            throw await parseErrorResponse(response, 'Server error');
-        }
-
-        const data = await response.json();
+        const data = await requestJson<{ text: string }>('/generate', { method: 'POST', body, fallbackMessage: 'Server error' });
         return data.text;
     }
 
@@ -140,67 +79,38 @@ export class TravelAIService {
             clientRequestId?: string;
         }
     ): Promise<GenerationJob> {
-        const headers = getAuthHeaders();
-        const response = await fetch(apiUrl('/generation-jobs'), {
+        return await requestJson<GenerationJob>('/generation-jobs', {
             method: 'POST',
-            headers,
-            body: JSON.stringify({
+            fallbackMessage: 'Failed to create generation job',
+            body: {
                 userId,
                 action: 'GENERATE_TRIP',
                 description: `Generate Trip: ${input.destination}`,
                 tripInput: input,
                 tripLocalId: options?.tripLocalId,
                 clientRequestId: options?.clientRequestId || crypto.randomUUID()
-            })
+            }
         });
-
-        if (!response.ok) {
-            throw await parseErrorResponse(response, 'Failed to create generation job');
-        }
-
-        return await response.json();
     }
 
     async getGenerationJob(jobId: string): Promise<GenerationJob> {
-        const headers = getAuthHeaders();
-        const response = await fetch(apiUrl(`/generation-jobs/${jobId}`), {
-            method: 'GET',
-            headers
-        });
-
-        if (!response.ok) {
-            throw await parseErrorResponse(response, 'Failed to fetch generation job');
-        }
-
-        return await response.json();
+        return await requestJson<GenerationJob>(`/generation-jobs/${jobId}`, { method: 'GET', fallbackMessage: 'Failed to fetch generation job' });
     }
 
     async claimGenerationJob(jobId: string): Promise<ClaimedGenerationJob> {
-        const headers = getAuthHeaders();
-        const response = await fetch(apiUrl(`/generation-jobs/${jobId}/claim`), {
+        return await requestJson<ClaimedGenerationJob>(`/generation-jobs/${jobId}/claim`, {
             method: 'POST',
-            headers,
-            body: JSON.stringify({})
+            body: {},
+            fallbackMessage: 'Failed to claim generation result'
         });
-
-        if (!response.ok) {
-            throw await parseErrorResponse(response, 'Failed to claim generation result');
-        }
-
-        return await response.json();
     }
 
     async ackGenerationJob(jobId: string, claimToken: string): Promise<void> {
-        const headers = getAuthHeaders();
-        const response = await fetch(apiUrl(`/generation-jobs/${jobId}/ack`), {
+        await requestJson(`/generation-jobs/${jobId}/ack`, {
             method: 'POST',
-            headers,
-            body: JSON.stringify({ claimToken })
+            body: { claimToken },
+            fallbackMessage: 'Failed to acknowledge generation result'
         });
-
-        if (!response.ok) {
-            throw await parseErrorResponse(response, 'Failed to acknowledge generation result');
-        }
     }
 
     async generateTrip(input: TripInput, userId?: string): Promise<TripData> {
@@ -229,12 +139,7 @@ export class TravelAIService {
     ): Promise<UpdateResult> {
         // Model is determined by backend configuration
 
-        const headers = getAuthHeaders();
-
-        const response = await fetch(apiUrl('/stream-update'), {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
+        const response = await openSsePost('/stream-update', {
                 // model removed, backend decides
                 userId,
                 action: 'CHAT_UPDATE',
@@ -242,20 +147,8 @@ export class TravelAIService {
                 currentData,
                 history: history.slice(-10),
                 language,
-                tripLanguage // Add this
-            })
-        });
-
-        if (!response.ok) {
-            throw await parseErrorResponse(response, 'Server error');
-        }
-
-        if (!response.body) {
-            throw new Error("Failed to connect to streaming endpoint");
-        }
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
+                tripLanguage
+            }, 'Server error');
         let fullText = "";
         let isJsonMode = false;
         let jsonBuffer = "";
@@ -272,61 +165,41 @@ export class TravelAIService {
             }
         };
 
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
+        await streamJsonEvents(response, async (data) => {
+            if (data.type === 'content') {
+                const text = data.chunk;
 
-            const chunkStr = decoder.decode(value);
-            const lines = chunkStr.split('\n\n');
+                if (!isJsonMode) {
+                    fullText += text;
+                    const delimiterIndex = fullText.indexOf(delimiter);
 
-            for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                    const dataStr = line.substring(6);
-                    try {
-                        const data = JSON.parse(dataStr);
-                        if (data.type === 'content') {
-                            const text = data.chunk;
+                    if (delimiterIndex !== -1) {
+                        isJsonMode = true;
 
-                            // If text contains delimiter, we switch modes
-                            // Note: text chunk might be small (one char) or large
+                        if (onPlanningStart) onPlanningStart();
 
-                            if (!isJsonMode) {
-                                fullText += text;
-                                const delimiterIndex = fullText.indexOf(delimiter);
+                        const fullThought = fullText.substring(0, delimiterIndex);
+                        const newThoughtPart = fullThought.substring(displayedText.length);
 
-                                if (delimiterIndex !== -1) {
-                                    isJsonMode = true;
+                        await typewrite(newThoughtPart);
 
-                                    // Trigger start of planning phase
-                                    if (onPlanningStart) onPlanningStart();
-
-                                    const fullThought = fullText.substring(0, delimiterIndex);
-                                    const newThoughtPart = fullThought.substring(displayedText.length);
-
-                                    await typewrite(newThoughtPart);
-
-                                    jsonBuffer = fullText.substring(delimiterIndex + delimiter.length);
-                                } else {
-                                    const safeEnd = Math.max(0, fullText.length - guardLength);
-                                    const safeText = fullText.substring(0, safeEnd);
-                                    const newThoughtPart = safeText.substring(displayedText.length);
-                                    if (newThoughtPart) {
-                                        await typewrite(newThoughtPart);
-                                    }
-                                }
-                            } else {
-                                fullText += text;
-                                jsonBuffer += text;
-                            }
-                        } else if (data.type === 'error') {
-                            throw new Error(data.message);
+                        jsonBuffer = fullText.substring(delimiterIndex + delimiter.length);
+                    } else {
+                        const safeEnd = Math.max(0, fullText.length - guardLength);
+                        const safeText = fullText.substring(0, safeEnd);
+                        const newThoughtPart = safeText.substring(displayedText.length);
+                        if (newThoughtPart) {
+                            await typewrite(newThoughtPart);
                         }
-                    } catch (e) {
-                        // ignore
                     }
+                } else {
+                    fullText += text;
+                    jsonBuffer += text;
                 }
+            } else if (data.type === 'error') {
+                throw new Error(data.message);
             }
-        }
+        });
 
         if (!isJsonMode) {
             const remainingText = fullText.substring(displayedText.length);
@@ -472,37 +345,17 @@ export class TravelAIService {
             throw new Error("Failed to connect to streaming endpoint");
         }
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunkStr = decoder.decode(value);
-            const lines = chunkStr.split('\n\n');
-
-            for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                    const dataStr = line.substring(6);
-                    try {
-                        const data = JSON.parse(dataStr);
-                        if (data.type === 'item' && data.item) {
-                            onItem(data.item);
-                        } else if (data.type === 'meta' && data.sessionId) {
-                            if (options?.onSessionStart) {
-                                options.onSessionStart(data.sessionId);
-                            }
-                        } else if (data.type === 'error') {
-                            throw new Error(data.message);
-                        }
-                        // 'done' type is handled by loop ending
-                    } catch (e) {
-                        // ignore parse errors for incomplete chunks
-                    }
+        await streamJsonEvents(response, (data) => {
+            if (data.type === 'item' && data.item) {
+                onItem(data.item);
+            } else if (data.type === 'meta' && data.sessionId) {
+                if (options?.onSessionStart) {
+                    options.onSessionStart(data.sessionId);
                 }
+            } else if (data.type === 'error') {
+                throw new Error(data.message);
             }
-        }
+        });
     }
 
     async generateAdvisory(

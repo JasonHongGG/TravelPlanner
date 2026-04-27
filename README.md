@@ -6,8 +6,7 @@ This repository is organized as a small workspace with clear runtime boundaries:
 
 - `frontend/` - Vite React client.
 - `backend/` - Express API, DB helper server, and Copilot helper server.
-- `shared/` - current shared TypeScript types used by the app.
-- `packages/contracts/` - schema-first API contract boundary used by the refactor baseline.
+- `shared/` - shared TypeScript types, API contracts, and cross-runtime helpers.
 
 Install dependencies inside each app if they are missing:
 
@@ -31,6 +30,12 @@ Validate the workspace:
 npm run typecheck
 npm run test
 npm run build
+```
+
+Run the shared API contract checks directly:
+
+```bash
+npm run test:contract
 ```
 
 Generate data migration readiness artifacts:

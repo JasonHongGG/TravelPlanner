@@ -1,6 +1,6 @@
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Trip, TripData, TripMeta, TripStop, Message, TripVisibility } from '../types';
+import React, { useState, useRef } from 'react';
+import { Trip, TripData, TripMeta, TripStop, Message } from '../types';
 import { CheckCircle2, AlertTriangle, Calendar, Clock, DollarSign, PanelRightClose, PanelRightOpen, Map as MapIcon, Loader2, Camera, ImagePlus, Shuffle, Share2, Cloud, WifiOff } from 'lucide-react';
 import Assistant from './Assistant';
 import { aiService } from '../services'; // Import singleton service
@@ -10,6 +10,7 @@ import { getTripCover } from '../utils/tripUtils';
 
 import { useTranslation } from 'react-i18next';
 import { useFeasibilityCheck } from '../hooks/useFeasibilityCheck';
+import { useTripCloudSync } from '../hooks/useTripCloudSync';
 
 // Sub-components
 import DaySelector from './trip/DaySelector';
@@ -22,7 +23,6 @@ import AttractionExplorer from './AttractionExplorer';
 import FeasibilityModal from './FeasibilityModal';
 import ShareTripModal from './ShareTripModal';
 import VisibilityToggle from './VisibilityToggle';
-import { tripShareService } from '../services/TripShareService';
 
 interface Props {
   trip: Trip;
@@ -74,201 +74,23 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
   const [isUpdatingFromExplorer, setIsUpdatingFromExplorer] = useState(false);
 
-  // Sharing State
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connecting');
-  // Validate Server Status on Open (Privacy/Sync Check)
-  useEffect(() => {
-    // Only validate if we think it's shared/synced and we are the owner (not shared view)
-    if (!trip.serverTripId || isSharedView) return;
-
-    const validateServerStatus = async () => {
-      try {
-        // Fetch fresh trip data from server
-        // This implicitly checks existence and access
-        const sharedTrip = await tripShareService.getTrip(trip.serverTripId!);
-
-        // 1. Check Visibility Mismatch
-        if (sharedTrip.visibility !== trip.visibility && onUpdateTripMeta) {
-          console.log(`[TripDetail] Syncing visibility mismatch. Server: ${sharedTrip.visibility}, Local: ${trip.visibility}`);
-          onUpdateTripMeta({ visibility: sharedTrip.visibility });
-        }
-
-        // 2. Check if we are still the owner? 
-        // (Rare case: unshared and reshared by someone else?) 
-        // We assume serverTripId is unique enough.
-
-      } catch (error: any) {
-        console.warn("[TripDetail] Server validation failed:", error);
-
-        // If 404/403, it means it's no longer valid on server.
-        // We should treat it as "Not Shared" locally.
-        if (error.message.includes('not found') || error.message.includes('Access denied') || error.message.includes('Unauthorized')) {
-          console.log("[TripDetail] Trip not found on server. Reverting to private local state.");
-          if (onUpdateTripMeta) {
-            // Remove server association
-            onUpdateTripMeta({
-              serverTripId: undefined,
-              visibility: undefined // or 'private' depending on type definition, usually undefined implies local private
-            });
-          }
-        }
-      }
-    };
-
-    validateServerStatus();
-  }, [trip.serverTripId, isSharedView]); // Run when serverTripId changes (e.g. initial load)
-
-  // Listen for Server Updates (Bidirectional Sync) & Connection Health Check
-  useEffect(() => {
-    // If in SharedView, the parent (SharedTripView) handles subscription.
-    // If local only (TripDetail in Dashboard), we handle it.
-    if (!trip.serverTripId || isSharedView) {
-      setConnectionStatus('connected'); // Assume connected if local or managed by parent (simplification)
-      return;
-    }
-
-    let eventSource: EventSource | null = null;
-    let heartbeatTimer: NodeJS.Timeout;
-
-    const setupConnection = async () => {
-      const handleServerEvent = async (type: string, data: any) => {
-        if (type === 'trip_updated' || type === 'visibility_updated') {
-          try {
-            const sharedTrip = await tripShareService.getTrip(trip.serverTripId!);
-            if (sharedTrip?.tripData?.data) {
-              onUpdateTrip(trip.id, sharedTrip.tripData.data);
-              if (onUpdateTripMeta && sharedTrip.visibility !== trip.visibility) {
-                onUpdateTripMeta({ visibility: sharedTrip.visibility });
-              }
-            }
-          } catch (e) {
-            console.error('[TripDetail] Failed to sync remote changes', e);
-          }
-        }
-      };
-
-      const token = await tripShareService.createTripEventToken(trip.serverTripId!);
-      eventSource = tripShareService.subscribeToTrip(trip.serverTripId!, handleServerEvent, token);
-
-      // Update status based on native events
-      eventSource.onopen = () => setConnectionStatus('connected');
-      eventSource.onerror = () => setConnectionStatus('disconnected'); // Will likely auto-reconnect
-    };
-
-    void setupConnection().catch((error) => {
-      console.error('[TripDetail] Failed to connect to trip events', error);
-      setConnectionStatus('disconnected');
-    });
-
-    // Heartbeat: Check readyState every 5 seconds
-    heartbeatTimer = setInterval(() => {
-      if (eventSource) {
-        if (eventSource.readyState === EventSource.OPEN) {
-          setConnectionStatus('connected');
-        } else if (eventSource.readyState === EventSource.CONNECTING) {
-          setConnectionStatus('connecting');
-        } else {
-          setConnectionStatus('disconnected');
-        }
-      }
-    }, 5000);
-
-    return () => {
-      if (eventSource) eventSource.close();
-      clearInterval(heartbeatTimer);
-    };
-  }, [trip.serverTripId, onUpdateTrip, trip.id, trip.visibility]);
-
-  // Handle visibility change (private <-> public)
-  const handleVisibilityChange = async (newVisibility: TripVisibility) => {
-    if (!trip.data) return;
-
-    setIsSyncing(true);
-    try {
-      if (newVisibility === 'public') {
-        // Switching to public = auto share (save/update on server)
-        const serverTripId = await tripShareService.saveTrip(trip, 'public');
-        onUpdateTripMeta?.({ serverTripId, visibility: 'public', lastSyncedAt: Date.now() });
-      } else {
-        // Switching to private
-        if (trip.serverTripId) {
-          // Update visibility on server if already shared
-          await tripShareService.updateVisibility(trip.serverTripId, 'private');
-          onUpdateTripMeta?.({ visibility: 'private' });
-        } else {
-          // Just update local state
-          onUpdateTripMeta?.({ visibility: 'private' });
-        }
-      }
-    } catch (e) {
-      console.error('Failed to update visibility:', e);
-      showAlert({
-        type: 'error',
-        title: t('trip.permission_update_error_title'),
-        description: t('trip.permission_update_error_desc')
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  // Handle share toggle (only for private mode)
-  const handleShareToggle = async (shouldShare: boolean) => {
-    if (!trip.data) return;
-
-    setIsSyncing(true);
-    try {
-      if (shouldShare) {
-        // Share: save to server as private
-        const serverTripId = await tripShareService.saveTrip(trip, 'private');
-        onUpdateTripMeta?.({ serverTripId, visibility: 'private', lastSyncedAt: Date.now() });
-      } else {
-        // Unshare: delete from server
-        if (trip.serverTripId) {
-          await tripShareService.deleteServerTrip(trip.serverTripId);
-          onUpdateTripMeta?.({ serverTripId: undefined, lastSyncedAt: undefined });
-        }
-      }
-    } catch (e) {
-      console.error('Failed to toggle share:', e);
-      showAlert({
-        type: 'error',
-        title: shouldShare ? t('trip.share_error_title') : t('trip.unshare_error_title'),
-        description: t('trip.share_action_error_desc')
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  // Helper: Save trip to cloud (Auto-sync)
-  const saveTripToCloud = async (tripToSave: Trip | any) => {
-    setIsSyncing(true);
-    try {
-      // Ensure we have a valid visibility, default to current or private
-      const visibility = tripToSave.visibility || trip.visibility || 'private';
-      await tripShareService.saveTrip(tripToSave, visibility);
-      onUpdateTripMeta?.({ lastSyncedAt: Date.now() });
-    } catch (e) {
-      console.error('[TripDetail] Auto-sync failed:', e);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  // Helper: Handle Trip Update with Auto-Sync
-  const handleTripUpdate = (tripId: string, newData: TripData) => {
-    // 1. Update Parent Local State
-    onUpdateTrip(tripId, newData);
-
-    // 2. Auto-Sync if Shared
-    if (trip.serverTripId) {
-      // Use the NEW data to save
-      saveTripToCloud({ ...trip, data: newData });
-    }
-  };
+  const {
+    isShareModalOpen,
+    setIsShareModalOpen,
+    isSyncing,
+    connectionStatus,
+    handleVisibilityChange,
+    handleShareToggle,
+    saveTripToCloud,
+    handleTripUpdate
+  } = useTripCloudSync({
+    trip,
+    isSharedView,
+    onUpdateTrip,
+    onUpdateTripMeta,
+    showAlert,
+    t
+  });
 
   // Feasibility Check State
   const {

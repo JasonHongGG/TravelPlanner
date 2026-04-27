@@ -10,6 +10,7 @@ import {
     constructAdvisoryPrompt
 } from "../../config/aiConfig.js";
 import { SERVICE_CONFIG } from "../../config/serviceConfig.js";
+import { mergeTripData, parseJsonFromText } from "../aiResponseParser.js";
 
 export class GeminiProvider implements IAIProvider {
     private getClient() {
@@ -21,22 +22,8 @@ export class GeminiProvider implements IAIProvider {
     }
 
     private parseJsonFromResponse(text: string, strict = true): any {
-        const start = text.indexOf('{');
-        const end = text.lastIndexOf('}');
-
-        if (start === -1 || end === -1) {
-            throw new Error("Invalid response format: No JSON object found.");
-        }
-
-        const jsonStr = text.substring(start, end + 1);
         try {
-            const data = JSON.parse(jsonStr);
-            if (strict) {
-                if (!data.tripMeta || !data.days) {
-                    // Strict check
-                }
-            }
-            return data;
+            return parseJsonFromText(text, { strict, fallback: {} });
         } catch (e) {
             console.error("JSON Parse Error:", e);
             throw new Error("Failed to parse itinerary data.");
@@ -126,7 +113,7 @@ export class GeminiProvider implements IAIProvider {
 
         if (isJsonMode) {
             const partialUpdate = this.parseJsonFromResponse(jsonBuffer, false);
-            const updatedData = this.mergeTripData(currentData, partialUpdate);
+            const updatedData = mergeTripData(currentData, partialUpdate);
             const finalText = fullText.split(delimiter)[0];
             return { responseText: finalText, updatedData: updatedData };
         } else {
@@ -356,7 +343,7 @@ export class GeminiProvider implements IAIProvider {
 
         if (isJsonMode) {
             const partialUpdate = this.parseJsonFromResponse(jsonBuffer, false);
-            const updatedData = this.mergeTripData(currentData, partialUpdate);
+            const updatedData = mergeTripData(currentData, partialUpdate);
             const finalText = fullText.split(delimiter)[0];
             return { responseText: finalText, updatedData: updatedData };
         } else {

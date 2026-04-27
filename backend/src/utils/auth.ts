@@ -10,7 +10,15 @@ export interface AuthUser {
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+function readTestAuthUser(): AuthUser | null {
+    if (process.env.NODE_ENV !== 'test' || !process.env.TEST_AUTH_USER_JSON) return null;
+    return JSON.parse(process.env.TEST_AUTH_USER_JSON) as AuthUser;
+}
+
 export async function verifyIdToken(idToken: string): Promise<AuthUser> {
+    const testUser = readTestAuthUser();
+    if (testUser) return testUser;
+
     if (!process.env.GOOGLE_CLIENT_ID) {
         throw new Error('GOOGLE_CLIENT_ID is not configured.');
     }

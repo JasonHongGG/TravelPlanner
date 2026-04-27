@@ -9,6 +9,7 @@ import {
     constructAdvisoryPrompt
 } from "../../config/aiConfig.js";
 import { SERVICE_CONFIG } from "../../config/serviceConfig.js";
+import { mergeTripData, parseJsonFromText, stripJsonFence } from "../aiResponseParser.js";
 
 export class OllamaProvider implements IAIProvider {
     private baseUrl: string;
@@ -18,18 +19,12 @@ export class OllamaProvider implements IAIProvider {
     }
 
     private cleanJsonString(text: string) {
-        return text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return stripJsonFence(text);
     }
 
     private parseJsonFromOllama(text: string, strict = true): any {
         try {
-            const cleaned = this.cleanJsonString(text);
-            const start = cleaned.search(/[{[]/);
-            const end = cleaned.lastIndexOf(cleaned[start] === '{' ? '}' : ']');
-
-            if (start === -1 || end === -1) throw new Error("No JSON found in Ollama response");
-
-            return JSON.parse(cleaned.substring(start, end + 1));
+            return parseJsonFromText(text, { strict, fallback: {} });
         } catch (e) {
             console.error("Ollama JSON Parse Error", e);
             if (strict) throw e;
@@ -179,7 +174,7 @@ export class OllamaProvider implements IAIProvider {
 
             if (isJsonMode) {
                 const partialUpdate = this.parseJsonFromOllama(jsonBuffer, false);
-                const updatedData = this.mergeTripData(currentData, partialUpdate);
+                const updatedData = mergeTripData(currentData, partialUpdate);
                 return {
                     responseText: fullText.split(delimiter)[0],
                     updatedData: updatedData
@@ -304,7 +299,7 @@ export class OllamaProvider implements IAIProvider {
 
             if (isJsonMode) {
                 const partialUpdate = this.parseJsonFromOllama(jsonBuffer, false);
-                const updatedData = this.mergeTripData(currentData, partialUpdate);
+                const updatedData = mergeTripData(currentData, partialUpdate);
                 return {
                     responseText: fullText.split(delimiter)[0],
                     updatedData: updatedData
