@@ -4,9 +4,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import { TripShareEventBus } from './tripShareEvents.js';
-import { TripShareRepository } from './tripShareRepository.js';
+import { TripShareRepository } from '../infrastructure/json/tripShareRepository.js';
 import { TripShareService } from './tripShareService.js';
-import type { Trip } from './tripShareTypes.js';
+import type { Trip } from '../domain/tripShareTypes.js';
 
 let tempDir = '';
 let repository: TripShareRepository;

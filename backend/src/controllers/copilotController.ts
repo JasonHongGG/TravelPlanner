@@ -13,6 +13,7 @@ import {
 } from "../config/aiConfig.js";
 import { SERVICE_CONFIG } from "../config/serviceConfig.js";
 import { RECOMMENDATION_COUNT } from "../config/apiLimits.js";
+import { resolveCopilotLogDir } from '../platform/runtimePaths.js';
 
 // Copilot Client Setup
 const binPath = path.join(process.cwd(), 'node_modules', '.bin');
@@ -22,7 +23,7 @@ const env = { ...process.env, PATH: `${binPath}${path.delimiter}${process.env.PA
 let client: CopilotClient | null = null;
 let isReady = false;
 
-const COPILOT_LOG_DIR = path.join(process.cwd(), 'copilot_logs');
+const COPILOT_LOG_DIR = resolveCopilotLogDir();
 
 function formatTimestamp(date: Date) {
     const pad = (value: number) => String(value).padStart(2, '0');

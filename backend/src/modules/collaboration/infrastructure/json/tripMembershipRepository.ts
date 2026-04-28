@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import { createJsonFileStore, type JsonFileStore, resolveDataDir } from './jsonFileStore.js';
-import { normalizeUserId } from './tripShareDomain.js';
-import type { TripMemberRole, TripMembership } from './tripShareTypes.js';
+import { createJsonFileStore, type JsonFileStore, resolveDataDir } from '../../../../platform/persistence/jsonFileStore.js';
+import { normalizeUserId } from '../../domain/tripShareDomain.js';
+import type { TripMemberRole, TripMembership } from '../../domain/tripShareTypes.js';
 
 type TripMembershipFile = {
     schemaVersion: 1;

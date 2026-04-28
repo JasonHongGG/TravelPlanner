@@ -1,3 +1,7 @@
 node_modules
 npm-debug.log
 logs
+data
+copilot_logs
+.runtime
+.artifacts

@@ -1,8 +1,8 @@
 import type { Request, Response } from 'express';
-import * as tripShareService from '../services/data/tripShareService.js';
-import { createTripEventToken as signTripEventToken, verifyTripEventToken } from '../services/security/tripEventTokenService.js';
-import { parseBoundedInt } from '../utils/params.js';
-import { GALLERY_PAGE_MAX, GALLERY_PAGE_SIZE_DEFAULT, GALLERY_PAGE_SIZE_MAX, RANDOM_TRIPS_DEFAULT, RANDOM_TRIPS_MAX } from '../config/apiLimits.js';
+import * as tripShareService from '../application/tripShareService.js';
+import { createTripEventToken as signTripEventToken, verifyTripEventToken } from '../../../services/security/tripEventTokenService.js';
+import { parseBoundedInt } from '../../../utils/params.js';
+import { GALLERY_PAGE_MAX, GALLERY_PAGE_SIZE_DEFAULT, GALLERY_PAGE_SIZE_MAX, RANDOM_TRIPS_DEFAULT, RANDOM_TRIPS_MAX } from '../../../config/apiLimits.js';
 
 // Local type definition (shared types not directly importable in backend)
 type TripVisibility = 'private' | 'public';

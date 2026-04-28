@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import { createJsonFileStore, type JsonFileStore, resolveDataDir } from './jsonFileStore.js';
-import { removeTripFromIndexList, selectIndexList } from './tripShareDomain.js';
-import type { SharedTripMeta, TripIndex, TripVisibility } from './tripShareTypes.js';
+import { createJsonFileStore, type JsonFileStore, resolveDataDir } from '../../../../platform/persistence/jsonFileStore.js';
+import { removeTripFromIndexList, selectIndexList } from '../../domain/tripShareDomain.js';
+import type { SharedTripMeta, TripIndex, TripVisibility } from '../../domain/tripShareTypes.js';
 
 function validateTripIndex(value: unknown): TripIndex {
     const parsed = value as Partial<TripIndex>;

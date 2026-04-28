@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import * as cryptoService from '../services/security/cryptoService.js';
-import { readUsers } from '../services/data/userStore.js';
+import { readUsers } from '../modules/users/infrastructure/json/userStore.js';
 
 export function encryptTrip(req: Request, res: Response) {
     try {

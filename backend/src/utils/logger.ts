@@ -1,5 +1,10 @@
 import winston from 'winston';
 import path from 'path';
+import fs from 'fs';
+import { resolveLogDir } from '../platform/runtimePaths.js';
+
+const logDir = resolveLogDir();
+fs.mkdirSync(logDir, { recursive: true });
 
 // Define log levels
 const levels = {
@@ -48,13 +53,13 @@ const transports = [
     }),
     // Error File: only errors
     new winston.transports.File({
-        filename: path.join('logs', 'error.log'),
+        filename: path.join(logDir, 'error.log'),
         level: 'error',
         format: jsonFormat,
     }),
     // Combined File: all logs
     new winston.transports.File({
-        filename: path.join('logs', 'combined.log'),
+        filename: path.join(logDir, 'combined.log'),
         format: jsonFormat,
     }),
 ];

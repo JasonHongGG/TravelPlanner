@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+export { resolveDataDir } from '../../platform/runtimePaths.js';
 
 export type JsonFileStoreOptions<T> = {
     filePath: string;
@@ -20,10 +21,6 @@ function ensureParentDirectory(filePath: string): void {
 
 function tempPathFor(filePath: string): string {
     return `${filePath}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
-}
-
-export function resolveDataDir(): string {
-    return (process.env.DATA_DIR || '').trim() || path.join(process.cwd(), 'data');
 }
 
 export class JsonFileStore<T> {

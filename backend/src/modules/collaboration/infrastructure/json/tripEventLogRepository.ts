@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { resolveDataDir } from './jsonFileStore.js';
-import type { TripEventLogEntry } from './tripShareTypes.js';
+import { resolveDataDir } from '../../../../platform/persistence/jsonFileStore.js';
+import type { TripEventLogEntry } from '../../domain/tripShareTypes.js';
 
 export class TripEventLogRepository {
     private readonly eventLogDir: string;

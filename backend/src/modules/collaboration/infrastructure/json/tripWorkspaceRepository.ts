@@ -1,7 +1,7 @@
 import path from 'path';
-import { createJsonFileStore, type JsonFileStore, resolveDataDir } from './jsonFileStore.js';
-import { normalizeUserId, removeTripFromIndexList } from './tripShareDomain.js';
-import type { UserWorkspaceState } from './tripShareTypes.js';
+import { createJsonFileStore, type JsonFileStore, resolveDataDir } from '../../../../platform/persistence/jsonFileStore.js';
+import { normalizeUserId, removeTripFromIndexList } from '../../domain/tripShareDomain.js';
+import type { UserWorkspaceState } from '../../domain/tripShareTypes.js';
 
 export class TripWorkspaceRepository {
     private readonly workspaceDir: string;

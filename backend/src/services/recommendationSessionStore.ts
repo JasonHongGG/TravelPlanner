@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import path from 'path';
-import { createJsonFileStore, resolveDataDir } from './data/jsonFileStore.js';
+import { createJsonFileStore, resolveDataDir } from '../platform/persistence/jsonFileStore.js';
 
 interface SessionData {
     userId: string;

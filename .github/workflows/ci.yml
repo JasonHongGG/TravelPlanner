@@ -10,6 +10,9 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    env:
+      RUNTIME_DIR: .runtime
+      ARTIFACTS_DIR: .artifacts
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,7 +32,21 @@ jobs:
         run: npm run test
       - name: Build
         run: npm run build
+      - name: Migration readiness report
+        run: |
+          DATA_DIR="$(mktemp -d)" npm run migrate:report
       - name: Install Playwright browsers
         run: npm --prefix frontend exec playwright install --with-deps chromium
       - name: Playwright E2E
         run: npm run test:e2e
+      - name: Playwright visual
+        run: npm run test:visual
+      - name: Upload generated artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-artifacts
+          path: |
+            .artifacts
+            .runtime/backend/logs
+          if-no-files-found: ignore

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { resolveDataDir, resolveMigrationReportDir } from '../../../../platform/runtimePaths.js';
 
 type MigrationSection = {
     name: string;
@@ -30,7 +31,7 @@ export type MigrationSnapshot = {
     generationJobs: unknown[];
 };
 
-const DATA_DIR = (process.env.DATA_DIR || '').trim() || path.join(process.cwd(), 'data');
+const DATA_DIR = resolveDataDir();
 
 function readJsonFile(filePath: string): any | null {
     if (!fs.existsSync(filePath)) return null;
@@ -230,7 +231,7 @@ export function createMigrationSnapshot(): MigrationSnapshot {
     };
 }
 
-export function writeMigrationReport(outputPath = path.join(DATA_DIR, 'migration_report.json')): MigrationReport {
+export function writeMigrationReport(outputPath = path.join(resolveMigrationReportDir(), 'migration_report.json')): MigrationReport {
     const report = createMigrationReport();
     const snapshotPath = outputPath.replace(/\.json$/i, '_snapshot.json');
     const snapshot = createMigrationSnapshot();

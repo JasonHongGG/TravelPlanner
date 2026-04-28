@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import apiRoutes from './routes/apiRoutes.js';
 import dbRoutes from './routes/dbRoutes.js';
-import tripShareRoutes from './routes/tripShareRoutes.js';
+import tripShareRoutes from './modules/collaboration/http/tripShareRoutes.js';
 import exportRoutes from './routes/exportRoutes.js';
 import copilotRoutes from './routes/copilotRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';

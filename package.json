@@ -14,6 +14,10 @@
     "test:e2e": "npm --prefix frontend run test:e2e",
     "test:visual": "npm --prefix frontend run test:visual",
     "lint": "npm --prefix backend run lint && npm --prefix frontend run lint",
-    "migrate:report": "npm --prefix backend run migrate:report"
+    "migrate:report": "npm --prefix backend run migrate:report",
+    "clean:artifacts": "node scripts/clean.mjs artifacts",
+    "clean:build": "node scripts/clean.mjs build",
+    "clean:runtime": "node scripts/clean.mjs runtime --yes",
+    "clean": "npm run clean:artifacts && npm run clean:build"
   }
 }

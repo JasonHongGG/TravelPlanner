@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { optionalAuth, requireAuth } from '../utils/auth.js';
+import { optionalAuth, requireAuth } from '../../../utils/auth.js';
 import {
     getTrip,
     deleteTrip,
@@ -16,7 +16,7 @@ import {
     createTripEventToken,
     updateTripContent,
     createTripDocument
-} from '../controllers/tripShareController.js';
+} from './tripShareController.js';
 
 const router = Router();
 

@@ -1,6 +1,6 @@
 # Logs
-logs
-copilot_logs
+/logs/
+/copilot_logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -11,7 +11,13 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+test-results
+playwright-report
 *.local
+
+# Generated runtime and artifacts
+.runtime/
+.artifacts/
 
 # Editor directories and files
 .vscode/*
@@ -25,27 +31,13 @@ dist-ssr
 *.sw?
 
 # Local Data
-data/
-database/
+/data/
+/database/
 *.db
 *.db
 *.sqlite
-
-# Allow source folders with these names
-!backend/src/services/
-!backend/src/services/data/
-!backend/src/services/data/**
-!frontend/services/database/
-!frontend/services/database/**
 
 # Secrets
 .env
 .agent/
 .shared/
-
-
-
-docs/*
-!docs/
-!docs/collaboration-data-migration.md
-!docs/collaboration-architecture.md

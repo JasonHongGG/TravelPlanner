@@ -7,6 +7,10 @@ This repository is organized as a small workspace with clear runtime boundaries:
 - `frontend/` - Vite React client.
 - `backend/` - Express API, DB helper server, and Copilot helper server.
 - `shared/` - shared TypeScript types, API contracts, and cross-runtime helpers.
+- `.runtime/` - local runtime data and logs, ignored by git.
+- `.artifacts/` - generated reports and test output, ignored by git.
+
+See [docs/architecture/project-structure.md](docs/architecture/project-structure.md) and [docs/operations/runtime-artifacts.md](docs/operations/runtime-artifacts.md) for the folder rules.
 
 Install dependencies inside each app if they are missing:
 
@@ -44,6 +48,6 @@ Generate data migration readiness artifacts:
 npm run migrate:report
 ```
 
-Collaboration data migration and local cleanup rules are documented in [docs/collaboration-data-migration.md](docs/collaboration-data-migration.md).
+Collaboration data migration and local cleanup rules are documented in [docs/migration/collaboration-data.md](docs/migration/collaboration-data.md).
 
-Architecture refactors must keep the existing visual design stable. See `docs/visual-baseline.md` before changing UI structure, spacing, or visual hierarchy.
+Architecture refactors must keep the existing visual design stable. See [docs/testing/visual-baseline.md](docs/testing/visual-baseline.md) before changing UI structure, spacing, or visual hierarchy.

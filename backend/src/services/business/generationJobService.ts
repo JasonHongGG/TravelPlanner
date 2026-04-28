@@ -10,7 +10,7 @@ import {
     getGenerationJob,
     purgeExpiredGenerationJobs,
     updateGenerationJob
-} from '../data/generationJobStore.js';
+} from '../../modules/ai/infrastructure/json/generationJobStore.js';
 import type { TripInput } from '../../types.js';
 
 const generationInFlight = new Set<string>();

@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import { createJsonFileStore, resolveDataDir } from './jsonFileStore.js';
-import { normalizeSharedTripDocument } from './tripShareDomain.js';
-import type { SharedTrip } from './tripShareTypes.js';
+import { createJsonFileStore, resolveDataDir } from '../../../../platform/persistence/jsonFileStore.js';
+import { normalizeSharedTripDocument } from '../../domain/tripShareDomain.js';
+import type { SharedTrip } from '../../domain/tripShareTypes.js';
 
 export class TripDocumentRepository {
     private readonly sharedTripsDir: string;

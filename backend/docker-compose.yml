@@ -13,8 +13,8 @@ services:
     ports:
       - "${DB_SERVER_PORT:-3002}:3002"
     volumes:
-      - ./data:/app/backend/data
-      - ./logs:/app/backend/logs
+      - ../.runtime/backend/data:/app/.runtime/backend/data
+      - ../.runtime/backend/logs:/app/.runtime/backend/logs
     restart: unless-stopped
     networks:
       - default
@@ -33,9 +33,9 @@ services:
       - "${COPILOT_SERVER_PORT:-3003}:3003"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ./data:/app/backend/data
-      - ./logs:/app/backend/logs
-      - ./copilot_logs:/app/backend/copilot_logs
+      - ../.runtime/backend/data:/app/.runtime/backend/data
+      - ../.runtime/backend/logs:/app/.runtime/backend/logs
+      - ../.runtime/backend/copilot-logs:/app/.runtime/backend/copilot-logs
     restart: unless-stopped
     networks:
       - default
@@ -59,8 +59,8 @@ services:
     ports:
       - "${PORT:-3001}:3001"
     volumes:
-      - ./data:/app/backend/data
-      - ./logs:/app/backend/logs
+      - ../.runtime/backend/data:/app/.runtime/backend/data
+      - ../.runtime/backend/logs:/app/.runtime/backend/logs
     restart: unless-stopped
     networks:
       - default

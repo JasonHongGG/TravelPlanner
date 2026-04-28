@@ -1,21 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { createJsonFileStore } from './jsonFileStore.js';
+import { createJsonFileStore } from '../../../../platform/persistence/jsonFileStore.js';
+import { resolveDataDir, resolveLegacyBackendDataDir } from '../../../../platform/runtimePaths.js';
 
-function resolveDataDir() {
-    // Preferred: explicit env var, or relative to runtime working dir (WORKDIR in Docker)
-    const preferred = (process.env.DATA_DIR || '').trim() || path.join(process.cwd(), 'data');
-
-    // Legacy fallback: older builds wrote under a dist-relative path (e.g. /app/backend/dist/backend/data)
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const legacy = path.join(path.dirname(path.dirname(path.dirname(__dirname))), 'data');
-
-    return { preferred, legacy };
-}
-
-const { preferred: DATA_DIR, legacy: LEGACY_DATA_DIR } = resolveDataDir();
+const DATA_DIR = resolveDataDir();
+const LEGACY_DATA_DIR = resolveLegacyBackendDataDir();
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const LEGACY_USERS_FILE = path.join(LEGACY_DATA_DIR, 'users.json');
 

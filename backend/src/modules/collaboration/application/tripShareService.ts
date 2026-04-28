@@ -1,9 +1,9 @@
 import crypto from 'crypto';
 import type { Response } from 'express';
-import { calculateTrendingScore, canEditTrip, createOwnerMembership, createSharedTripSnapshot, createTripMetaSnapshot, normalizeUserId, permissionToMemberRole, resolveTripPermission, revokeMembership, upsertMembership } from './tripShareDomain.js';
+import { calculateTrendingScore, canEditTrip, createOwnerMembership, createSharedTripSnapshot, createTripMetaSnapshot, normalizeUserId, permissionToMemberRole, resolveTripPermission, revokeMembership, upsertMembership } from '../domain/tripShareDomain.js';
 import { tripShareEventBus, type TripShareEventBus } from './tripShareEvents.js';
-import { tripShareRepository, type TripShareRepository } from './tripShareRepository.js';
-import type { Engagement, GalleryResponse, SaveTripParams, SharedTrip, SharedTripMeta, SharedTripWithPermission, Trip, TripPermission, TripVisibility, WorkspaceTripSummary } from './tripShareTypes.js';
+import { tripShareRepository, type TripShareRepository } from '../infrastructure/json/tripShareRepository.js';
+import type { Engagement, GalleryResponse, SaveTripParams, SharedTrip, SharedTripMeta, SharedTripWithPermission, Trip, TripPermission, TripVisibility, WorkspaceTripSummary } from '../domain/tripShareTypes.js';
 
 const VIEW_DEBOUNCE_MS = 60 * 1000;
 const ENGAGEMENT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;

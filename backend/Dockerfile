@@ -1,8 +1,8 @@
 FROM node:24-slim AS build
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+	&& apt-get install -y --no-install-recommends ca-certificates \
+	&& rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app/backend
 
@@ -18,8 +18,8 @@ RUN npm run build
 FROM node:24-slim
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+	&& apt-get install -y --no-install-recommends ca-certificates \
+	&& rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app/backend
 

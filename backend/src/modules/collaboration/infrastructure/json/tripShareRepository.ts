@@ -1,13 +1,13 @@
 import fs from 'fs';
 import path from 'path';
-import { resolveDataDir } from './jsonFileStore.js';
-import { normalizeUserId, permissionToWorkspaceRole, permissionsFromMemberships } from './tripShareDomain.js';
+import { resolveDataDir } from '../../../../platform/persistence/jsonFileStore.js';
+import { normalizeUserId, permissionToWorkspaceRole, permissionsFromMemberships } from '../../domain/tripShareDomain.js';
 import { TripDocumentRepository } from './tripDocumentRepository.js';
 import { TripEventLogRepository } from './tripEventLogRepository.js';
 import { TripMembershipRepository } from './tripMembershipRepository.js';
 import { TripMetaRepository } from './tripMetaRepository.js';
 import { TripWorkspaceRepository } from './tripWorkspaceRepository.js';
-import type { SharedTrip, SharedTripMeta, TripEventLogEntry, TripIndex, TripMembership, TripVisibility, UserWorkspaceState, WorkspaceTripSummary } from './tripShareTypes.js';
+import type { SharedTrip, SharedTripMeta, TripEventLogEntry, TripIndex, TripMembership, TripVisibility, UserWorkspaceState, WorkspaceTripSummary } from '../../domain/tripShareTypes.js';
 
 export class TripShareRepository {
     private readonly transactionDir: string;

@@ -1,7 +1,7 @@
 import path from 'path';
 import crypto from 'crypto';
-import type { TripData, TripInput } from '../../types.js';
-import { createJsonFileStore, resolveDataDir } from './jsonFileStore.js';
+import type { TripData, TripInput } from '../../../../types.js';
+import { createJsonFileStore, resolveDataDir } from '../../../../platform/persistence/jsonFileStore.js';
 
 export type GenerationJobStatus = 'queued' | 'running' | 'completed' | 'failed';
 export type GenerationBillingStatus = 'pending' | 'charged' | 'charge_failed';
