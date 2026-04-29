@@ -2,48 +2,80 @@
 // =================================================================
 // Service Configuration
 // This is where you manually select which AI provider to use.
-// Options: 'gemini' | 'ollama' | 'local_api' | 'copilot'
+// Options: 'gemini' | 'ollama' | 'local_api' | 'copilot' | 'vertex'
 // =================================================================
+
+export type ServiceAIProviderType = 'gemini' | 'ollama' | 'local_api' | 'copilot' | 'vertex';
+
+const readEnv = (key: string, fallback = ''): string => {
+    const value = process.env[key];
+    if (value === undefined || value.trim() === '') return fallback;
+    return value.trim();
+};
+
+const parseNumberEnv = (value: string | undefined, fallback: number): number => {
+    if (value === undefined || value.trim() === '') return fallback;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const readProviderModel = (specificKey: string, defaultKey: string, fallback: string): string => {
+    return readEnv(specificKey, readEnv(defaultKey, fallback));
+};
 
 export const SERVICE_CONFIG = {
     // Can be overridden by env variable AI_PROVIDER
-    provider: (process.env.AI_PROVIDER || 'copilot') as 'gemini' | 'ollama' | 'local_api' | 'copilot',
+    provider: readEnv('AI_PROVIDER', 'copilot') as ServiceAIProviderType,
 
     // Google Gemini Configuration
     gemini: {
         models: {
-            tripGenerator: 'gemini-3-pro-preview', // 負責生成完整行程 (需邏輯強)
-            tripUpdater: 'gemini-3-pro-preview',   // 負責修改行程 (需理解上下文)
-            recommender: 'gemini-3-flash-preview', // 負責推薦景點 (速度快)
+            tripGenerator: readProviderModel('GEMINI_TRIP_GENERATOR_MODEL', 'GEMINI_MODEL', 'gemini-3-pro-preview'),
+            tripUpdater: readProviderModel('GEMINI_TRIP_UPDATER_MODEL', 'GEMINI_MODEL', 'gemini-3-pro-preview'),
+            recommender: readProviderModel('GEMINI_RECOMMENDER_MODEL', 'GEMINI_MODEL', 'gemini-3-flash-preview'),
         }
     },
 
     // Local Ollama Configuration
     ollama: {
-        baseUrl: process.env.OLLAMA_BASE_URL || 'https://17c6fa445bc9.ngrok-free.app',
+        baseUrl: readEnv('OLLAMA_BASE_URL', 'https://17c6fa445bc9.ngrok-free.app'),
         models: {
-            tripGenerator: 'gpt-oss:120b', // 生成完整 JSON 需要較強的模型 (如 llama3, mistral)
-            tripUpdater: 'llama3.3:70b',   // 處理對話修改
-            recommender: 'gemma3:12b',   // 簡單列表生成 (可以用較小的模型如 gemma:7b 以加速)
+            tripGenerator: readProviderModel('OLLAMA_TRIP_GENERATOR_MODEL', 'OLLAMA_MODEL', 'gpt-oss:120b'),
+            tripUpdater: readProviderModel('OLLAMA_TRIP_UPDATER_MODEL', 'OLLAMA_MODEL', 'llama3.3:70b'),
+            recommender: readProviderModel('OLLAMA_RECOMMENDER_MODEL', 'OLLAMA_MODEL', 'gemma3:12b'),
         }
     },
 
     // Local Custom API Configuration
     local_api: {
-        baseUrl: '/local-api',
+        baseUrl: readEnv('LOCAL_API_BASE_URL', '/local-api'),
         models: {
-            tripGenerator: 'gemini-3-pro-thinking',
-            tripUpdater: 'gemini-3-pro-thinking',
-            recommender: 'gemini-3-flash',
+            tripGenerator: readProviderModel('LOCAL_API_TRIP_GENERATOR_MODEL', 'LOCAL_API_MODEL', 'gemini-3-pro-thinking'),
+            tripUpdater: readProviderModel('LOCAL_API_TRIP_UPDATER_MODEL', 'LOCAL_API_MODEL', 'gemini-3-pro-thinking'),
+            recommender: readProviderModel('LOCAL_API_RECOMMENDER_MODEL', 'LOCAL_API_MODEL', 'gemini-3-flash'),
         }
     },
 
     // Copilot SDK Configuration
     copilot: {
         models: {
-            tripGenerator: 'gpt-5.2', // gpt-5.2 gemini-3-pro
-            tripUpdater: 'gpt-5.2',
-            recommender: 'gemini-3-flash',
+            tripGenerator: readProviderModel('COPILOT_TRIP_GENERATOR_MODEL', 'COPILOT_MODEL', 'gpt-5.2'),
+            tripUpdater: readProviderModel('COPILOT_TRIP_UPDATER_MODEL', 'COPILOT_MODEL', 'gpt-5.2'),
+            recommender: readProviderModel('COPILOT_RECOMMENDER_MODEL', 'COPILOT_MODEL', 'gemini-3-flash'),
+        }
+    },
+
+    // Google Cloud Vertex AI Gemini Configuration
+    vertex: {
+        projectId: readEnv('GOOGLE_CLOUD_PROJECT'),
+        location: readEnv('GOOGLE_CLOUD_LOCATION', 'us-central1'),
+        apiVersion: readEnv('VERTEX_API_VERSION', 'v1'),
+        temperature: parseNumberEnv(process.env.VERTEX_TEMPERATURE, 0.2),
+        maxOutputTokens: parseNumberEnv(process.env.VERTEX_MAX_OUTPUT_TOKENS, 4096),
+        models: {
+            tripGenerator: readProviderModel('VERTEX_TRIP_GENERATOR_MODEL', 'VERTEX_MODEL', 'gemini-2.5-flash'),
+            tripUpdater: readProviderModel('VERTEX_TRIP_UPDATER_MODEL', 'VERTEX_MODEL', 'gemini-2.5-flash'),
+            recommender: readProviderModel('VERTEX_RECOMMENDER_MODEL', 'VERTEX_MODEL', 'gemini-2.5-flash'),
         }
     }
 };

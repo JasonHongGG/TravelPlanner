@@ -3,8 +3,9 @@ import { CopilotProvider } from './CopilotProvider.js';
 import { GeminiProvider } from './GeminiProvider.js';
 import { LocalApiProvider } from './LocalApiProvider.js';
 import { OllamaProvider } from './OllamaProvider.js';
+import { VertexAIProvider } from './VertexAIProvider.js';
 
-export type AIProviderType = 'copilot' | 'gemini' | 'local_api' | 'ollama';
+export type AIProviderType = 'copilot' | 'gemini' | 'local_api' | 'ollama' | 'vertex';
 
 export class AIProviderRegistry {
     private instance?: IAIProvider;
@@ -31,6 +32,8 @@ export class AIProviderRegistry {
                 return new OllamaProvider();
             case 'gemini':
                 return new GeminiProvider();
+            case 'vertex':
+                return new VertexAIProvider();
             case 'local_api':
                 return new LocalApiProvider();
             case 'copilot':

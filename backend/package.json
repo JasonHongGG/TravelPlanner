@@ -13,6 +13,7 @@
         "lint": "npm run typecheck",
         "migrate:report": "tsx src/scripts/createMigrationReport.ts",
         "copilot:logs:parse": "tsx src/scripts/parseCopilotLogs.ts",
+        "smoke:vertex": "tsx src/scripts/vertexSmokeTest.ts",
         "db": "tsx src/dbServer.ts",
         "copilot": "tsx src/copilotServer.ts",
         "server": "tsx src/server.ts",

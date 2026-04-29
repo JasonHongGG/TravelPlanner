@@ -15,6 +15,11 @@ services:
     volumes:
       - ../.runtime/backend/data:/app/.runtime/backend/data
       - ../.runtime/backend/logs:/app/.runtime/backend/logs
+      # Optional for AI_PROVIDER=vertex when using a local service account key:
+      # 1. Store the key outside git, for example ../.runtime/secrets/google-application-credentials.json
+      # 2. Set GOOGLE_APPLICATION_CREDENTIALS=/app/.runtime/secrets/google-application-credentials.json in backend/.env
+      # 3. Uncomment the mount below. Never bake credentials into the image.
+      # - ../.runtime/secrets/google-application-credentials.json:/app/.runtime/secrets/google-application-credentials.json:ro
     restart: unless-stopped
     networks:
       - default
