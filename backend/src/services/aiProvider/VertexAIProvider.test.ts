@@ -87,8 +87,39 @@ describe('VertexAIProvider', () => {
         assert.deepEqual(result, tripData);
         assert.equal(calls[0].model, 'gemini-2.5-flash');
         assert.equal(calls[0].config?.responseMimeType, 'application/json');
+        assert.equal(calls[0].config?.maxOutputTokens, 16384);
+        assert.equal(calls[0].config?.thinkingConfig?.thinkingBudget, 0);
         assert.equal(calls[0].config?.systemInstruction, SYSTEM_INSTRUCTION);
         assert.equal(calls[0].config?.labels?.provider, 'vertex_ai');
+    });
+
+    it('fails fast when trip generation is truncated by max tokens', async () => {
+        const client: VertexAIClient = {
+            models: {
+                async generateContent() {
+                    return {
+                        text: '{"tripMeta": {',
+                        candidates: [{ finishReason: 'MAX_TOKENS' } as any]
+                    };
+                },
+                async generateContentStream() {
+                    return streamText([]);
+                }
+            }
+        };
+
+        const provider = createProvider(client);
+        const originalConsoleError = console.error;
+        console.error = () => undefined;
+
+        try {
+            await assert.rejects(
+                () => provider.generateTrip({ destination: 'Tokyo' } as any),
+                /MAX_TOKENS/
+            );
+        } finally {
+            console.error = originalConsoleError;
+        }
     });
 
     it('streams trip updates and merges partial JSON payloads', async () => {

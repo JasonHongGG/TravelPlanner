@@ -45,7 +45,6 @@ export interface VertexAIProviderOptions {
         models?: Partial<VertexAIModelConfig>;
     };
 }
-
 const createDefaultVertexClient: VertexAIProviderClientFactory = (settings) => new GoogleGenAI({
     vertexai: true,
     project: settings.projectId,
@@ -121,9 +120,17 @@ export class VertexAIProvider implements IAIProvider {
         }
     }
 
-    private getResponseText(response: VertexAIResponse, context: string, allowEmpty = false): string {
+    private getResponseText(response: VertexAIResponse, context: string, allowEmpty = false, requireComplete = false): string {
+        const firstCandidate = response.candidates?.[0];
+        const finishReason = firstCandidate?.finishReason ? String(firstCandidate.finishReason) : undefined;
+        const finishMessage = firstCandidate?.finishMessage ? `: ${firstCandidate.finishMessage}` : "";
         const text = response.text || "";
-        if (text) return text;
+        if (text) {
+            if (requireComplete && finishReason === 'MAX_TOKENS') {
+                throw new Error(`Vertex AI ${context} was truncated because generation stopped with ${finishReason}${finishMessage}`);
+            }
+            return text;
+        }
 
         const promptFeedback = response.promptFeedback;
         if (promptFeedback?.blockReason) {
@@ -131,10 +138,7 @@ export class VertexAIProvider implements IAIProvider {
             throw new Error(`Vertex AI ${context} blocked the prompt (${promptFeedback.blockReason})${message}`);
         }
 
-        const firstCandidate = response.candidates?.[0];
-        const finishReason = firstCandidate?.finishReason ? String(firstCandidate.finishReason) : undefined;
-        const finishMessage = firstCandidate?.finishMessage ? `: ${firstCandidate.finishMessage}` : "";
-        if (finishReason && this.isBlockingFinishReason(finishReason)) {
+        if (finishReason && (this.isBlockingFinishReason(finishReason) || (requireComplete && finishReason === 'MAX_TOKENS'))) {
             throw new Error(`Vertex AI ${context} returned no content because generation stopped with ${finishReason}${finishMessage}`);
         }
 
@@ -263,12 +267,17 @@ export class VertexAIProvider implements IAIProvider {
                 model: settings.models.tripGenerator,
                 contents: prompt,
                 config: this.buildGenerationConfig(settings, {
+                    maxOutputTokens: settings.maxOutputTokens,
                     systemInstruction: SYSTEM_INSTRUCTION,
                     responseMimeType: 'application/json',
                 }),
             });
 
-            return this.parseJsonFromVertex<TripData>(this.getResponseText(response, 'trip generation'), true, {} as TripData);
+            return this.parseJsonFromVertex<TripData>(
+                this.getResponseText(response, 'trip generation', false, true),
+                true,
+                {} as TripData
+            );
         } catch (error) {
             this.handleProviderError('Generate Trip', error);
         }
