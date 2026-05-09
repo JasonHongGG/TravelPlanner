@@ -482,7 +482,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
     setIsCoverUpdating(true); // Start loading
 
     // Expanded list of keywords for variety
-    const keywords = ["landmark", "landscape", "street view", "aerial view", "architecture", "night view", "nature", "tourism", "skyline", "scenery", "historic", "culture", "daytime", "vacation", "panoramic", "travel", "sightseeing"];
+    const keywords = ["landmark", "landscape", "street view", "aerial view", "architecture", "night view", "nature", "tourism", "skyline", "scenery", "culture", "daytime", "vacation", "panoramic", "travel", "sightseeing"];
 
     // 1. Pick a random keyword
     const randomKeyword = keywords[Math.floor(Math.random() * keywords.length)];
@@ -508,10 +508,7 @@ export default function TripDetail({ trip, onBack, onUpdateTrip, onUpdateTripMet
         return;
       }
     } catch (e) {
-      console.warn('Cover lookup failed, falling back to Bing thumbnail', e);
-      // Fallback
-      const fallbackUrl = `https://th.bing.com/th?q=${encodeURIComponent(city + ' ' + randomKeyword)}&w=1920&h=1080&c=7&rs=1&p=${randomPage}&t=${timestamp}`;
-      updateCoverImage(fallbackUrl);
+      console.warn('Cover lookup failed, keeping current cover', e);
     } finally {
       setIsCoverUpdating(false); // Stop loading
     }
