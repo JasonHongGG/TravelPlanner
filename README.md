@@ -82,7 +82,7 @@ VERTEX_TEMPERATURE=0.2
 VERTEX_MAX_OUTPUT_TOKENS=4096
 ```
 
-The authenticated user or service account needs permission to call Vertex AI, such as `roles/aiplatform.user`. For containers running outside Google Cloud, mount a service account key at runtime and set `GOOGLE_APPLICATION_CREDENTIALS` to the in-container path; never bake the key into an image or commit it.
+The authenticated user or service account needs permission to call Vertex AI, such as `roles/aiplatform.user`. In this repo's Docker Compose setup, the backend container mounts host `~/.config/gcloud` into `/root/.config/gcloud`, so after running `gcloud auth application-default login` on the host the container can reuse that ADC automatically. If you prefer a service account key, mount it at runtime under `.runtime/secrets` and set `GOOGLE_APPLICATION_CREDENTIALS` to the in-container path; never bake the key into an image or commit it.
 
 After ADC or `GOOGLE_APPLICATION_CREDENTIALS` is configured, run a small live Vertex check from the backend package:
 

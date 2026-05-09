@@ -69,6 +69,8 @@ export default function LoginScreen() {
                         shape="pill"
                         size="large"
                         width={280}
+                        use_fedcm_for_button
+                        itp_support
                     />
                 </div>
 

@@ -62,9 +62,14 @@ services:
       DB_SERVER_URL: ${DB_SERVER_URL:-http://travel-planner-db:3002}
       COPILOT_SERVER_URL: ${COPILOT_SERVER_URL:-http://travel-planner-copilot:3003/process}
       FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://travel-planner-frontend,http://localhost:7000,https://travelplanner.alberthongtunnel.dpdns.org}
+      HOME: /root
+      CLOUDSDK_CONFIG: /root/.config/gcloud
+      GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS:-/root/.config/gcloud/application_default_credentials.json}
     ports:
       - "${PORT:-3001}:3001"
     volumes:
+      - ${HOME}/.config/gcloud:/root/.config/gcloud:ro
+      - ../.runtime/secrets:/app/.runtime/secrets:ro
       - ../.runtime/backend/data:/app/.runtime/backend/data
       - ../.runtime/backend/logs:/app/.runtime/backend/logs
     restart: unless-stopped
