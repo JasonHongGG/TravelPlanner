@@ -64,8 +64,12 @@ const transports = [
     }),
 ];
 
+const configuredLogLevel = (process.env.LOG_LEVEL || '').trim();
+const defaultLogLevel = process.env.NODE_ENV === 'development' ? 'debug' : 'http';
+const resolvedLogLevel = configuredLogLevel || defaultLogLevel;
+
 export const logger = winston.createLogger({
-    level: process.env.NODE_ENV === 'development' ? 'debug' : 'warn',
+    level: resolvedLogLevel,
     levels,
     transports,
 });
