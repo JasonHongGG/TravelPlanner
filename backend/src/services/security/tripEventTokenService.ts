@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { getPersistentSecret } from './persistentSecret.js';
 
 type TripEventTokenPayload = {
     tripId: string;
@@ -11,11 +12,13 @@ type TripEventTokenPayload = {
 const TOKEN_TTL_MS = Number.parseInt(process.env.TRIP_EVENT_TOKEN_TTL_MS || '', 10) || 10 * 60 * 1000;
 
 function getSecret() {
-    const secret = process.env.TRIP_EVENT_TOKEN_SECRET || process.env.TRIP_ENCRYPTION_KEY;
-    if (!secret && process.env.NODE_ENV === 'production') {
-        throw new Error('TRIP_EVENT_TOKEN_SECRET is required in production.');
-    }
-    return secret || 'development-trip-event-token-secret';
+    return getPersistentSecret({
+        envKeys: ['TRIP_EVENT_TOKEN_SECRET', 'TRIP_ENCRYPTION_KEY'],
+        fileEnvKey: 'TRIP_EVENT_TOKEN_SECRET_FILE',
+        fileName: 'trip_event_token_secret',
+        fallbackValue: 'development-trip-event-token-secret',
+        byteLength: 32
+    });
 }
 
 function toBase64Url(value: string) {
