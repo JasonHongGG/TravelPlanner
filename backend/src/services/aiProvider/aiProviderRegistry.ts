@@ -1,6 +1,7 @@
 import type { IAIProvider } from './aiProvider.js';
 import { CopilotProvider } from './CopilotProvider.js';
 import { GeminiProvider } from './GeminiProvider.js';
+import { LoggedAIProvider } from './LoggedAIProvider.js';
 import { LocalApiProvider } from './LocalApiProvider.js';
 import { OllamaProvider } from './OllamaProvider.js';
 import { VertexAIProvider } from './VertexAIProvider.js';
@@ -29,18 +30,18 @@ export class AIProviderRegistry {
     private createProvider(providerType: string): IAIProvider {
         switch (providerType) {
             case 'ollama':
-                return new OllamaProvider();
+                return new LoggedAIProvider('ollama', new OllamaProvider());
             case 'gemini':
-                return new GeminiProvider();
+                return new LoggedAIProvider('gemini', new GeminiProvider());
             case 'vertex':
-                return new VertexAIProvider();
+                return new LoggedAIProvider('vertex', new VertexAIProvider());
             case 'local_api':
-                return new LocalApiProvider();
+                return new LoggedAIProvider('local_api', new LocalApiProvider());
             case 'copilot':
-                return new CopilotProvider();
+                return new LoggedAIProvider('copilot', new CopilotProvider());
             default:
                 console.warn(`Unknown provider '${providerType}', falling back to Gemini`);
-                return new GeminiProvider();
+                return new LoggedAIProvider('gemini', new GeminiProvider());
         }
     }
 }

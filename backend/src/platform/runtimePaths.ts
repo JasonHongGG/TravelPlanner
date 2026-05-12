@@ -38,8 +38,8 @@ export function resolveLogDir(): string {
     return fromEnvPath('LOG_DIR') || path.join(resolveBackendRuntimeDir(), 'logs');
 }
 
-export function resolveCopilotLogDir(): string {
-    return fromEnvPath('COPILOT_LOG_DIR') || path.join(resolveBackendRuntimeDir(), 'copilot-logs');
+export function resolveAiLogDir(): string {
+    return fromEnvPath('AI_LOG_DIR') || path.join(resolveBackendRuntimeDir(), 'ai-logs');
 }
 
 export function resolveMigrationReportDir(): string {

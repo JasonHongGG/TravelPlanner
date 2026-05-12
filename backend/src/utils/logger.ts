@@ -2,6 +2,7 @@ import winston from 'winston';
 import path from 'path';
 import fs from 'fs';
 import { resolveLogDir } from '../platform/runtimePaths.js';
+import { formatOffsetTimestamp } from './time.js';
 
 const logDir = resolveLogDir();
 fs.mkdirSync(logDir, { recursive: true });
@@ -29,7 +30,7 @@ winston.addColors(colors);
 
 // Define log format
 const format = winston.format.combine(
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+    winston.format.timestamp({ format: () => formatOffsetTimestamp(new Date()) }),
     // winston.format.colorize({ all: true }), // Colorize for console, generally used in dev
     winston.format.printf(
         (info) => `[${info.timestamp}] ${info.level}: ${info.message}${info.correlationId ? ` (CID: ${info.correlationId})` : ''}`
@@ -38,7 +39,7 @@ const format = winston.format.combine(
 
 // JSON format for file logging (Machine Readable)
 const jsonFormat = winston.format.combine(
-    winston.format.timestamp(),
+    winston.format.timestamp({ format: () => formatOffsetTimestamp(new Date()) }),
     winston.format.json()
 );
 

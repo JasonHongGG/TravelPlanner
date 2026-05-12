@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { resolveCopilotLogDir } from '../platform/runtimePaths.js';
+import { resolveAiLogDir } from '../platform/runtimePaths.js';
 
 function stripJsonFence(text: string): string {
     const trimmed = text.trim();
@@ -22,14 +22,28 @@ function parseResponseContent(response: string): unknown {
     }
 }
 
-function parseSingleFile(filePath: string, outputDir: string): string {
-    const raw = fs.readFileSync(filePath, 'utf8');
-    const data = JSON.parse(raw) as { response?: unknown };
-    if (typeof data.response !== 'string') {
-        throw new Error('Missing response string in log file.');
+function extractStructuredResponse(data: Record<string, unknown>): unknown {
+    const output = data.output as Record<string, unknown> | undefined;
+
+    if (output && 'normalizedResponse' in output) {
+        return output.normalizedResponse;
     }
 
-    const parsedResponse = parseResponseContent(data.response);
+    if (output && typeof output.rawResponseText === 'string') {
+        return parseResponseContent(output.rawResponseText);
+    }
+
+    if (typeof data.response === 'string') {
+        return parseResponseContent(data.response);
+    }
+
+    throw new Error('No structured response found in ai-log file.');
+}
+
+function parseSingleFile(filePath: string, outputDir: string): string {
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const data = JSON.parse(raw) as Record<string, unknown>;
+    const parsedResponse = extractStructuredResponse(data);
     const baseName = path.basename(filePath).replace(/\.json$/i, '_parsed.json');
     const outputPath = path.join(outputDir, baseName);
     fs.writeFileSync(outputPath, JSON.stringify(parsedResponse, null, 2), 'utf8');
@@ -57,12 +71,12 @@ function parseDirectory(dirPath: string) {
 }
 
 function printUsage(): void {
-    console.log('Usage: npm run copilot:logs:parse -- [path-to-json-or-folder]');
-    console.log('If no path is provided, the configured COPILOT_LOG_DIR is parsed.');
+    console.log('Usage: npm run ai:logs:parse -- [path-to-json-or-folder]');
+    console.log('If no path is provided, the configured AI_LOG_DIR is parsed.');
 }
 
 function main(): void {
-    const target = process.argv[2] || resolveCopilotLogDir();
+    const target = process.argv[2] || resolveAiLogDir();
     const resolved = path.resolve(process.cwd(), target);
 
     if (!fs.existsSync(resolved)) {
